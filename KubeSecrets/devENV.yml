@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  name: food-delivery-frontend-env
+  namespace: food-delivery
+type: Opaque
+stringData:
+  NEXT_PUBLIC_API_URL: "https://fooddeliveryapi.codevertexitsolutions.com"
+  NEXT_PUBLIC_NOTIFICATIONS_URL: "https://notificationsapi.codevertexitsolutions.com"
+  NEXT_PUBLIC_MAPBOX_TOKEN: "set-this-token"
+  NEXT_PUBLIC_SENTRY_DSN: ""

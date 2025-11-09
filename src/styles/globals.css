@@ -1,0 +1,15 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: light dark;
+}
+
+body {
+  @apply bg-brand-muted text-slate-900 transition-colors duration-150 ease-out dark:bg-slate-950 dark:text-slate-100;
+}
+
+::selection {
+  @apply bg-brand-emphasis text-brand-contrast;
+}
