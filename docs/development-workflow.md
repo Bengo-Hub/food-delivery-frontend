@@ -31,6 +31,7 @@ pnpm dev
 - `pnpm lint` – ESLint flat config leveraging Next core web vitals and TypeScript rules
 - `pnpm typecheck` – strict compilation without emitting
 - `pnpm test` – unit/integration tests via Vitest + Testing Library
+- Visual QA – verify new screens against design tokens (`tailwind.config.ts`) and ensure responsive behaviour at xs/sm/md/lg breakpoints in mobile + PWA install mode.
 - Visual regression (Percy) and Playwright E2E will be added before GA launch.
 
 ## Environment Promotion

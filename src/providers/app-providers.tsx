@@ -8,7 +8,7 @@ import { ThemeProvider } from "next-themes";
 
 import { createQueryClient } from "@/lib/query-client";
 
-export function AppProviders({ children }: PropsWithChildren): JSX.Element {
+export function AppProviders({ children }: PropsWithChildren) {
   const [queryClient] = useState<QueryClient>(() => createQueryClient());
   const showDevtools = process.env.NODE_ENV !== "production";
 

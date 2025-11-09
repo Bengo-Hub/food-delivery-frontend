@@ -1,7 +1,9 @@
 import type { Metadata, Viewport } from "next";
 import { Inter, Playfair_Display as PlayfairDisplay } from "next/font/google";
+import type { CSSProperties } from "react";
 import "@/styles/globals.css";
 
+import { brand } from "@/config/brand";
 import { AppProviders } from "@/providers/app-providers";
 import { cn } from "@/lib/utils";
 
@@ -19,16 +21,15 @@ const display = PlayfairDisplay({
 
 export const metadata: Metadata = {
   title: {
-    default: "BengoBox Food Delivery",
-    template: "%s | BengoBox Food Delivery",
+    default: brand.metadata.defaultTitle,
+    template: brand.metadata.template,
   },
-  description:
-    "Unified urban cafe ordering experience with localized content, offline resilience, and realtime delivery visibility.",
-  applicationName: "BengoBox Food Delivery",
-  authors: [{ name: "BengoBox" }],
+  description: brand.description,
+  applicationName: brand.metadata.applicationName,
+  authors: [{ name: brand.name }],
   keywords: [
     "food delivery",
-    "bengobox",
+    brand.shortName.toLowerCase(),
     "next.js",
     "react",
     "pwa",
@@ -37,15 +38,30 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: [{ media: "(prefers-color-scheme: dark)", color: "#0f172a" }, { color: "#6b2a1b" }],
+  themeColor: [
+    { media: "(prefers-color-scheme: dark)", color: brand.palette.dark },
+    { color: brand.palette.primary },
+  ],
+};
+
+const brandCssVariables: CSSProperties = {
+  "--brand-primary": brand.cssVariables.primary,
+  "--brand-emphasis": brand.cssVariables.emphasis,
+  "--brand-contrast": brand.cssVariables.contrast,
+  "--brand-muted": brand.cssVariables.muted,
+  "--brand-surface": brand.cssVariables.surface,
+  "--brand-dark": brand.cssVariables.dark,
 };
 
 export default function RootLayout({
   children,
-}: Readonly<{ children: React.ReactNode }>): JSX.Element {
+}: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={cn(inter.variable, display.variable, "font-sans antialiased")}>
+      <body
+        style={brandCssVariables}
+        className={cn(inter.variable, display.variable, "font-sans antialiased")}
+      >
         <AppProviders>{children}</AppProviders>
       </body>
     </html>

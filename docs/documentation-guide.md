@@ -13,5 +13,6 @@ This document enumerates Markdown files that complement the Food Delivery fronte
 | [`docs/architecture.md`](architecture.md) | Solution architecture, routing, state management, and integration notes |
 | [`docs/development-workflow.md`](development-workflow.md) | Local dev setup, environments, branching, and CI/CD expectations |
 | [`docs/testing-strategy.md`](testing-strategy.md) | Testing pyramid, tooling, and automation coverage goals |
+| [`docs/information-architecture-checklist.md`](information-architecture-checklist.md) | Wireframe/IA coverage checklist for all page groups |
 
 Update this index whenever new documentation is added.

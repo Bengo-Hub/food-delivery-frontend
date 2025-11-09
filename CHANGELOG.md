@@ -7,4 +7,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) 
 ## [Unreleased]
 
 ### Added
-- Initial project scaffolding, documentation, and shared providers
+- Configurable brand theming backed by CSS variables and default logo fallback.
+- Marketing surface updates with riders and merchants landing flows, plus new rider/merchant/service pages.
+- Rider onboarding form with KYC capture, Google OAuth entry point, and verification guidance.
+- Merchant signup workflow with staff invitation scaffolding and dedicated staff portal sign-in.
+- Role-aware authentication hub for riders, merchants, and staff.

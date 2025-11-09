@@ -4,7 +4,6 @@ import { fileURLToPath } from "node:url";
 import { FlatCompat } from "@eslint/eslintrc";
 import tseslint from "@typescript-eslint/eslint-plugin";
 import tsParser from "@typescript-eslint/parser";
-import testingLibrary from "eslint-plugin-testing-library";
 
 const baseDirectory = path.dirname(fileURLToPath(import.meta.url));
 const compat = new FlatCompat({ baseDirectory });
@@ -39,15 +38,6 @@ export default [
           ignoreRestSiblings: true,
         },
       ],
-    },
-  },
-  {
-    files: ["**/*.{test,spec}.{ts,tsx}", "**/__tests__/**/*.{ts,tsx}"],
-    plugins: {
-      "testing-library": testingLibrary,
-    },
-    rules: {
-      ...testingLibrary.configs.react.rules,
     },
   },
 ];

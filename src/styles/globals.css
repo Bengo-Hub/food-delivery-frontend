@@ -4,10 +4,54 @@
 
 :root {
   color-scheme: light dark;
+  font-feature-settings: "liga" 1, "kern" 1;
+  text-rendering: optimizeLegibility;
+  --brand-primary: 107 42 27;
+  --brand-emphasis: 243 106 12;
+  --brand-contrast: 255 255 255;
+  --brand-muted: 249 237 229;
+  --brand-surface: 244 230 220;
+  --brand-dark: 67 23 13;
+}
+
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+*,
+*::before,
+*::after {
+  @apply box-border;
+}
+
+html {
+  scroll-behavior: smooth;
+  min-height: 100%;
 }
 
 body {
-  @apply bg-brand-muted text-slate-900 transition-colors duration-150 ease-out dark:bg-slate-950 dark:text-slate-100;
+  @apply min-h-screen bg-brand-muted text-slate-900 transition-colors duration-150 ease-out antialiased dark:bg-slate-950 dark:text-slate-100;
+}
+
+img,
+video,
+canvas,
+svg {
+  max-width: 100%;
+  height: auto;
+}
+
+main {
+  @apply min-h-screen;
+}
+
+a {
+  @apply text-inherit no-underline;
+}
+
+a:focus-visible,
+button:focus-visible {
+  @apply outline-none ring-2 ring-brand-emphasis ring-offset-2 ring-offset-brand-muted dark:ring-offset-slate-950;
 }
 
 ::selection {

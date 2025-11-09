@@ -2,9 +2,9 @@ import Link from "next/link";
 
 import { Clock3Icon, MapPinIcon, SmartphoneIcon } from "lucide-react";
 
-import { SiteFooter } from "@/components/layout/site-footer";
-import { SiteHeader } from "@/components/layout/site-header";
+import { SiteShell } from "@/components/layout/site-shell";
 import { Button } from "@/components/primitives/button";
+import { brand } from "@/config/brand";
 
 const features = [
   {
@@ -24,29 +24,31 @@ const features = [
   },
 ];
 
-export default function HomePage(): JSX.Element {
+export default function HomePage() {
   return (
-    <div className="flex min-h-screen flex-col bg-gradient-to-b from-brand-muted/60 via-white to-white dark:from-slate-950 dark:via-slate-950 dark:to-slate-950">
-      <SiteHeader />
-      <main className="flex-1">
+    <SiteShell className="bg-gradient-to-b from-brand-muted/60 via-white to-white dark:from-slate-950 dark:via-slate-950 dark:to-slate-950">
+      <div className="flex-1">
         <section className="relative overflow-hidden py-24">
           <div className="mx-auto grid w-full max-w-6xl gap-10 px-4 md:grid-cols-[1.1fr_0.9fr] md:items-center">
             <div className="space-y-6">
               <span className="inline-flex items-center rounded-full bg-brand-muted px-3 py-1 text-xs font-semibold uppercase tracking-wide text-brand">
-                Urban Café Platform
+                {brand.shortName} Platform
               </span>
               <h1 className="text-4xl font-semibold leading-tight text-slate-900 dark:text-white md:text-5xl">
-                Delight customers, empower riders, and keep kitchens in sync.
+                {brand.tagline}
               </h1>
               <p className="max-w-xl text-lg text-slate-600 dark:text-slate-300">
-                Ship a world-class ordering experience with localized content, loyalty rewards, and integrated treasury & notification workflows.
+                {brand.description}
               </p>
               <div className="flex flex-wrap gap-3">
                 <Button size="lg" asChild>
                   <Link href="/menu">Start an order</Link>
                 </Button>
                 <Button variant="outline" size="lg" asChild>
-                  <Link href="/docs">Explore platform docs</Link>
+                  <Link href="/riders/signup">Become a rider</Link>
+                </Button>
+                <Button variant="ghost" size="lg" asChild>
+                  <Link href="/merchants/signup">Launch merchant SaaS</Link>
                 </Button>
               </div>
             </div>
@@ -55,7 +57,7 @@ export default function HomePage(): JSX.Element {
                 <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,#f36a0c33,transparent_60%)]" aria-hidden />
                 <div className="relative flex h-full w-full flex-col justify-between p-6">
                   <header className="flex items-center justify-between text-sm text-slate-500">
-                    <span>Urban Café</span>
+                    <span>{brand.shortName}</span>
                     <span>ETA 18 min</span>
                   </header>
                   <div className="space-y-3 text-slate-900 dark:text-white">
@@ -92,8 +94,52 @@ export default function HomePage(): JSX.Element {
             ))}
           </div>
         </section>
-      </main>
-      <SiteFooter />
-    </div>
+        <section className="border-t border-slate-200 bg-brand-surface/60 py-20 dark:border-slate-800 dark:bg-brand-dark/20">
+          <div className="mx-auto grid w-full max-w-6xl gap-8 px-4 md:grid-cols-2">
+            <article className="rounded-3xl border border-slate-200 bg-white p-8 shadow-sm dark:border-slate-800 dark:bg-slate-900/70">
+              <h2 className="text-3xl font-semibold text-slate-900 dark:text-white">Verified rider network</h2>
+              <p className="mt-3 text-sm text-slate-600 dark:text-slate-300">
+                Submit KYC details, upload your bike documents, and activate deliveries once the operations team
+                verifies your profile. Only verified riders receive assignments, in-app navigation, and treasury-backed payouts.
+              </p>
+              <ul className="mt-4 space-y-2 text-sm text-slate-600 dark:text-slate-300">
+                <li>• National ID, proof of residency, and recent profile photo</li>
+                <li>• Motorbike logbook or lease agreement plus insurance document</li>
+                <li>• Safety and customer care onboarding before your first shift</li>
+              </ul>
+              <div className="mt-6 flex flex-wrap gap-3">
+                <Button size="sm" asChild>
+                  <Link href="/riders/signup">Start rider onboarding</Link>
+                </Button>
+                <Button variant="ghost" size="sm" asChild>
+                  <Link href="/auth#rider">Rider sign in</Link>
+                </Button>
+              </div>
+            </article>
+            <article className="rounded-3xl border border-slate-200 bg-white p-8 shadow-sm dark:border-slate-800 dark:bg-slate-900/70">
+              <h2 className="text-3xl font-semibold text-slate-900 dark:text-white">SaaS merchant workspace</h2>
+              <p className="mt-3 text-sm text-slate-600 dark:text-slate-300">
+                Roll out branded storefronts, manage menus, and invite cafe staff from a single portal. Staff logins
+                inherit your permissions and billing while treasury services reconcile payouts automatically.
+              </p>
+              <ul className="mt-4 space-y-2 text-sm text-slate-600 dark:text-slate-300">
+                <li>• Capture store locations and opening hours per outlet</li>
+                <li>• Invite staff with role-based access to kitchen, rider, or finance tools</li>
+                <li>• Configure look &amp; feel tokens that will sync from backend admin preferences</li>
+              </ul>
+              <div className="mt-6 flex flex-wrap gap-3">
+                <Button size="sm" asChild>
+                  <Link href="/merchants/signup">Create merchant account</Link>
+                </Button>
+                <Button variant="ghost" size="sm" asChild>
+                  <Link href="/merchants/staff-portal">Staff portal</Link>
+                </Button>
+              </div>
+            </article>
+          </div>
+        </section>
+        {/* Admin note intentionally omitted from public landing. Admin tools are accessed post sign-in. */}
+      </div>
+    </SiteShell>
   );
 }
