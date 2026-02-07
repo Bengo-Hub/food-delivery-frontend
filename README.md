@@ -34,7 +34,7 @@ Environment variables live in `.env.local` (not committed). Minimum variables:
 NEXT_PUBLIC_API_URL=http://localhost:4000/api
 NEXT_PUBLIC_AUTH_SERVICE_URL=https://sso.codevertexitsolutions.com
 NEXT_PUBLIC_LOGISTICS_UI_URL=https://logistics.codevertexitsolutions.com
-NEXT_PUBLIC_CAFE_WEBSITE_URL=https://cafe.codevertexitsolutions.com
+NEXT_PUBLIC_CAFE_WEBSITE_URL=https://theurbanloftcafe.com
 
 # App-first UX (Design notes)
 

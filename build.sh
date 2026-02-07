@@ -54,6 +54,21 @@ fi
 
 log_success "Prerequisite checks passed"
 
+# =============================================================================
+# Auto-sync secrets from devops-k8s
+# =============================================================================
+if [[ ${DEPLOY} == "true" ]]; then
+  log_info "Checking and syncing required secrets from devops-k8s..."
+  SYNC_SCRIPT=$(mktemp)
+  if curl -fsSL https://raw.githubusercontent.com/Bengo-Hub/devops-k8s/main/scripts/tools/check-and-sync-secrets.sh -o "$SYNC_SCRIPT" 2>/dev/null; then
+    source "$SYNC_SCRIPT"
+    check_and_sync_secrets "KUBE_CONFIG" "REGISTRY_USERNAME" "REGISTRY_PASSWORD" "GIT_TOKEN" || log_warn "Secret sync failed - continuing with existing secrets"
+    rm -f "$SYNC_SCRIPT"
+  else
+    log_warn "Unable to download secret sync script - continuing with existing secrets"
+  fi
+fi
+
 log_info "Running Trivy scan"
 trivy fs . --exit-code "$TRIVY_ECODE" --format table || true
 

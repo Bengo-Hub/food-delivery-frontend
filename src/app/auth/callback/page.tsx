@@ -40,7 +40,7 @@ function AuthCallbackContent() {
       // services (cafe website / logistics) so we avoid duplicating those UIs here.
       if (userHasRole(user, ["staff", "admin", "superuser"])) {
         const cafeUrl =
-          process.env.NEXT_PUBLIC_CAFE_WEBSITE_URL ?? "https://cafe.codevertexitsolutions.com";
+          process.env.NEXT_PUBLIC_CAFE_WEBSITE_URL ?? "https://theurbanloftcafe.com";
         // preserve return_url where possible
         window.location.href = cafeUrl;
         return;

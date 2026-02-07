@@ -48,7 +48,7 @@
 
 ### ❌ Staff/Admin Dashboards → **cafe-website**
 - **Route**: `/dashboard/staff`
-- **Redirects To**: `https://cafe.codevertexitsolutions.com/{tenant_slug}/admin`
+- **Redirects To**: `https://theurbanloftcafe.com/{tenant_slug}/admin`
 - **Why**: Operations management, analytics, staff administration belong to cafe-website
 - **Integration**: Ordering service provides order APIs for admin dashboards
 
@@ -96,7 +96,7 @@ Environment variables used for redirects (client):
 ### 2. **Cafe Website** (Staff/Admin Management)
 ```typescript
 // Redirect pattern for staff/admin features
-const adminUrl = `https://cafe.codevertexitsolutions.com/${tenantSlug}/admin?return_url=${returnUrl}`;
+const adminUrl = `https://theurbanloftcafe.com/${tenantSlug}/admin?return_url=${returnUrl}`;
 window.location.href = adminUrl;
 ```
 
