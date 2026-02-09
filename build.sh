@@ -120,6 +120,14 @@ if ! kubectl -n "$NAMESPACE" get secret "$ENV_SECRET_NAME" >/dev/null 2>&1; then
     --from-literal=SENTRY_DSN="" || true
 fi
 
+# Clone devops-k8s repo (needed for helm values update)
+if [[ ! -d "$DEVOPS_DIR" ]]; then
+  TOKEN="${GH_PAT:-}"
+  CLONE_URL="https://github.com/${DEVOPS_REPO}.git"
+  [[ -n $TOKEN ]] && CLONE_URL="https://x-access-token:${TOKEN}@github.com/${DEVOPS_REPO}.git"
+  git clone "$CLONE_URL" "$DEVOPS_DIR" || log_warn "Unable to clone devops repo for helm values update"
+fi
+
 # Update Helm values using centralized script
 source "${HOME}/devops-k8s/scripts/helm/update-values.sh" 2>/dev/null || {
   log_warn "Centralized helm update script not available"
