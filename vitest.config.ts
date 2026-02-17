@@ -10,6 +10,7 @@ export default defineConfig({
     globals: true,
     environment: "jsdom",
     setupFiles: ["./vitest.setup.ts"],
+    pool: "threads",
     coverage: {
       provider: "v8",
       reportsDirectory: "./coverage",

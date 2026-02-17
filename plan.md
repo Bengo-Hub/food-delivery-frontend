@@ -7,6 +7,24 @@
 - Uphold brand palette and accessibility (WCAG 2.1 AA) while ensuring sub-second perceived performance on mobile devices.
 - PWA features: Installable, offline menu browsing, push notifications, fast loading, responsive design.
 
+## Recent Progress (February 2026 — Week 2: Testing & Polish)
+
+- **Test Infrastructure** (Feb 16): Installed MSW v2, created mock handlers (17 HTTP endpoints), server setup, and TestWrapper (QueryClient + OrgSlugProvider).
+- **Store Tests** (Feb 16): 28 tests across 5 files — auth, cart, dining-mode (10 tests), location (5 tests), cart-persistence (3 tests). All passing.
+- **Hook Tests** (Feb 16): 33 tests across 3 files — use-menu (11 tests), use-orders (14 tests), use-loyalty (8 tests). Covers queries, mutations, query key factories, cache invalidation.
+- **Component Tests** (Feb 16): 6 checkout flow tests — unauthenticated guard, empty cart, order summary, delivery fee logic, pickup free delivery, payment method toggle.
+- **Responsive Fixes** (Feb 16): Orders summary cards gap tightened on mobile (`gap-2 sm:gap-3`), order detail timeline labels truncation safety added.
+- **Total**: 67 frontend tests across 10 files, all passing.
+
+## Recent Progress (February 2026 — Week 1: MVP Features)
+
+- **Order History Pages** (Feb 16): Built dedicated `/orders` list page with status tabs (All/Active/Completed/Cancelled), search, summary cards. Added `/orders/[orderId]` detail page with order timeline, items breakdown, delivery/payment info, reorder and cancel actions.
+- **Loyalty Dashboard** (Feb 16): Created `/loyalty` page with tier progress visualization, points balance hero card, transaction history with pagination, tier benefits breakdown, and "How it works" onboarding section. API layer: `lib/api/loyalty.ts` + `hooks/use-loyalty.ts`.
+- **Email Verification Flow** (Feb 16): Built `/auth/verify-email` OTP input page with 6-digit code entry, paste support, resend cooldown timer, and success redirect.
+- **Notification Preferences** (Feb 16): Created API hooks (`hooks/use-notifications.ts`) for backend notification preferences endpoints. Profile page preferences card enhanced with backend API readiness.
+- **Cart Persistence** (Feb 15): Added Zustand `persist` middleware to cart store — cart survives page refresh via localStorage.
+- **Profile Enhancement** (Feb 16): Loyalty card in profile now links to dedicated `/loyalty` page.
+
 ## Recent Progress (December 2025)
 
 - **Service Boundary Refactoring** (Dec 2025): Removed rider and staff dashboards from ordering frontend. These now redirect to logistics-service and cafe-website respectively. Ordering frontend is now focused solely on customer-facing online ordering.
@@ -195,10 +213,10 @@
      - **January 2026**: Uber Eats-style location dialog with address management
      - **January 2026**: Uber Eats-style user menu drawer (side panel)
    - **Outstanding**:
-     - Cart persistence to localStorage
+     - ~~Cart persistence to localStorage~~ ✅ Done (Feb 15)
      - Related items on product detail page
-     - Email verification flow
-     - Unit tests
+     - ~~Email verification flow~~ ✅ Done (Feb 16)
+     - ~~Unit tests~~ ✅ Done (Feb 16) — 67 tests across 10 files
    - **Next sprint tasks**: Wire location store into checkout, integrate with live backend APIs.
    - _Backend link: [Sprint 1 – Identity & Access](../cafe-backend/plan.md#sprint-1--identity--access-management-weeks-2-3) & [Sprint 2 – Catalog & Localization](../cafe-backend/plan.md#sprint-2--catalog--localization-weeks-4-5)._
 3. **Sprint 2 – Checkout & Payments UX (Weeks 4-5)** — _Status: ⏳ Not Started_

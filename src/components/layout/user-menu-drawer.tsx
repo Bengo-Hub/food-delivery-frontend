@@ -18,7 +18,9 @@ import Link from "next/link";
 
 import { Button } from "@/components/ui/button";
 import { brand } from "@/config/brand";
+import { orgRoute } from "@/lib/routes";
 import { cn } from "@/lib/utils";
+import { useOrgSlug } from "@/providers/org-slug-provider";
 import { useAuthStore } from "@/store/auth";
 
 interface UserMenuDrawerProps {
@@ -45,6 +47,7 @@ function SubscriptionIcon({ className }: { className?: string }) {
 }
 
 export function UserMenuDrawer({ open, onOpenChange }: UserMenuDrawerProps) {
+  const orgSlug = useOrgSlug();
   const user = useAuthStore((state) => state.user);
   const logout = useAuthStore((state) => state.logout);
 
@@ -74,22 +77,22 @@ export function UserMenuDrawer({ open, onOpenChange }: UserMenuDrawerProps) {
     {
       icon: Package,
       label: "Orders",
-      href: "/orders",
+      href: orgRoute(orgSlug, "/orders"),
     },
     {
       icon: Heart,
       label: "Favorites",
-      href: "/favorites",
+      href: orgRoute(orgSlug, "/favorites"),
     },
     {
       icon: CreditCard,
       label: "Wallet",
-      href: "/wallet",
+      href: orgRoute(orgSlug, "/wallet"),
     },
     {
       icon: HelpCircle,
       label: "Help",
-      href: "/help",
+      href: orgRoute(orgSlug, "/help"),
     },
     {
       icon: Car,
@@ -100,19 +103,19 @@ export function UserMenuDrawer({ open, onOpenChange }: UserMenuDrawerProps) {
     {
       icon: Tag,
       label: "Promotions",
-      href: "/promotions",
+      href: orgRoute(orgSlug, "/promotions"),
     },
     {
       icon: SubscriptionIcon,
       label: `${brand.shortName} One`,
-      href: "/subscription",
+      href: orgRoute(orgSlug, "/subscription"),
       highlight: true,
       description: "Try free for 4 weeks",
     },
     {
       icon: Users,
       label: "Invite friends",
-      href: "/referral",
+      href: orgRoute(orgSlug, "/referral"),
       description: "You get KES 25 off",
     },
   ];
@@ -170,7 +173,7 @@ export function UserMenuDrawer({ open, onOpenChange }: UserMenuDrawerProps) {
                   {getUserName()}
                 </h2>
                 <Link
-                  href="/profile"
+                  href={orgRoute(orgSlug, "/profile")}
                   onClick={handleClose}
                   className="text-sm text-green-600 hover:underline"
                 >
@@ -181,7 +184,7 @@ export function UserMenuDrawer({ open, onOpenChange }: UserMenuDrawerProps) {
           ) : (
             <div className="space-y-3">
               <Button asChild className="w-full" size="lg">
-                <Link href="/auth" onClick={handleClose}>
+                <Link href={orgRoute(orgSlug, "/auth")} onClick={handleClose}>
                   Sign in
                 </Link>
               </Button>
@@ -266,21 +269,21 @@ export function UserMenuDrawer({ open, onOpenChange }: UserMenuDrawerProps) {
           {/* Business Links */}
           <div className="space-y-3 text-sm">
             <Link
-              href="/business"
+              href={orgRoute(orgSlug, "/business")}
               onClick={handleClose}
               className="block text-foreground hover:underline"
             >
               Create a business account
             </Link>
             <Link
-              href="/add-restaurant"
+              href={orgRoute(orgSlug, "/add-restaurant")}
               onClick={handleClose}
               className="block text-foreground hover:underline"
             >
               Add your restaurant
             </Link>
             <Link
-              href="/deliver"
+              href={orgRoute(orgSlug, "/deliver")}
               onClick={handleClose}
               className="block text-foreground hover:underline"
             >

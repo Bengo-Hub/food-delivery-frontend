@@ -5,6 +5,8 @@ import type { ReactNode } from "react";
 
 import { usePathname, useRouter } from "next/navigation";
 
+import { orgRoute } from "@/lib/routes";
+import { useOrgSlug } from "@/providers/org-slug-provider";
 import { useAuthStore } from "@/store/auth";
 import type { Permission, UserRole } from "@/lib/auth/types";
 import { userCanAccess } from "@/lib/auth/permissions";
@@ -38,6 +40,7 @@ export function RequireAuth({
     </div>
   ),
 }: RequireAuthProps) {
+  const orgSlug = useOrgSlug();
   const router = useRouter();
   const pathname = usePathname();
   const status = useAuthStore((state) => state.status);
@@ -52,7 +55,7 @@ export function RequireAuth({
       if (permissionOperator) accessParams.permissionOperator = permissionOperator;
       const permitted = userCanAccess(user, accessParams);
       if (!permitted) {
-        router.replace((redirectTo ?? "/") as Parameters<typeof router.replace>[0]);
+        router.replace((redirectTo ?? orgRoute(orgSlug, "/")) as Parameters<typeof router.replace>[0]);
       }
       return;
     }
@@ -61,7 +64,7 @@ export function RequireAuth({
       const params = new URLSearchParams({
         redirectTo: redirectTo ?? pathname ?? "/",
       });
-      router.replace(`/auth?${params.toString()}`);
+      router.replace(`${orgRoute(orgSlug, "/auth")}?${params.toString()}`);
     }
   }, [
     status,

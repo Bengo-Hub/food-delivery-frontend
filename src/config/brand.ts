@@ -61,7 +61,7 @@ const headquarters =
   "Oginga Road, Pioneer House, Second Floor, Kisumu, Kenya";
 const logo = process.env.NEXT_PUBLIC_BRAND_LOGO_URL?.trim() || "/logo.jpg";
 
-// TODO: Replace static defaults with backend-managed "look & feel" settings once admin tooling is wired.
+// Brand defaults are env-configurable per tenant. Backend-managed settings planned for post-MVP.
 export const brand = {
   name: brandName,
   shortName: brandShortName,

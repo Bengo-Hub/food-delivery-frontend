@@ -9,9 +9,15 @@ export const baseapi = axios.create({
 });
 
 baseapi.interceptors.request.use((config) => {
-  const tenantId = typeof window !== "undefined" ? localStorage.getItem("tenantId") : undefined;
-  if (tenantId) {
-    config.headers.set("x-tenant-id", tenantId);
+  if (typeof window !== "undefined") {
+    const tenantId = localStorage.getItem("tenantId");
+    if (tenantId) {
+      config.headers.set("x-tenant-id", tenantId);
+    }
+    const tenantSlug = localStorage.getItem("tenantSlug");
+    if (tenantSlug) {
+      config.headers.set("x-tenant-slug", tenantSlug);
+    }
   }
 
   return config;

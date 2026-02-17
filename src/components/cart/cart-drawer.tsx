@@ -4,7 +4,9 @@ import { Minus, Plus, ShoppingBag, Trash2, X } from "lucide-react";
 import Link from "next/link";
 
 import { Button } from "@/components/ui/button";
+import { orgRoute } from "@/lib/routes";
 import { cn } from "@/lib/utils";
+import { useOrgSlug } from "@/providers/org-slug-provider";
 import { useCartStore, type CartItem } from "@/store/cart";
 
 interface CartDrawerProps {
@@ -81,6 +83,7 @@ function CartItemRow({ item }: { item: CartItem }) {
 }
 
 export function CartDrawer({ open, onOpenChange }: CartDrawerProps) {
+  const orgSlug = useOrgSlug();
   const items = useCartStore((state) => state.items);
   const subtotal = useCartStore((state) => state.subtotal);
   const clear = useCartStore((state) => state.clear);
@@ -146,7 +149,7 @@ export function CartDrawer({ open, onOpenChange }: CartDrawerProps) {
               </p>
             </div>
             <Button onClick={handleClose} asChild>
-              <Link href="/menu">Browse Menu</Link>
+              <Link href={orgRoute(orgSlug, "/menu")}>Browse Menu</Link>
             </Button>
           </div>
         ) : (
@@ -200,7 +203,7 @@ export function CartDrawer({ open, onOpenChange }: CartDrawerProps) {
             {/* Checkout Button */}
             <div className="border-t border-border p-4">
               <Button asChild className="w-full" size="lg">
-                <Link href="/checkout" onClick={handleClose}>
+                <Link href={orgRoute(orgSlug, "/checkout")} onClick={handleClose}>
                   Proceed to Checkout
                 </Link>
               </Button>

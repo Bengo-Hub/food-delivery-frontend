@@ -26,9 +26,12 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { brand } from "@/config/brand";
 import { getShortLocationName } from "@/lib/geocoding";
+import { orgRoute } from "@/lib/routes";
+import { useOrgSlug } from "@/providers/org-slug-provider";
 import { useAuthStore } from "@/store/auth";
 import { useCartStore } from "@/store/cart";
 import { useDiningModeStore } from "@/store/dining-mode";
+import { useOutlets } from "@/hooks/use-menu";
 
 interface SiteHeaderProps {
   onMenuClick?: () => void;
@@ -41,7 +44,7 @@ type SearchCategory = {
   emoji?: string;
 };
 
-type Outlet = {
+type SearchOutlet = {
   id: string;
   name: string;
   address: string;
@@ -62,24 +65,9 @@ const searchCategories: SearchCategory[] = [
   { id: "indian", name: "indian", label: "Indian", emoji: "🍛" },
 ];
 
-// Mock outlets for search
-const mockOutlets: Outlet[] = [
-  { id: "out_1", name: "Java House, Langata", address: "Rubis, Langata Road", distance: "2.3 km" },
-  { id: "out_2", name: "Urban Loft Cafe", address: "Kinoo Road", distance: "1.2 km" },
-  { id: "out_3", name: "QuickMart Supermarket", address: "Ngong Road", distance: "3.5 km" },
-];
-
-async function fetchOutlets(_latitude: number, _longitude: number): Promise<Outlet[]> {
-  try {
-    // TODO: Replace with actual API call to /api/v1/outlets
-    return mockOutlets;
-  } catch (error) {
-    console.error("Failed to fetch outlets:", error);
-    return mockOutlets;
-  }
-}
 
 export function SiteHeader({ onMenuClick }: SiteHeaderProps) {
+  const orgSlug = useOrgSlug();
   const router = useRouter();
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [cartOpen, setCartOpen] = useState(false);
@@ -87,12 +75,17 @@ export function SiteHeader({ onMenuClick }: SiteHeaderProps) {
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [activeSearchTab, setActiveSearchTab] = useState("all");
-  const [outlets, setOutlets] = useState<Outlet[]>([]);
 
   // Store state
   const user = useAuthStore((state) => state.user);
   const logout = useAuthStore((state) => state.logout);
   const cartItems = useCartStore((state) => state.items);
+  const { data: outletsData } = useOutlets(undefined, 1, 10);
+  const outlets: SearchOutlet[] = (outletsData?.data ?? []).map((o) => ({
+    id: o.id,
+    name: o.name,
+    address: o.address,
+  }));
 
   // Dining mode state
   const diningMode = useDiningModeStore((state) => state.mode);
@@ -127,7 +120,6 @@ export function SiteHeader({ onMenuClick }: SiteHeaderProps) {
             latitude,
             longitude,
           });
-          fetchOutlets(latitude, longitude).then(setOutlets);
         },
         (error) => {
           console.log("Geolocation error:", error);
@@ -135,13 +127,6 @@ export function SiteHeader({ onMenuClick }: SiteHeaderProps) {
       );
     }
   }, [deliveryLocation, setDeliveryLocation]);
-
-  // Fetch outlets on mount
-  useEffect(() => {
-    if (outlets.length === 0) {
-      fetchOutlets(0, 0).then(setOutlets);
-    }
-  }, [outlets.length]);
 
   return (
     <header className="sticky top-0 z-40 border-b border-border bg-background">
@@ -157,7 +142,7 @@ export function SiteHeader({ onMenuClick }: SiteHeaderProps) {
             <MenuIcon className="size-5" />
           </button>
           <Link
-            href="/"
+            href={orgRoute(orgSlug, "/")}
             className="flex items-center gap-2 text-sm font-bold text-foreground sm:text-base"
           >
             <Image
@@ -246,7 +231,7 @@ export function SiteHeader({ onMenuClick }: SiteHeaderProps) {
                       <button
                         key={category.id}
                         onClick={() => {
-                          router.push(`/menu?category=${category.id}`);
+                          router.push(orgRoute(orgSlug, `/menu?category=${category.id}`));
                           setSearchOpen(false);
                         }}
                         className="flex w-full items-center gap-4 py-3 text-sm transition hover:bg-muted/50"
@@ -267,7 +252,7 @@ export function SiteHeader({ onMenuClick }: SiteHeaderProps) {
                         <button
                           key={outlet.id}
                           onClick={() => {
-                            router.push(`/outlet/${outlet.id}`);
+                            router.push(orgRoute(orgSlug, `/outlet/${outlet.id}`));
                             setSearchOpen(false);
                           }}
                           className="flex w-full items-start justify-between py-3 text-left text-sm transition hover:bg-muted/50"
@@ -306,7 +291,7 @@ export function SiteHeader({ onMenuClick }: SiteHeaderProps) {
                         key={item.label}
                         onClick={() => {
                           router.push(
-                            `/menu?category=grocery&sub=${item.label.toLowerCase().replace(/ & /g, "-")}`,
+                            orgRoute(orgSlug, `/menu?category=grocery&sub=${item.label.toLowerCase().replace(/ & /g, "-")}`),
                           );
                           setSearchOpen(false);
                         }}
@@ -334,7 +319,7 @@ export function SiteHeader({ onMenuClick }: SiteHeaderProps) {
                         key={item.label}
                         onClick={() => {
                           router.push(
-                            `/menu?category=alcohol&sub=${item.label.toLowerCase().replace(/ /g, "-")}`,
+                            orgRoute(orgSlug, `/menu?category=alcohol&sub=${item.label.toLowerCase().replace(/ /g, "-")}`),
                           );
                           setSearchOpen(false);
                         }}
@@ -382,7 +367,7 @@ export function SiteHeader({ onMenuClick }: SiteHeaderProps) {
           {user ? (
             <div className="hidden items-center gap-1 sm:flex">
               <Button variant="ghost" size="sm" asChild>
-                <Link href="/profile">
+                <Link href={orgRoute(orgSlug, "/profile")}>
                   <UserIcon className="size-4" />
                   <span className="hidden lg:inline">Account</span>
                 </Link>
@@ -393,7 +378,7 @@ export function SiteHeader({ onMenuClick }: SiteHeaderProps) {
             </div>
           ) : (
             <Button size="sm" asChild className="hidden sm:inline-flex">
-              <Link href="/auth">
+              <Link href={orgRoute(orgSlug, "/auth")}>
                 <LogIn className="size-4 sm:mr-1" />
                 <span className="hidden sm:inline">Sign in</span>
               </Link>
