@@ -11,6 +11,7 @@ import {
   getPaymentStatus,
   initiateMpesaPayment,
   listOrders,
+  rateOrder,
   type CreateOrderRequest,
   type MpesaPaymentRequest,
 } from "@/lib/api/orders";
@@ -93,6 +94,18 @@ export function useCancelOrder() {
     onSuccess: (_data, { orderId }) => {
       queryClient.invalidateQueries({ queryKey: orderKeys.detail(orderId) });
       queryClient.invalidateQueries({ queryKey: orderKeys.lists() });
+    },
+  });
+}
+
+export function useRateOrder() {
+  const slug = useOrgSlug();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ orderId, rating, comment }: { orderId: string; rating: number; comment: string }) =>
+      rateOrder(slug, orderId, rating, comment),
+    onSuccess: (_data, { orderId }) => {
+      queryClient.invalidateQueries({ queryKey: orderKeys.detail(orderId) });
     },
   });
 }

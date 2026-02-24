@@ -9,12 +9,15 @@ import {
   MapPin,
   Package,
   Phone,
+  Star,
   Truck,
   XCircle,
 } from "lucide-react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
+import { useState } from "react";
 
+import { RatingDialog } from "@/components/orders/rating-dialog";
 import { SiteShell } from "@/components/layout/site-shell";
 import { Button } from "@/components/ui/button";
 import { useCancelOrder, useOrder, useOrderTracking } from "@/hooks/use-orders";
@@ -52,6 +55,7 @@ export default function TrackOrderPage() {
   const { data: order, isLoading, error } = useOrder(orderId);
   const { data: tracking } = useOrderTracking(orderId, !!order && order.status !== "delivered" && order.status !== "cancelled");
   const cancelOrder = useCancelOrder();
+  const [showRatingDialog, setShowRatingDialog] = useState(false);
 
   if (isLoading) {
     return (
@@ -81,6 +85,7 @@ export default function TrackOrderPage() {
   const isDelivered = order.status === "delivered" || order.status === "completed";
   const currentStepIndex = getStepIndex(order.status);
   const canCancel = ["pending", "confirmed"].includes(order.status);
+  const canRate = isDelivered && !order.rating;
 
   const handleCancel = async () => {
     if (!confirm("Are you sure you want to cancel this order?")) return;
@@ -255,6 +260,26 @@ export default function TrackOrderPage() {
           </div>
         </section>
 
+        {/* Rating — shown after delivery if not yet rated */}
+        {isDelivered && order.rating ? (
+          <section className="mb-6 rounded-xl border border-yellow-200 bg-yellow-50 p-4">
+            <div className="flex items-center gap-2">
+              <div className="flex">
+                {[1, 2, 3, 4, 5].map((s) => (
+                  <Star
+                    key={s}
+                    className={`size-4 ${s <= (order.rating ?? 0) ? "fill-yellow-400 text-yellow-400" : "text-gray-300"}`}
+                  />
+                ))}
+              </div>
+              <span className="text-sm font-medium text-yellow-800">You rated this order</span>
+            </div>
+            {order.ratingComment && (
+              <p className="mt-1 text-xs text-yellow-700 italic">&ldquo;{order.ratingComment}&rdquo;</p>
+            )}
+          </section>
+        ) : null}
+
         {/* Actions */}
         <div className="space-y-3 pb-4">
           {canCancel && (
@@ -270,11 +295,29 @@ export default function TrackOrderPage() {
               Cancel Order
             </Button>
           )}
+          {canRate && (
+            <Button
+              className="w-full min-h-[48px] gap-2"
+              onClick={() => setShowRatingDialog(true)}
+            >
+              <Star className="size-4" />
+              Rate this Order
+            </Button>
+          )}
           <Button variant="outline" className="w-full min-h-[48px]" asChild>
             <Link href={orgRoute(orgSlug, "/orders")}>View All Orders</Link>
           </Button>
         </div>
       </div>
+
+      {/* Rating Dialog */}
+      {showRatingDialog && (
+        <RatingDialog
+          orderId={orderId}
+          orderNumber={order.orderNumber}
+          onClose={() => setShowRatingDialog(false)}
+        />
+      )}
     </SiteShell>
   );
 }

@@ -42,6 +42,9 @@ export interface Order {
   riderPhone?: string;
   riderLat?: number;
   riderLng?: number;
+  rating?: number;
+  ratingComment?: string;
+  ratedAt?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -82,6 +85,16 @@ export async function listOrders(
 
 export async function cancelOrder(tenantSlug: string, orderId: string, reason: string): Promise<void> {
   await api.post(`${tenantSlug}/orders/${orderId}/cancel`, { reason });
+}
+
+export async function rateOrder(
+  tenantSlug: string,
+  orderId: string,
+  rating: number,
+  comment: string,
+): Promise<Order> {
+  const res = await api.post(`${tenantSlug}/orders/${orderId}/rate`, { rating, comment });
+  return res.data;
 }
 
 export async function initiateMpesaPayment(
