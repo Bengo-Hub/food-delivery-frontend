@@ -94,12 +94,16 @@ export default function TrackOrderPage() {
 
   return (
     <SiteShell>
-      <div className="container mx-auto max-w-2xl px-4 py-6">
+      <div className="mx-auto max-w-2xl px-4 py-4 sm:py-6">
         {/* Header */}
-        <div className="mb-6 flex items-center gap-3">
-          <Button variant="ghost" size="icon" onClick={() => router.back()}>
+        <div className="mb-4 flex items-center gap-3 sm:mb-6">
+          <button
+            onClick={() => router.back()}
+            className="flex size-11 items-center justify-center rounded-lg hover:bg-muted active:bg-muted/80"
+            aria-label="Go back"
+          >
             <ArrowLeft className="size-5" />
-          </Button>
+          </button>
           <div>
             <h1 className="text-xl font-bold">Track Order</h1>
             <p className="text-sm text-muted-foreground">#{order.orderNumber}</p>
@@ -252,11 +256,11 @@ export default function TrackOrderPage() {
         </section>
 
         {/* Actions */}
-        <div className="space-y-3">
+        <div className="space-y-3 pb-4">
           {canCancel && (
             <Button
               variant="destructive"
-              className="w-full"
+              className="w-full min-h-[48px]"
               onClick={handleCancel}
               disabled={cancelOrder.isPending}
             >
@@ -266,8 +270,8 @@ export default function TrackOrderPage() {
               Cancel Order
             </Button>
           )}
-          <Button variant="outline" className="w-full" asChild>
-            <Link href={orgRoute(orgSlug, "/dashboard/customer")}>Back to Dashboard</Link>
+          <Button variant="outline" className="w-full min-h-[48px]" asChild>
+            <Link href={orgRoute(orgSlug, "/orders")}>View All Orders</Link>
           </Button>
         </div>
       </div>

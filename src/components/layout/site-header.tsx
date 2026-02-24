@@ -135,7 +135,7 @@ export function SiteHeader({ onMenuClick }: SiteHeaderProps) {
         <div className="flex items-center gap-2 sm:gap-3">
           <button
             type="button"
-            className="inline-flex size-9 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground"
+            className="inline-flex size-11 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground"
             aria-label="Open menu"
             onClick={() => onMenuClick?.()}
           >
@@ -341,7 +341,7 @@ export function SiteHeader({ onMenuClick }: SiteHeaderProps) {
           {/* Mobile Search Button */}
           <button
             onClick={() => setSearchOpen(true)}
-            className="inline-flex size-9 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground md:hidden"
+            className="inline-flex size-11 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground md:hidden"
             aria-label="Search"
           >
             <Search className="size-5" />
@@ -352,12 +352,12 @@ export function SiteHeader({ onMenuClick }: SiteHeaderProps) {
           {/* Cart Button */}
           <button
             onClick={() => setCartOpen(true)}
-            className="relative inline-flex size-9 items-center justify-center rounded-full border border-border bg-background hover:bg-muted"
+            className="relative inline-flex size-11 items-center justify-center rounded-full border border-border bg-background hover:bg-muted"
             aria-label="Open cart"
           >
             <ShoppingCart className="size-5" />
             {cartItems.length > 0 && (
-              <span className="absolute -right-1 -top-1 inline-flex size-5 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground">
+              <span className="absolute -right-0.5 -top-0.5 inline-flex size-5 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground">
                 {cartItems.length}
               </span>
             )}
@@ -388,16 +388,16 @@ export function SiteHeader({ onMenuClick }: SiteHeaderProps) {
       </div>
 
       {/* Mobile: Delivery/Pickup + Location Row */}
-      <div className="flex items-center gap-2 border-t border-border px-3 py-2 md:hidden">
+      <div className="flex items-center gap-1.5 border-t border-border px-3 py-1 md:hidden">
         <DiningModeToggle size="sm" />
         <button
           onClick={() => setLocationDialogOpen(true)}
-          className="flex flex-1 items-center gap-1.5 rounded-full bg-muted/50 px-3 py-1.5 text-xs font-medium"
+          className="flex min-h-[40px] flex-1 items-center gap-1.5 rounded-full bg-muted/50 px-3 py-1.5 text-xs font-medium active:bg-muted"
         >
-          <MapPin className="size-3.5 text-muted-foreground" />
+          <MapPin className="size-3.5 shrink-0 text-muted-foreground" />
           <span className="truncate">{locationDisplay}</span>
           <span className="text-muted-foreground">•</span>
-          <span className="text-muted-foreground">{timeDisplay}</span>
+          <span className="shrink-0 text-muted-foreground">{timeDisplay}</span>
         </button>
       </div>
 

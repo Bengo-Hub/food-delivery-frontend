@@ -105,13 +105,13 @@ function PromoBannerCard({ banner }: PromoBannerCardProps) {
   return (
     <Link
       href={banner.ctaLink as any}
-      className="group relative flex min-w-[320px] shrink-0 overflow-hidden rounded-xl transition-transform hover:scale-[1.02] sm:min-w-[380px] md:min-w-[420px]"
+      className="group relative flex min-w-[280px] shrink-0 overflow-hidden rounded-xl transition-transform hover:scale-[1.02] sm:min-w-[340px] md:min-w-[400px]"
       style={{ backgroundColor: bgColor }}
     >
       {/* Text Content */}
-      <div className="flex flex-1 flex-col justify-center p-4 sm:p-5" style={{ color: textColor }}>
-        <h3 className="text-lg font-bold leading-tight sm:text-xl">{banner.title}</h3>
-        <p className="mt-1 text-sm opacity-90">{banner.subtitle}</p>
+      <div className="flex flex-1 flex-col justify-center p-3 sm:p-5" style={{ color: textColor }}>
+        <h3 className="text-base font-bold leading-tight sm:text-xl">{banner.title}</h3>
+        <p className="mt-0.5 text-xs opacity-90 sm:mt-1 sm:text-sm">{banner.subtitle}</p>
         {banner.priceBadge && (
           <div className="mt-3">
             <span className="inline-block rounded-full bg-black/90 px-3 py-1.5 text-xs font-semibold text-white">
@@ -150,7 +150,7 @@ export const mockPromoBanners: PromoBanner[] = [
     id: "promo-1",
     title: "Pizza Pleasures Await!",
     subtitle: "Classic Medium Everyday Offer!",
-    imageUrl: "/images/promo-pizza.jpg",
+    imageUrl: "/images/promo-pizza.svg",
     ctaText: "Order Now",
     ctaLink: "/menu?category=pizza",
     priceBadge: "Now at Ksh. 690!",
@@ -160,7 +160,7 @@ export const mockPromoBanners: PromoBanner[] = [
     id: "promo-2",
     title: "BOGO Alert! Pineapple Mint Cake",
     subtitle: "Buy one Java's Pineapple Mint cake slice & get 1 Free",
-    imageUrl: "/images/promo-cake.jpg",
+    imageUrl: "/images/promo-cake.svg",
     ctaText: "Order Now",
     ctaLink: "/menu?category=desserts",
     backgroundColor: "#86efac",
@@ -170,7 +170,7 @@ export const mockPromoBanners: PromoBanner[] = [
     id: "promo-3",
     title: "Pay with your Mastercard card, enjoy up to 50% off",
     subtitle: "Step 1: Add card to Wallet. Step 2: Use Code MC50EATS",
-    imageUrl: "/images/promo-mastercard.jpg",
+    imageUrl: "/images/promo-mastercard.svg",
     ctaText: "",
     ctaLink: "/wallet",
     backgroundColor: "#fde047",
@@ -180,7 +180,7 @@ export const mockPromoBanners: PromoBanner[] = [
     id: "promo-4",
     title: "New Year, New You",
     subtitle: "Fresh groceries and essentials to start strong",
-    imageUrl: "/images/promo-fresh.jpg",
+    imageUrl: "/images/promo-fresh.svg",
     ctaText: "Order now",
     ctaLink: "/menu?category=grocery",
     backgroundColor: "#c4b5fd",

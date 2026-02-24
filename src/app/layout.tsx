@@ -26,13 +26,13 @@ export const metadata: Metadata = {
     template: brand.metadata.template,
   },
   description: brand.description,
-  applicationName: "Order App",
+  applicationName: brand.metadata.applicationName,
   icons: {
-    icon: "/logo.jpg",
-    apple: "/logo.jpg",
+    icon: brand.assets.logo,
+    apple: brand.assets.logo,
   },
   authors: [{ name: brand.name }],
-  manifest: "/manifest.json",
+  manifest: "/api/manifest",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",

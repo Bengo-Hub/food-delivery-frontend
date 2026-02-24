@@ -93,7 +93,7 @@ export function CategoryCarousel({
                 key={category.id}
                 onClick={() => onCategoryChange?.(category.id)}
                 className={cn(
-                  "flex shrink-0 items-center gap-2 rounded-full border px-4 py-2 text-sm font-medium transition-all",
+                  "flex min-h-[36px] shrink-0 items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition-all active:scale-95 sm:gap-2 sm:px-4 sm:py-2 sm:text-sm",
                   isActive
                     ? "border-foreground bg-foreground text-background"
                     : "border-border bg-background text-foreground hover:border-foreground/50",
@@ -153,14 +153,14 @@ export function CategoryCarousel({
               key={category.id}
               onClick={() => onCategoryChange?.(category.id)}
               className={cn(
-                "group flex shrink-0 flex-col items-center gap-1 rounded-lg p-2 transition-all sm:min-w-[72px] sm:p-3",
+                "group flex shrink-0 flex-col items-center gap-0.5 rounded-lg p-1.5 transition-all active:scale-95 sm:min-w-[72px] sm:gap-1 sm:p-3",
                 isActive ? "bg-muted" : "hover:bg-muted/50",
               )}
             >
               {/* Emoji/Image container */}
               <div
                 className={cn(
-                  "flex size-12 items-center justify-center rounded-full text-2xl transition-transform group-hover:scale-110 sm:size-14 sm:text-3xl",
+                  "flex size-10 items-center justify-center rounded-full text-xl transition-transform group-hover:scale-110 sm:size-14 sm:text-3xl",
                   isActive && "ring-2 ring-foreground ring-offset-2 ring-offset-background",
                 )}
               >
@@ -179,7 +179,7 @@ export function CategoryCarousel({
               {/* Label */}
               <span
                 className={cn(
-                  "max-w-[64px] truncate text-center text-xs font-medium sm:max-w-[72px]",
+                  "max-w-[56px] truncate text-center text-[10px] font-medium sm:max-w-[72px] sm:text-xs",
                   isActive ? "text-foreground" : "text-muted-foreground",
                 )}
               >

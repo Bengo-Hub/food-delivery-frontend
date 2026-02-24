@@ -136,12 +136,12 @@ export function OutletCard({
         {/* Favorite Heart - Top Right */}
         <button
           onClick={handleFavoriteClick}
-          className="absolute right-2 top-2 flex size-8 items-center justify-center rounded-full bg-white/90 shadow-md transition-all hover:scale-110 hover:bg-white"
+          className="absolute right-1.5 top-1.5 flex size-7 items-center justify-center rounded-full bg-white/90 shadow-md transition-all hover:scale-110 hover:bg-white sm:right-2 sm:top-2 sm:size-8"
           aria-label={isFavorite ? "Remove from favorites" : "Add to favorites"}
         >
           <Heart
             className={cn(
-              "size-4 transition-colors",
+              "size-3.5 transition-colors sm:size-4",
               isFavorite ? "fill-red-500 text-red-500" : "text-gray-600",
             )}
           />
@@ -149,14 +149,14 @@ export function OutletCard({
       </div>
 
       {/* Content Section - Uber Eats Style */}
-      <div className="space-y-1.5 p-3">
+      <div className="space-y-1 p-2 sm:space-y-1.5 sm:p-3">
         {/* Name */}
-        <h3 className="line-clamp-1 text-sm font-semibold text-foreground">{name}</h3>
+        <h3 className="line-clamp-1 text-xs font-semibold text-foreground sm:text-sm">{name}</h3>
 
         {/* Delivery Fee Badge + Rating Row */}
         <div className="flex items-center justify-between gap-2">
           {/* Left: Delivery info or distance for pickup */}
-          <div className="flex items-center gap-1 text-xs text-muted-foreground">
+          <div className="flex items-center gap-1 text-[10px] text-muted-foreground sm:text-xs">
             {isPickupMode ? (
               <>{distance && <span className="font-medium">{distance}</span>}</>
             ) : (
@@ -171,7 +171,7 @@ export function OutletCard({
         </div>
 
         {/* Rating + Time Row */}
-        <div className="flex items-center gap-2 text-xs">
+        <div className="flex flex-wrap items-center gap-1 text-[10px] sm:gap-2 sm:text-xs">
           {/* Rating */}
           {rating > 0 && (
             <div className="flex items-center gap-0.5">
@@ -204,7 +204,7 @@ export function OutletCard({
 
         {/* Cuisines/Categories - Only if provided */}
         {cuisines.length > 0 && (
-          <p className="line-clamp-1 text-xs text-muted-foreground">
+          <p className="line-clamp-1 hidden text-xs text-muted-foreground sm:block">
             {cuisines.slice(0, 3).join(" • ")}
           </p>
         )}
@@ -222,7 +222,7 @@ export function OutletGrid({
   className?: string;
 }) {
   return (
-    <div className={cn("grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4", className)}>
+    <div className={cn("grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 xl:grid-cols-4", className)}>
       {children}
     </div>
   );

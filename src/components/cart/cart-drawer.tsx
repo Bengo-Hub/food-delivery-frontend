@@ -46,7 +46,7 @@ function CartItemRow({ item }: { item: CartItem }) {
           </div>
           <button
             onClick={() => removeItem(item.id)}
-            className="p-1 text-muted-foreground hover:text-destructive"
+            className="flex size-9 items-center justify-center rounded-md text-muted-foreground hover:text-destructive active:bg-destructive/10"
             aria-label={`Remove ${item.name}`}
           >
             <Trash2 className="size-4" />
@@ -59,21 +59,21 @@ function CartItemRow({ item }: { item: CartItem }) {
           </span>
 
           {/* Quantity controls */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5">
             <button
               onClick={handleDecrease}
-              className="flex size-7 items-center justify-center rounded-full bg-muted text-foreground hover:bg-muted/80"
+              className="flex size-9 items-center justify-center rounded-full bg-muted text-foreground active:bg-muted/60"
               aria-label="Decrease quantity"
             >
-              <Minus className="size-3" />
+              <Minus className="size-4" />
             </button>
-            <span className="w-6 text-center text-sm font-medium">{item.quantity}</span>
+            <span className="w-8 text-center text-sm font-medium">{item.quantity}</span>
             <button
               onClick={handleIncrease}
-              className="flex size-7 items-center justify-center rounded-full bg-primary text-primary-foreground hover:bg-primary/90"
+              className="flex size-9 items-center justify-center rounded-full bg-primary text-primary-foreground active:bg-primary/80"
               aria-label="Increase quantity"
             >
-              <Plus className="size-3" />
+              <Plus className="size-4" />
             </button>
           </div>
         </div>
@@ -201,8 +201,8 @@ export function CartDrawer({ open, onOpenChange }: CartDrawerProps) {
             </div>
 
             {/* Checkout Button */}
-            <div className="border-t border-border p-4">
-              <Button asChild className="w-full" size="lg">
+            <div className="border-t border-border p-4 safe-area-pb">
+              <Button asChild className="w-full min-h-[48px]" size="lg">
                 <Link href={orgRoute(orgSlug, "/checkout")} onClick={handleClose}>
                   Proceed to Checkout
                 </Link>

@@ -101,7 +101,7 @@ export default function OrdersPage() {
   return (
     <RequireAuth roles={["customer"]}>
       <SiteShell>
-        <div className="mx-auto my-8 flex w-full max-w-3xl flex-col gap-6 px-4">
+        <div className="mx-auto flex w-full max-w-3xl flex-col gap-4 px-4 py-4 sm:gap-6 sm:py-8">
           {/* Header */}
           <header className="flex flex-col gap-1">
             <p className="text-sm font-semibold uppercase tracking-wide text-brand-emphasis">
@@ -154,7 +154,7 @@ export default function OrdersPage() {
                 placeholder="Search by order #"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="pl-9 sm:w-56"
+                className="min-h-[44px] pl-9 sm:w-56"
               />
             </div>
           </div>

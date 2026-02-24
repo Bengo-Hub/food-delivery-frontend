@@ -46,7 +46,7 @@ svg {
 }
 
 main {
-  @apply min-h-screen;
+  @apply min-h-[50vh];
 }
 
 a {
@@ -125,4 +125,20 @@ button:focus-visible {
   body {
     @apply bg-background text-foreground;
   }
+}
+
+@layer utilities {
+  .safe-area-pb {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+}
+
+/* Scrollbar hiding for carousels */
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
 }

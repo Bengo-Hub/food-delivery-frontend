@@ -3,7 +3,7 @@
 import { ArrowLeft, CheckCircle2, CreditCard, Loader2, MapPin, Phone, Tag } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useCallback, useState } from "react";
+import { useState } from "react";
 
 import { SiteShell } from "@/components/layout/site-shell";
 import { Button } from "@/components/ui/button";
@@ -154,20 +154,24 @@ export default function CheckoutPage() {
   };
 
   return (
-    <SiteShell>
-      <div className="container mx-auto max-w-2xl px-4 py-6">
+    <SiteShell hideBottomNav hideSidebar>
+      <div className="mx-auto max-w-2xl px-4 py-4 sm:py-6">
         {/* Header */}
-        <div className="mb-6 flex items-center gap-3">
-          <Button variant="ghost" size="icon" onClick={() => router.back()}>
+        <div className="mb-4 flex items-center gap-3 sm:mb-6">
+          <button
+            onClick={() => router.back()}
+            className="flex size-11 items-center justify-center rounded-lg hover:bg-muted active:bg-muted/80"
+            aria-label="Go back"
+          >
             <ArrowLeft className="size-5" />
-          </Button>
-          <h1 className="text-2xl font-bold">Checkout</h1>
+          </button>
+          <h1 className="text-xl font-bold sm:text-2xl">Checkout</h1>
         </div>
 
         {step === "success" ? (
           <SuccessView orderId={orderId!} paymentMethod={paymentMethod} />
         ) : (
-          <div className="space-y-6">
+          <div className="space-y-4 pb-24 sm:space-y-6 sm:pb-6">
             {/* Delivery Info */}
             {diningMode === "delivery" && (
               <section className="rounded-xl border border-border p-4">
@@ -179,7 +183,7 @@ export default function CheckoutPage() {
                   {deliveryLocation?.address || "No delivery address set"}
                 </p>
                 <Input
-                  className="mt-3"
+                  className="mt-3 min-h-[44px]"
                   placeholder="Delivery notes (e.g., gate code, landmarks)"
                   value={deliveryNotes}
                   onChange={(e) => setDeliveryNotes(e.target.value)}
@@ -208,11 +212,13 @@ export default function CheckoutPage() {
                   placeholder="Enter code"
                   value={promoCode}
                   onChange={(e) => setPromoCode(e.target.value)}
+                  className="min-h-[44px]"
                 />
                 <Button
                   variant="outline"
                   onClick={handleApplyPromo}
                   disabled={applyPromo.isPending}
+                  className="min-h-[44px] shrink-0"
                 >
                   {applyPromo.isPending ? <Loader2 className="size-4 animate-spin" /> : "Apply"}
                 </Button>
@@ -249,12 +255,13 @@ export default function CheckoutPage() {
                 <div className="mt-4">
                   <label className="mb-1 block text-xs text-muted-foreground">M-Pesa Phone Number</label>
                   <div className="flex items-center gap-2">
-                    <Phone className="size-4 text-muted-foreground" />
+                    <Phone className="size-4 shrink-0 text-muted-foreground" />
                     <Input
                       placeholder="0712345678"
                       value={mpesaPhone}
                       onChange={(e) => setMpesaPhone(e.target.value)}
                       type="tel"
+                      className="min-h-[44px]"
                     />
                   </div>
                 </div>
@@ -285,25 +292,48 @@ export default function CheckoutPage() {
               </div>
             </section>
 
-            {/* Place Order Button */}
-            <Button
-              className="w-full"
-              size="lg"
-              onClick={handlePlaceOrder}
-              disabled={step === "processing" || createOrder.isPending}
-            >
-              {step === "processing" ? (
-                <>
-                  <Loader2 className="mr-2 size-4 animate-spin" />
-                  Placing Order...
-                </>
-              ) : (
-                `Place Order - KES ${total.toLocaleString()}`
-              )}
-            </Button>
+            {/* Place Order Button - Desktop inline */}
+            <div className="hidden sm:block">
+              <Button
+                className="w-full min-h-[48px]"
+                size="lg"
+                onClick={handlePlaceOrder}
+                disabled={step === "processing" || createOrder.isPending}
+              >
+                {step === "processing" ? (
+                  <>
+                    <Loader2 className="mr-2 size-4 animate-spin" />
+                    Placing Order...
+                  </>
+                ) : (
+                  `Place Order - KES ${total.toLocaleString()}`
+                )}
+              </Button>
+            </div>
           </div>
         )}
       </div>
+
+      {/* Mobile sticky order button */}
+      {step !== "success" && items.length > 0 && (
+        <div className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-background p-3 safe-area-pb sm:hidden">
+          <Button
+            className="w-full min-h-[48px] text-base"
+            size="lg"
+            onClick={handlePlaceOrder}
+            disabled={step === "processing" || createOrder.isPending}
+          >
+            {step === "processing" ? (
+              <>
+                <Loader2 className="mr-2 size-4 animate-spin" />
+                Placing Order...
+              </>
+            ) : (
+              `Place Order - KES ${total.toLocaleString()}`
+            )}
+          </Button>
+        </div>
+      )}
     </SiteShell>
   );
 }
@@ -337,7 +367,7 @@ function PaymentOption({
     <button
       type="button"
       onClick={onClick}
-      className={`flex w-full items-center gap-3 rounded-lg border p-3 text-left transition-colors ${
+      className={`flex w-full min-h-[52px] items-center gap-3 rounded-xl border p-3.5 text-left transition-colors active:scale-[0.98] ${
         selected ? "border-primary bg-primary/5" : "border-border hover:bg-muted/50"
       }`}
     >

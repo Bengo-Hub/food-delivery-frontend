@@ -12,7 +12,7 @@ const footerLinks = [
 
 export function SiteFooter() {
   return (
-    <footer className="border-t border-border bg-card/80 py-10">
+    <footer className="hidden border-t border-border bg-card/80 py-10 md:block">
       <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 px-4 text-sm text-muted-foreground md:flex-row md:items-center md:justify-between">
         <div>
           <p>

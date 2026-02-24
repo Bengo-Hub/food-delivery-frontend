@@ -17,10 +17,10 @@ import { Card } from "@/components/ui/card";
 export default function MenuPage() {
   return (
     <SiteShell>
-      <section className="border-b border-border bg-brand-surface/60 py-8 sm:py-12 md:py-16">
-        <div className="mx-auto w-full max-w-6xl space-y-6 px-4 sm:space-y-8 md:space-y-10">
+      <section className="border-b border-border bg-brand-surface/60 py-6 sm:py-10 md:py-16">
+        <div className="mx-auto w-full max-w-6xl space-y-4 px-4 sm:space-y-6 md:space-y-10">
           {/* Text Content Section */}
-          <div className="space-y-6">
+          <div className="space-y-3 sm:space-y-4 md:space-y-6">
             <span className="inline-flex items-center gap-2 rounded-full bg-brand-emphasis/10 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-brand-emphasis">
               <ShoppingCartIcon className="size-3.5" aria-hidden /> Menu & Ordering
             </span>
@@ -28,88 +28,41 @@ export default function MenuPage() {
               Browse & Order
             </h1>
             <p className="max-w-3xl text-sm leading-relaxed text-muted-foreground sm:text-base">
-              Browse seasonal dishes, personalize dietary filters, and sync your cart across web,
-              PWA, and mobile clients. Availability is managed in real time by operations and
-              backend services.
+              Fresh dishes, dietary filters, and real-time availability. Your cart syncs across all devices.
             </p>
             <div className="flex flex-wrap gap-3">
-              <Button size="lg" asChild>
+              <Button size="lg" asChild className="min-h-[48px]">
                 <a href="#menu-browser">Explore menu</a>
               </Button>
-              <Button variant="outline" size="lg" asChild>
+              <Button variant="outline" size="lg" asChild className="min-h-[48px]">
                 <Link href="/dashboard/customer">My Account</Link>
               </Button>
             </div>
           </div>
 
-          {/* Delivery Location Section - Mobile-first: Stack on mobile, side-by-side on desktop */}
-          <div className="grid gap-4 sm:gap-6 lg:grid-cols-[1fr_1fr]">
-            <CustomerLocationPicker />
-            <div className="flex flex-col gap-3 sm:gap-4">
-              <Card className="rounded-2xl border border-border bg-card p-4 shadow-sm sm:rounded-3xl sm:p-6">
-                <div className="flex items-start gap-2 text-sm text-muted-foreground sm:gap-3">
-                  <MapPinIcon
-                    className="mt-0.5 size-4 shrink-0 text-primary sm:size-5"
-                    aria-hidden
-                  />
-                  <div className="space-y-1">
-                    <p className="text-xs font-semibold text-foreground sm:text-sm">
-                      Multi-outlet menus
-                    </p>
-                    <p className="text-xs leading-relaxed sm:text-sm">
-                      Tenant-aware pricing and availability across multiple locations.
-                    </p>
-                  </div>
+          {/* Feature highlights - horizontal scroll on mobile, grid on desktop */}
+          <div className="flex gap-3 overflow-x-auto pb-2 sm:grid sm:grid-cols-2 sm:gap-4 sm:overflow-visible sm:pb-0 lg:grid-cols-4">
+            {[
+              { icon: MapPinIcon, title: "Multi-outlet menus", desc: "Prices & availability per location" },
+              { icon: ClockIcon, title: "Real-time availability", desc: "Updates as inventory changes" },
+              { icon: ArrowLeftRight, title: "Sync across devices", desc: "Start on web, finish on mobile" },
+              { icon: SparklesIcon, title: "Dietary filters", desc: "Vegan, gluten-free & more" },
+            ].map((feat) => (
+              <Card key={feat.title} className="flex min-w-[200px] shrink-0 items-start gap-3 rounded-xl border border-border bg-card p-3 shadow-sm sm:min-w-0 sm:p-4">
+                <div className="rounded-lg bg-primary/10 p-1.5">
+                  <feat.icon className="size-4 text-primary" aria-hidden />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs font-semibold text-foreground sm:text-sm">{feat.title}</p>
+                  <p className="text-[11px] leading-snug text-muted-foreground sm:text-xs">{feat.desc}</p>
                 </div>
               </Card>
+            ))}
+          </div>
 
-              {/* Additional Feature Cards */}
-              <div className="space-y-4">
-                <Card className="rounded-2xl border border-border bg-card p-4 shadow-sm">
-                  <div className="flex items-start gap-3">
-                    <div className="mt-0.5 rounded-lg bg-primary/10 p-1.5">
-                      <ClockIcon className="size-4 text-primary" aria-hidden />
-                    </div>
-                    <div className="flex-1 space-y-1">
-                      <p className="text-sm font-semibold text-foreground">
-                        Real-time availability
-                      </p>
-                      <p className="text-xs leading-relaxed text-muted-foreground">
-                        Menu items update instantly as inventory changes. No surprises at checkout.
-                      </p>
-                    </div>
-                  </div>
-                </Card>
-
-                <Card className="rounded-2xl border border-border bg-card p-4 shadow-sm">
-                  <div className="flex items-start gap-3">
-                    <div className="mt-0.5 rounded-lg bg-primary/10 p-1.5">
-                      <ArrowLeftRight className="size-4 text-primary" aria-hidden />
-                    </div>
-                    <div className="flex-1 space-y-1">
-                      <p className="text-sm font-semibold text-foreground">Sync across devices</p>
-                      <p className="text-xs leading-relaxed text-muted-foreground">
-                        Your cart follows you. Start on web, finish on mobile—seamlessly.
-                      </p>
-                    </div>
-                  </div>
-                </Card>
-
-                <Card className="rounded-2xl border border-border bg-card p-4 shadow-sm">
-                  <div className="flex items-start gap-3">
-                    <div className="mt-0.5 rounded-lg bg-primary/10 p-1.5">
-                      <SparklesIcon className="size-4 text-primary" aria-hidden />
-                    </div>
-                    <div className="flex-1 space-y-1">
-                      <p className="text-sm font-semibold text-foreground">Dietary filters</p>
-                      <p className="text-xs leading-relaxed text-muted-foreground">
-                        Filter by vegan, gluten-free, spicy, and more. Find what fits your needs.
-                      </p>
-                    </div>
-                  </div>
-                </Card>
-              </div>
-            </div>
+          {/* Location picker - hidden on mobile (already in header), shown on desktop */}
+          <div className="hidden sm:block">
+            <CustomerLocationPicker />
           </div>
         </div>
       </section>

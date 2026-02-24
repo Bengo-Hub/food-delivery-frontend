@@ -176,7 +176,7 @@ function FilterChip({ children, active = false, onClick, icon, className }: Filt
     <button
       onClick={onClick}
       className={cn(
-        "inline-flex shrink-0 items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition-all",
+        "inline-flex min-h-[36px] shrink-0 items-center gap-1.5 rounded-full border px-3.5 py-2 text-xs font-medium transition-all active:scale-95",
         active
           ? "border-foreground bg-foreground text-background"
           : "border-border bg-background text-foreground hover:border-foreground/50",
@@ -206,7 +206,7 @@ function FilterDropdown({ label, value, options, onChange, icon }: FilterDropdow
       <PopoverTrigger asChild>
         <button
           className={cn(
-            "inline-flex shrink-0 items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition-all",
+            "inline-flex min-h-[36px] shrink-0 items-center gap-1.5 rounded-full border px-3.5 py-2 text-xs font-medium transition-all active:scale-95",
             value
               ? "border-foreground bg-foreground text-background"
               : "border-border bg-background text-foreground hover:border-foreground/50",

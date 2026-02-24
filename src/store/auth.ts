@@ -3,17 +3,24 @@ import { create } from "zustand";
 
 import { attachAuthTokenGetter } from "@/lib/api/base";
 import {
-  logout as apiLogout,
-  beginGoogleOAuth,
-  completeGoogleOAuth,
+  buildAuthorizeUrl,
+  buildLogoutUrl,
+  exchangeCodeForTokens,
   fetchOrderSummary,
   fetchProfile,
-  loginWithEmail,
-  refreshSession,
   updatePreferences,
   updateProfile,
   updateSecurity,
 } from "@/lib/auth/api";
+import {
+  consumeState,
+  consumeVerifier,
+  generateCodeChallenge,
+  generateCodeVerifier,
+  generateState,
+  storeState,
+  storeVerifier,
+} from "@/lib/auth/pkce";
 import { loadAuthState, persistAuthState } from "@/lib/auth/session";
 import type {
   AuthResponse,
@@ -23,11 +30,10 @@ import type {
   SecurityUpdateInput,
   SessionTokens,
   UserProfile,
-  UserRole,
 } from "@/lib/auth/types";
 import { toast } from "@/lib/toast";
 
-type AuthStatus = "idle" | "loading" | "authenticated" | "error";
+type AuthStatus = "idle" | "loading" | "authenticated" | "syncing" | "error";
 
 interface AuthState {
   status: AuthStatus;
@@ -36,14 +42,8 @@ interface AuthState {
   user: UserProfile | null;
   orders: OrderSummary[];
   initialize: () => Promise<void>;
-  loginWithEmail: (input: {
-    email: string;
-    password: string;
-    role: UserRole;
-    tenantSlug?: string;
-  }) => Promise<void>;
-  beginGoogleOAuth: (input: { role: UserRole; redirectUri?: string }) => Promise<void>;
-  completeGoogleOAuth: (input: { code: string; state?: string | null }) => Promise<void>;
+  redirectToSSO: (returnTo?: string) => Promise<void>;
+  handleSSOCallback: (code: string, callbackUrl: string) => Promise<void>;
   logout: () => Promise<void>;
   updateProfile: (input: ProfileUpdateInput) => Promise<void>;
   updatePreferences: (input: PreferencesUpdateInput) => Promise<void>;
@@ -67,8 +67,7 @@ async function hydrateOrders(set: (value: Partial<AuthState>) => void) {
     const orders = await fetchOrderSummary();
     set({ orders });
     return orders;
-  } catch (error) {
-    console.warn("Failed to hydrate orders", error);
+  } catch {
     set({ orders: [] });
     return [];
   }
@@ -96,45 +95,14 @@ function clearSession(set: (value: Partial<AuthState>) => void) {
   });
 }
 
-async function tryRefreshSession(
-  set: (value: Partial<AuthState>) => void,
-  get: () => AuthState,
-  error: unknown,
-): Promise<boolean> {
-  const status = extractStatus(error);
-  // Only try refresh on 401 or 403
-  if (status !== 401 && status !== 403) {
-    return false;
-  }
-
-  const session = get().session;
-  if (!session?.refreshToken) {
-    return false;
-  }
-
-  try {
-    set({ status: "loading", error: null });
-    const refreshed = await refreshSession({ refreshToken: session.refreshToken });
-    applyAuthResponse(set, refreshed);
-    await hydrateOrders(set);
-    return true;
-  } catch (refreshError) {
-    console.error("Session refresh failed", refreshError);
-    clearSession(set);
-    toast.error("Session expired. Please sign in again.");
-    return true; // We handled it by clearing session
-  }
-}
-
 export const useAuthStore = create<AuthState>((set, get) => ({
-  ...loadAuthState(), // Initialize from local storage
+  ...loadAuthState(),
   status: "idle",
   error: null,
   orders: [],
 
   initialize: async () => {
     const { session, user } = get();
-    // If we have a session but no user, or if we just want to verify session validity
     if (!session) {
       set({ status: "idle", user: null, error: null, orders: [] });
       return;
@@ -143,8 +111,6 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     // Optimistically set authenticated if we have user and session
     if (user && session) {
       set({ status: "authenticated" });
-      // Skip profile fetch to prevent session clearing on every page load
-      // Hydrate orders in the background without blocking
       hydrateOrders(set);
       return;
     }
@@ -155,22 +121,14 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       applyAuthResponse(set, response);
       await hydrateOrders(set);
     } catch (error) {
-      if (await tryRefreshSession(set, get, error)) {
-        return;
-      }
-
       const status = extractStatus(error);
-      // If it's a 401/403 and refresh failed (or wasn't tried), clear session
       if (status === 401 || status === 403) {
-        console.warn("Auth initialization failed with 401/403", error);
         clearSession(set);
         toast.error("Session expired. Please sign in again.");
       } else {
-        // For other errors (network, etc), keep the local session but maybe show a warning
-        console.warn("Auth initialization failed (non-fatal)", error);
-        // Don't clear session, allow "offline" access if data is cached
+        // For network errors, keep cached session for offline access
         if (user && session) {
-          set({ status: "authenticated" }); // Fallback to authenticated
+          set({ status: "authenticated" });
         } else {
           set({ status: "error", error: "Connection failed" });
         }
@@ -178,64 +136,132 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     }
   },
 
-  loginWithEmail: async (input) => {
+  /**
+   * Redirect the user to the SSO authorization page.
+   * Generates PKCE code verifier/challenge and stores in sessionStorage.
+   */
+  redirectToSSO: async (returnTo?: string) => {
     set({ status: "loading", error: null });
     try {
-      const response = await loginWithEmail(input);
-      applyAuthResponse(set, response);
-      await hydrateOrders(set);
-      toast.success("Welcome back!");
-    } catch (error) {
-      console.error("Email login failed", error);
-      set({ status: "error", error: "Unable to sign in with the provided credentials." });
-      toast.error("Login failed. Please check your credentials.");
-      throw error;
-    }
-  },
+      const verifier = generateCodeVerifier();
+      const challenge = await generateCodeChallenge(verifier);
+      const state = generateState();
 
-  beginGoogleOAuth: async ({ role, redirectUri }) => {
-    set({ status: "loading", error: null });
-    try {
-      const redirect =
-        redirectUri ??
-        (typeof window !== "undefined" ? `${window.location.origin}/auth/callback` : "");
-      const { url } = await beginGoogleOAuth({ role, redirectUri: redirect });
+      storeVerifier(verifier);
+      storeState(state);
+
+      // Store returnTo so the callback page knows where to redirect after sync
+      if (returnTo && typeof window !== "undefined") {
+        sessionStorage.setItem("sso_return_to", returnTo);
+      }
+
+      // Build the callback URL for this frontend
+      const callbackUrl = typeof window !== "undefined"
+        ? `${window.location.origin}${window.location.pathname.split("/").slice(0, 2).join("/")}/auth/callback`
+        : "";
+
+      const authorizeUrl = buildAuthorizeUrl({
+        codeChallenge: challenge,
+        state,
+        redirectUri: callbackUrl,
+      });
+
       if (typeof window !== "undefined") {
-        window.location.href = url;
+        window.location.href = authorizeUrl;
       }
     } catch (error) {
-      console.error("Failed to initiate Google OAuth", error);
-      set({ status: "error", error: "Unable to start Google sign-in." });
-      toast.error("Failed to start Google sign-in.");
+      set({ status: "error", error: "Failed to start sign-in. Please try again." });
+      toast.error("Failed to start sign-in.");
       throw error;
     }
   },
 
-  completeGoogleOAuth: async ({ code, state }) => {
-    set({ status: "loading", error: null });
+  /**
+   * Handle the SSO callback: exchange auth code for tokens, then sync user.
+   */
+  handleSSOCallback: async (code: string, callbackUrl: string) => {
+    set({ status: "syncing", error: null });
+
+    const verifier = consumeVerifier();
+    const storedState = consumeState();
+
+    if (!verifier) {
+      set({ status: "error", error: "Authentication session expired. Please try again." });
+      return;
+    }
+
     try {
-      const response = await completeGoogleOAuth({ code, state: state ?? null });
-      applyAuthResponse(set, response);
-      await hydrateOrders(set);
-      toast.success("Successfully signed in with Google.");
+      // Step 1: Exchange auth code for tokens at SSO
+      const tokens = await exchangeCodeForTokens({
+        code,
+        codeVerifier: verifier,
+        redirectUri: callbackUrl,
+      });
+
+      // Step 2: Store session tokens
+      const session: SessionTokens = {
+        accessToken: tokens.access_token,
+        refreshToken: tokens.refresh_token ?? "",
+        expiresAt: new Date(Date.now() + tokens.expires_in * 1000).toISOString(),
+        sessionId: "",
+      };
+      persistAuthState({ session, user: null });
+      set({ session });
+
+      // Step 3: Wait for user sync via NATS and fetch profile from ordering-backend
+      // The SSO publishes auth.user.created/login → ordering-backend subscribes and syncs user
+      let syncAttempts = 0;
+      const maxAttempts = 10;
+      const pollInterval = 1000; // 1 second
+
+      while (syncAttempts < maxAttempts) {
+        try {
+          const response = await fetchProfile();
+          applyAuthResponse(set, {
+            session: { ...session, sessionId: response.session?.sessionId ?? "" },
+            user: response.user,
+          });
+          await hydrateOrders(set);
+          toast.success("Welcome back!");
+          return;
+        } catch (err) {
+          const httpStatus = extractStatus(err);
+          // 404 means user not yet synced, keep polling
+          if (httpStatus === 404 || httpStatus === 401) {
+            syncAttempts++;
+            await new Promise((r) => setTimeout(r, pollInterval));
+            continue;
+          }
+          throw err;
+        }
+      }
+
+      // If sync didn't complete, still set authenticated with SSO tokens
+      // The user can try refreshing later
+      set({
+        status: "authenticated",
+        session,
+        error: null,
+      });
+      toast.info("Signed in. Your profile is still syncing.");
     } catch (error) {
-      console.error("Google OAuth completion failed", error);
-      set({ status: "error", error: "Google sign-in failed." });
-      toast.error("Google sign-in failed. Please try again.");
-      throw error; // Re-throw so UI can handle if needed
+      const message = error instanceof Error ? error.message : "Sign-in failed";
+      set({ status: "error", error: message });
+      toast.error("Sign-in failed. Please try again.");
     }
   },
 
   logout: async () => {
     try {
-      await apiLogout();
       toast.success("Signed out successfully.");
-    } catch (error) {
-      console.warn("Error during logout", error);
-      // Force logout even if API call fails
+    } catch {
       toast.info("Signed out.");
     } finally {
       clearSession(set);
+      // Redirect to SSO logout for single sign-out
+      if (typeof window !== "undefined") {
+        window.location.href = buildLogoutUrl(window.location.origin);
+      }
     }
   },
 
@@ -246,7 +272,6 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       applyAuthResponse(set, response);
       toast.success("Profile updated successfully.");
     } catch (error) {
-      console.error("Profile update failed", error);
       set({ status: "error", error: "Could not update profile right now." });
       toast.error("Failed to update profile.");
       throw error;
@@ -260,7 +285,6 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       applyAuthResponse(set, response);
       toast.success("Preferences updated.");
     } catch (error) {
-      console.error("Preferences update failed", error);
       set({ status: "error", error: "Could not update preferences right now." });
       toast.error("Failed to update preferences.");
       throw error;
@@ -274,7 +298,6 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       applyAuthResponse(set, response);
       toast.success("Security settings updated.");
     } catch (error) {
-      console.error("Security update failed", error);
       set({ status: "error", error: "Unable to update security settings." });
       toast.error("Failed to update security settings.");
       throw error;
@@ -285,8 +308,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     try {
       const orders = await fetchOrderSummary();
       set({ orders });
-    } catch (error) {
-      console.warn("Failed to refresh orders", error);
+    } catch {
+      // silently fail
     }
   },
 }));

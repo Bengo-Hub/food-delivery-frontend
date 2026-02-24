@@ -321,7 +321,7 @@ export function MenuDiscovery() {
                         )}
                       </div>
                     </div>
-                    <Button onClick={() => handleAddToCart(item)} className="w-full" size="sm">
+                    <Button onClick={() => handleAddToCart(item)} className="w-full min-h-[44px]" size="sm">
                       <ShoppingCartIcon className="mr-2 size-4" />
                       Add to Cart
                     </Button>
