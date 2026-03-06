@@ -38,17 +38,8 @@ interface LocationDialogProps {
   onOpenChange: (open: boolean) => void;
 }
 
-// Mock saved addresses
-const mockSavedAddresses: SavedAddress[] = [
-  {
-    id: "1",
-    label: "Kinoo Road",
-    address: "Kinoo Rd, Nairobi",
-    fullAddress: "Kinoo Rd, Nairobi, Kenya",
-    latitude: -1.2424,
-    longitude: 36.7498,
-  },
-];
+// Saved addresses: load from GET /addresses when API is wired (ordering-backend has ListAddresses)
+const savedAddresses: SavedAddress[] = [];
 
 type DialogView = "main" | "edit";
 
@@ -147,7 +138,7 @@ export function LocationDialog({ open, onOpenChange }: LocationDialogProps) {
             <div className="mt-4">
               <h3 className="mb-3 text-sm font-semibold text-foreground">Saved addresses</h3>
               <div className="space-y-1">
-                {mockSavedAddresses.map((address) => (
+                {savedAddresses.map((address) => (
                   <div
                     key={address.id}
                     className={cn(

@@ -5,9 +5,11 @@ import { useMenuItems, useMenuItem, useFeaturedItems, useCategories, useOutlets,
 import { TestWrapper } from "../utils/test-wrapper";
 import { mockData } from "../mocks/handlers";
 
+const tenantSlug = "urban-loft";
+
 describe("useMenuItems", () => {
   it("returns paginated menu items", async () => {
-    const { result } = renderHook(() => useMenuItems(), { wrapper: TestWrapper });
+    const { result } = renderHook(() => useMenuItems(tenantSlug), { wrapper: TestWrapper });
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
 
@@ -18,14 +20,13 @@ describe("useMenuItems", () => {
 
   it("keeps previous data on refetch (placeholderData)", async () => {
     const { result, rerender } = renderHook(
-      ({ filters }) => useMenuItems(filters),
+      ({ filters }) => useMenuItems(tenantSlug, filters),
       { wrapper: TestWrapper, initialProps: { filters: undefined as undefined } },
     );
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
     expect(result.current.data?.data).toHaveLength(2);
 
-    // Re-render with new filters — placeholderData should keep data visible
     rerender({ filters: { category: "salads" } as never });
     expect(result.current.data).toBeDefined();
   });
@@ -33,7 +34,7 @@ describe("useMenuItems", () => {
 
 describe("useMenuItem", () => {
   it("fetches single item by id", async () => {
-    const { result } = renderHook(() => useMenuItem("item-1"), { wrapper: TestWrapper });
+    const { result } = renderHook(() => useMenuItem(tenantSlug, "item-1"), { wrapper: TestWrapper });
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
 
@@ -42,7 +43,7 @@ describe("useMenuItem", () => {
   });
 
   it("is disabled when id is empty", () => {
-    const { result } = renderHook(() => useMenuItem(""), { wrapper: TestWrapper });
+    const { result } = renderHook(() => useMenuItem(tenantSlug, ""), { wrapper: TestWrapper });
 
     expect(result.current.fetchStatus).toBe("idle");
   });
@@ -50,11 +51,10 @@ describe("useMenuItem", () => {
 
 describe("useFeaturedItems", () => {
   it("returns featured items array", async () => {
-    const { result } = renderHook(() => useFeaturedItems(), { wrapper: TestWrapper });
+    const { result } = renderHook(() => useFeaturedItems(tenantSlug), { wrapper: TestWrapper });
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
 
-    // fetchFeaturedItems extracts .data from the paginated response
     expect(Array.isArray(result.current.data)).toBe(true);
     expect(result.current.data).toHaveLength(2);
   });
@@ -62,7 +62,7 @@ describe("useFeaturedItems", () => {
 
 describe("useCategories", () => {
   it("returns category list", async () => {
-    const { result } = renderHook(() => useCategories(), { wrapper: TestWrapper });
+    const { result } = renderHook(() => useCategories(tenantSlug), { wrapper: TestWrapper });
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
 
@@ -73,7 +73,7 @@ describe("useCategories", () => {
 
 describe("useOutlets", () => {
   it("returns paginated outlets", async () => {
-    const { result } = renderHook(() => useOutlets(), { wrapper: TestWrapper });
+    const { result } = renderHook(() => useOutlets(tenantSlug), { wrapper: TestWrapper });
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
 

@@ -34,11 +34,11 @@ export function MobileBottomNav() {
 
   return (
     <nav
-      className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-background/95 backdrop-blur-sm md:hidden safe-area-pb"
+      className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-background/95 backdrop-blur-sm md:hidden safe-area-pb safe-area-px"
       role="navigation"
       aria-label="Main navigation"
     >
-      <div className="flex items-center justify-around px-1">
+      <div className="flex items-center justify-around px-1 sm:px-2">
         {navItems.map((item) => {
           const Icon = item.icon;
           const active = isActive(item.href);

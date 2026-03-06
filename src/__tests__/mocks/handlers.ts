@@ -130,14 +130,54 @@ const tierBenefits = {
 
 export const handlers = [
   // Menu
-  http.get("*/menu/items", () => HttpResponse.json(menuItems)),
-  http.get("*/menu/items/:id", ({ params }) =>
-    HttpResponse.json(menuItems.data.find((i) => i.id === params.id) ?? menuItems.data[0]),
+  // Menu: backend returns { data, total, limit, page }
+  http.get("*/menu/items", () =>
+    HttpResponse.json({
+      data: menuItems.data.map((i) => ({
+        id: i.id,
+        name: i.name,
+        description: i.description,
+        basePrice: i.price,
+        currency: i.currency,
+        categoryId: i.category?.id ?? "cat-1",
+        categoryName: i.category?.name,
+        imageUrl: i.image,
+      })),
+      total: menuItems.meta.total,
+      limit: menuItems.meta.limit,
+      page: menuItems.meta.page,
+    }),
   ),
+  http.get("*/menu/items/:id", ({ params }) => {
+    const item = menuItems.data.find((i) => i.id === params.id) ?? menuItems.data[0];
+    return HttpResponse.json({
+      id: item.id,
+      name: item.name,
+      description: item.description,
+      basePrice: item.price,
+      currency: item.currency,
+      categoryId: item.category?.id ?? "cat-1",
+      categoryName: item.category?.name,
+      imageUrl: item.image,
+    });
+  }),
   http.get("*/menu/categories", () => HttpResponse.json(categories)),
   http.get("*/menu/categories/:id", ({ params }) =>
     HttpResponse.json(categories.find((c) => c.id === params.id) ?? categories[0]),
   ),
+  // Cafes (outlets): backend returns { data, total, limit, page }
+  http.get("*/cafes", () =>
+    HttpResponse.json({
+      data: outlets.data.map((o) => ({ id: o.id, name: o.name })),
+      total: outlets.data.length,
+      limit: 20,
+      page: 1,
+    }),
+  ),
+  http.get("*/cafes/:id", ({ params }) => {
+    const o = outlets.data.find((out) => out.id === params.id) ?? outlets.data[0];
+    return HttpResponse.json({ id: o.id, name: o.name });
+  }),
   http.get("*/outlets", () => HttpResponse.json(outlets)),
   http.get("*/outlets/:id", () => HttpResponse.json(outlets.data[0])),
 

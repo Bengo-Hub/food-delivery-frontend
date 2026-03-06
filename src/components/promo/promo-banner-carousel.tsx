@@ -144,46 +144,4 @@ function PromoBannerCard({ banner }: PromoBannerCardProps) {
   );
 }
 
-// Mock data for development
-export const mockPromoBanners: PromoBanner[] = [
-  {
-    id: "promo-1",
-    title: "Pizza Pleasures Await!",
-    subtitle: "Classic Medium Everyday Offer!",
-    imageUrl: "/images/promo-pizza.svg",
-    ctaText: "Order Now",
-    ctaLink: "/menu?category=pizza",
-    priceBadge: "Now at Ksh. 690!",
-    backgroundColor: "#f87171",
-  },
-  {
-    id: "promo-2",
-    title: "BOGO Alert! Pineapple Mint Cake",
-    subtitle: "Buy one Java's Pineapple Mint cake slice & get 1 Free",
-    imageUrl: "/images/promo-cake.svg",
-    ctaText: "Order Now",
-    ctaLink: "/menu?category=desserts",
-    backgroundColor: "#86efac",
-    textColor: "#000000",
-  },
-  {
-    id: "promo-3",
-    title: "Pay with your Mastercard card, enjoy up to 50% off",
-    subtitle: "Step 1: Add card to Wallet. Step 2: Use Code MC50EATS",
-    imageUrl: "/images/promo-mastercard.svg",
-    ctaText: "",
-    ctaLink: "/wallet",
-    backgroundColor: "#fde047",
-    textColor: "#000000",
-  },
-  {
-    id: "promo-4",
-    title: "New Year, New You",
-    subtitle: "Fresh groceries and essentials to start strong",
-    imageUrl: "/images/promo-fresh.svg",
-    ctaText: "Order now",
-    ctaLink: "/menu?category=grocery",
-    backgroundColor: "#c4b5fd",
-    textColor: "#000000",
-  },
-];
+// Promo banners: pass from parent (e.g. from GET /promos when API is wired)

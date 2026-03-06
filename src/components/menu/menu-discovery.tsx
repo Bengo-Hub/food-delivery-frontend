@@ -13,11 +13,12 @@ import {
 import Image from "next/image";
 import { toast } from "sonner";
 
-import { useCartStore } from "@/store/cart";
-
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { useMenuItems } from "@/hooks/use-menu";
 import { cn } from "@/lib/utils";
+import { useOrgSlug } from "@/providers/org-slug-provider";
+import { useCartStore } from "@/store/cart";
 
 type DietaryTag = "vegan" | "vegetarian" | "glutenFree" | "spicy" | "chefSpecial";
 
@@ -47,101 +48,39 @@ const dietaryFilters: Array<{ value: DietaryTag; label: string; icon: React.Reac
   },
 ];
 
-const mockMenu: MenuItem[] = [
-  {
-    id: "caf-cappuccino",
-    name: "Classic Cappuccino",
-    description: "Rich espresso with steamed milk and velvety foam",
-    price: "KES 350",
-    priceValue: 350,
-    category: "Beverages",
-    dietary: ["vegan"],
-    feature: "recommended",
-    image: "/images/menu/cappuccino.jpg",
-    outletName: "Main Outlet",
-  },
-  {
-    id: "caf-pizza",
-    name: "Margherita Pizza",
-    description: "Fresh mozzarella, basil, and tomato on crispy artisan crust",
-    price: "KES 850",
-    priceValue: 850,
-    category: "Main Course",
-    dietary: ["vegetarian"],
-    image: "/images/menu/margherita-pizza.jpg",
-    outletName: "Main Outlet",
-  },
-  {
-    id: "caf-burger",
-    name: "Classic Burger",
-    description: "Juicy beef patty with lettuce, tomato, and special sauce",
-    price: "KES 750",
-    priceValue: 750,
-    category: "Main Course",
-    dietary: ["chefSpecial"],
-    feature: "new",
-    image: "/images/menu/burger.jpg",
-    outletName: "Main Outlet",
-  },
-  {
-    id: "caf-espresso",
-    name: "Espresso Shot",
-    description: "Bold, rich espresso perfectly pulled with crema",
-    price: "KES 280",
-    priceValue: 280,
-    category: "Beverages",
-    dietary: ["vegan", "glutenFree"],
-    image: "/images/menu/espresso.jpg",
-    outletName: "Main Outlet",
-  },
-  {
-    id: "caf-lava-cake",
-    name: "Chocolate Lava Cake",
-    description: "Decadent chocolate cake with molten center and ice cream",
-    price: "KES 520",
-    priceValue: 520,
-    category: "Desserts",
-    dietary: ["vegetarian"],
-    feature: "recommended",
-    image: "/images/menu/chocolate-lava-cake.jpg",
-    outletName: "Main Outlet",
-  },
-  {
-    id: "caf-salad",
-    name: "Caesar Salad",
-    description: "Fresh romaine lettuce with parmesan, croutons, and caesar dressing",
-    price: "KES 620",
-    priceValue: 620,
-    category: "Salads",
-    dietary: ["vegetarian", "glutenFree"],
-    image: "/images/menu/salad.jpg",
-    outletName: "Main Outlet",
-  },
-  {
-    id: "caf-breakfast",
-    name: "Full English Breakfast",
-    description: "Eggs, bacon, sausage, baked beans, mushrooms, and toast",
-    price: "KES 720",
-    priceValue: 720,
-    category: "Breakfast",
-    dietary: ["glutenFree"],
-    image: "/images/menu/breakfast.jpg",
-    outletName: "Main Outlet",
-  },
-];
-
 const getCategories = (items: MenuItem[]): string[] => {
   const unique = new Set(items.map((item) => item.category));
   return ["All", ...Array.from(unique)];
 };
 
 export function MenuDiscovery() {
+  const orgSlug = useOrgSlug();
   const [search, setSearch] = useState("");
   const [activeCategory, setActiveCategory] = useState("All");
   const [activeDietary, setActiveDietary] = useState<DietaryTag[]>([]);
   const addItem = useCartStore((state) => state.addItem);
 
-  const categories = useMemo(() => getCategories(mockMenu), []);
+  const { data: menuData } = useMenuItems(orgSlug, undefined, 1, 200);
+  const apiItems = menuData?.data ?? [];
+  const menuItems: MenuItem[] = useMemo(
+    () =>
+      apiItems.map((m) => ({
+        id: m.id,
+        name: m.name,
+        description: m.description ?? "",
+        price: `${m.currency ?? "KES"} ${(m.price ?? 0).toLocaleString()}`,
+        priceValue: m.price ?? 0,
+        category: m.category || "Other",
+        dietary: (m.dietary ?? []) as DietaryTag[],
+        image: m.image,
+        outletId: m.outletId,
+        outletName: m.outletName,
+        feature: m.featured ? "recommended" : undefined,
+      })),
+    [apiItems],
+  );
+
+  const categories = useMemo(() => getCategories(menuItems), [menuItems]);
 
   const handleAddToCart = (item: MenuItem) => {
     addItem({
@@ -155,7 +94,7 @@ export function MenuDiscovery() {
   };
 
   const filteredItems = useMemo(() => {
-    return mockMenu.filter((item) => {
+    return menuItems.filter((item) => {
       const matchesCategory = activeCategory === "All" || item.category === activeCategory;
       const matchesDietary =
         activeDietary.length === 0 || activeDietary.every((tag) => item.dietary.includes(tag));
@@ -166,7 +105,7 @@ export function MenuDiscovery() {
 
       return matchesCategory && matchesDietary && matchesSearch;
     });
-  }, [activeCategory, activeDietary, search]);
+  }, [menuItems, activeCategory, activeDietary, search]);
 
   return (
     <section className="border-t border-border bg-card py-8 sm:py-12 md:py-16">

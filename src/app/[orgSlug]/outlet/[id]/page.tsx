@@ -10,138 +10,12 @@ import { toast } from "sonner";
 import { SiteShell } from "@/components/layout/site-shell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { useOutlet, useOutletMenu } from "@/hooks/use-menu";
 import { orgRoute } from "@/lib/routes";
 import { cn } from "@/lib/utils";
 import { useOrgSlug } from "@/providers/org-slug-provider";
 import { useCartStore } from "@/store/cart";
-import type { DietaryTag, MenuItem, Outlet } from "@/types/menu";
-
-// Mock outlet data - In production, this would come from useOutlet hook
-const mockOutlets: Record<string, Outlet> = {
-  "ulc-busia": {
-    id: "ulc-busia",
-    name: "Urban Loft Cafe Busia",
-    description:
-      "Experience the finest coffee and artisan cuisine in a warm, modern atmosphere. Our Busia location offers a perfect blend of comfort food and premium beverages.",
-    address: "Busia Mall, Busia Road, Kenya",
-    latitude: -1.2424,
-    longitude: 36.7498,
-    phone: "+254 700 123 456",
-    email: "busia@urbanloftcafe.com",
-    rating: 4.8,
-    reviewCount: 2450,
-    deliveryTime: "20-30",
-    deliveryFee: "Free",
-    minimumOrder: 500,
-    cuisines: ["Cafe", "Bakery", "Breakfast", "Lunch"],
-    image: "/images/outlets/urban-loft-busia.jpeg",
-    isOpen: true,
-    promoted: true,
-    offerBadge: "Free Delivery",
-    businessType: "food",
-  },
-};
-
-// Mock menu items for outlets
-const mockMenuItems: MenuItem[] = [
-  {
-    id: "item-1",
-    name: "Classic Cappuccino",
-    description: "Rich espresso with steamed milk and velvety foam",
-    price: 350,
-    currency: "KES",
-    category: "Beverages",
-    categoryId: "beverages",
-    dietary: ["vegan"],
-    image: "/images/menu/cappuccino.jpg",
-    outletId: "ulc-busia",
-    outletName: "Urban Loft Cafe Busia",
-    available: true,
-    featured: true,
-    preparationTime: 5,
-  },
-  {
-    id: "item-2",
-    name: "Margherita Pizza",
-    description: "Fresh mozzarella, basil, and tomato on crispy artisan crust",
-    price: 850,
-    currency: "KES",
-    category: "Main Course",
-    categoryId: "main-course",
-    dietary: ["vegetarian"],
-    image: "/images/menu/margherita-pizza.jpg",
-    outletId: "ulc-busia",
-    outletName: "Urban Loft Cafe Busia",
-    available: true,
-    preparationTime: 20,
-  },
-  {
-    id: "item-3",
-    name: "Classic Burger",
-    description: "Juicy beef patty with lettuce, tomato, and special sauce",
-    price: 750,
-    currency: "KES",
-    category: "Main Course",
-    categoryId: "main-course",
-    dietary: ["chefSpecial"],
-    image: "/images/menu/burger.jpg",
-    outletId: "ulc-busia",
-    outletName: "Urban Loft Cafe Busia",
-    available: true,
-    featured: true,
-    discountPercent: 12,
-    originalPrice: 850,
-    preparationTime: 15,
-  },
-  {
-    id: "item-4",
-    name: "Espresso",
-    description: "Bold, rich espresso shot, perfectly pulled",
-    price: 280,
-    currency: "KES",
-    category: "Beverages",
-    categoryId: "beverages",
-    dietary: ["vegan", "glutenFree"],
-    image: "/images/menu/espresso.jpg",
-    outletId: "ulc-busia",
-    outletName: "Urban Loft Cafe Busia",
-    available: true,
-    preparationTime: 3,
-  },
-  {
-    id: "item-5",
-    name: "Chocolate Lava Cake",
-    description: "Decadent chocolate cake with molten center and ice cream",
-    price: 520,
-    currency: "KES",
-    category: "Desserts",
-    categoryId: "desserts",
-    dietary: ["vegetarian"],
-    image: "/images/menu/chocolate-lava-cake.jpg",
-    outletId: "ulc-busia",
-    outletName: "Urban Loft Cafe Busia",
-    available: true,
-    featured: true,
-    discountPercent: 13,
-    originalPrice: 600,
-    preparationTime: 10,
-  },
-  {
-    id: "item-6",
-    name: "Caesar Salad",
-    description: "Fresh romaine lettuce with parmesan, croutons, and caesar dressing",
-    price: 620,
-    currency: "KES",
-    category: "Salads",
-    categoryId: "salads",
-    dietary: ["vegetarian", "glutenFree"],
-    image: "/images/menu/salad.jpg",
-    outletId: "ulc-busia",
-    outletName: "Urban Loft Cafe Busia",
-    available: true,
-    preparationTime: 8,
-  },
-];
+import type { DietaryTag, MenuItem } from "@/types/menu";
 
 const dietaryLabels: Record<DietaryTag, string> = {
   vegan: "Vegan",
@@ -167,7 +41,7 @@ function MenuItemCard({ item, onAddToCart }: { item: MenuItem; onAddToCart: () =
 
         {/* Tags */}
         <div className="mt-2 flex flex-wrap gap-1">
-          {item.dietary.slice(0, 2).map((tag) => (
+          {(item.dietary ?? []).slice(0, 2).map((tag) => (
             <span
               key={tag}
               className="rounded-full bg-primary/10 px-1.5 py-0.5 text-[10px] font-medium text-primary"
@@ -234,15 +108,12 @@ function MenuItemCard({ item, onAddToCart }: { item: MenuItem; onAddToCart: () =
 export default function OutletPage() {
   const params = useParams();
   const router = useRouter();
-  const outletId = params.id as string;
+  const orgSlug = useOrgSlug();
+  const outletId = (params?.id as string) ?? "";
 
-  // In production, use: const { data: outlet } = useOutlet(outletId);
-  const outlet = mockOutlets[outletId] || mockOutlets["ulc-busia"];
-
-  // In production, use: const { data: menuData } = useOutletMenu(outletId);
-  const menuItems = mockMenuItems.filter(
-    (item) => item.outletId === outletId || item.outletId === "ulc-busia",
-  );
+  const { data: outlet, isLoading: outletLoading, error: outletError } = useOutlet(orgSlug, outletId);
+  const { data: menuData } = useOutletMenu(orgSlug, outletId, undefined, 1, 100);
+  const menuItems = menuData?.data ?? [];
 
   const [search, setSearch] = useState("");
   const [activeCategory, setActiveCategory] = useState("All");
@@ -290,6 +161,28 @@ export default function OutletPage() {
     });
     toast.success(`Added ${item.name} to cart`);
   };
+
+  if (outletLoading) {
+    return (
+      <SiteShell>
+        <div className="flex min-h-[40vh] items-center justify-center text-muted-foreground">
+          Loading outlet...
+        </div>
+      </SiteShell>
+    );
+  }
+  if (outletError || !outlet) {
+    return (
+      <SiteShell>
+        <div className="flex min-h-[40vh] flex-col items-center justify-center gap-4 text-muted-foreground">
+          <p>{outletError ? "Failed to load outlet." : "Outlet not found."}</p>
+          <Button variant="outline" onClick={() => router.back()}>
+            Go back
+          </Button>
+        </div>
+      </SiteShell>
+    );
+  }
 
   return (
     <SiteShell>

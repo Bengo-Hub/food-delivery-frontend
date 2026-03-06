@@ -45,12 +45,18 @@ export const outletKeys = {
 // =============================================================================
 
 /**
- * Hook to fetch paginated menu items with filters
+ * Hook to fetch paginated menu items with filters (requires tenant slug for API path).
  */
-export function useMenuItems(filters?: MenuFilters, page = 1, limit = 20) {
+export function useMenuItems(
+  tenantSlug: string,
+  filters?: MenuFilters,
+  page = 1,
+  limit = 20,
+) {
   return useQuery({
-    queryKey: menuKeys.itemList(filters),
-    queryFn: () => fetchMenuItems(filters, page, limit),
+    queryKey: [tenantSlug, ...menuKeys.itemList(filters), page, limit],
+    queryFn: () => fetchMenuItems(tenantSlug, filters, page, limit),
+    enabled: !!tenantSlug,
     placeholderData: keepPreviousData,
   });
 }
@@ -58,36 +64,46 @@ export function useMenuItems(filters?: MenuFilters, page = 1, limit = 20) {
 /**
  * Hook to fetch menu items with infinite scroll
  */
-export function useInfiniteMenuItems(filters?: MenuFilters, limit = 20) {
+export function useInfiniteMenuItems(
+  tenantSlug: string,
+  filters?: MenuFilters,
+  limit = 20,
+) {
   return useInfiniteQuery({
-    queryKey: [...menuKeys.itemList(filters), "infinite"],
-    queryFn: ({ pageParam = 1 }) => fetchMenuItems(filters, pageParam, limit),
+    queryKey: [tenantSlug, ...menuKeys.itemList(filters), "infinite"],
+    queryFn: ({ pageParam = 1 }) => fetchMenuItems(tenantSlug, filters, pageParam, limit),
     initialPageParam: 1,
     getNextPageParam: (lastPage) => {
       const { page, totalPages } = lastPage.meta;
       return page < totalPages ? page + 1 : undefined;
     },
+    enabled: !!tenantSlug,
   });
 }
 
 /**
  * Hook to fetch a single menu item by ID
  */
-export function useMenuItem(id: string) {
+export function useMenuItem(tenantSlug: string, id: string) {
   return useQuery({
-    queryKey: menuKeys.item(id),
-    queryFn: () => fetchMenuItem(id),
-    enabled: !!id,
+    queryKey: [tenantSlug, ...menuKeys.item(id)],
+    queryFn: () => fetchMenuItem(tenantSlug, id),
+    enabled: !!tenantSlug && !!id,
   });
 }
 
 /**
  * Hook to fetch featured menu items
  */
-export function useFeaturedItems(outletId?: string, limit = 10) {
+export function useFeaturedItems(
+  tenantSlug: string,
+  outletId?: string,
+  limit = 10,
+) {
   return useQuery({
-    queryKey: menuKeys.featured(outletId),
-    queryFn: () => fetchFeaturedItems(outletId, limit),
+    queryKey: [tenantSlug, ...menuKeys.featured(outletId)],
+    queryFn: () => fetchFeaturedItems(tenantSlug, outletId, limit),
+    enabled: !!tenantSlug,
   });
 }
 
@@ -96,37 +112,44 @@ export function useFeaturedItems(outletId?: string, limit = 10) {
 // =============================================================================
 
 /**
- * Hook to fetch all menu categories
+ * Hook to fetch all menu categories (cafeId required by backend for public list).
  */
-export function useCategories(outletId?: string) {
+export function useCategories(tenantSlug: string, cafeId?: string) {
   return useQuery({
-    queryKey: menuKeys.categoryList(outletId),
-    queryFn: () => fetchCategories(outletId),
+    queryKey: [tenantSlug, ...menuKeys.categoryList(cafeId)],
+    queryFn: () => fetchCategories(tenantSlug, cafeId),
+    enabled: !!tenantSlug,
   });
 }
 
 /**
  * Hook to fetch a single category by ID
  */
-export function useCategory(id: string) {
+export function useCategory(tenantSlug: string, id: string) {
   return useQuery({
-    queryKey: menuKeys.category(id),
-    queryFn: () => fetchCategory(id),
-    enabled: !!id,
+    queryKey: [tenantSlug, ...menuKeys.category(id)],
+    queryFn: () => fetchCategory(tenantSlug, id),
+    enabled: !!tenantSlug && !!id,
   });
 }
 
 // =============================================================================
-// OUTLETS HOOKS
+// OUTLETS / CAFES HOOKS
 // =============================================================================
 
 /**
- * Hook to fetch paginated outlets with filters
+ * Hook to fetch paginated cafes/outlets for tenant
  */
-export function useOutlets(filters?: OutletFilters, page = 1, limit = 20) {
+export function useOutlets(
+  tenantSlug: string,
+  filters?: OutletFilters,
+  page = 1,
+  limit = 20,
+) {
   return useQuery({
-    queryKey: outletKeys.list(filters),
-    queryFn: () => fetchOutlets(filters, page, limit),
+    queryKey: [tenantSlug, ...outletKeys.list(filters), page, limit],
+    queryFn: () => fetchOutlets(tenantSlug, filters, page, limit),
+    enabled: !!tenantSlug,
     placeholderData: keepPreviousData,
   });
 }
@@ -134,37 +157,48 @@ export function useOutlets(filters?: OutletFilters, page = 1, limit = 20) {
 /**
  * Hook to fetch outlets with infinite scroll
  */
-export function useInfiniteOutlets(filters?: OutletFilters, limit = 20) {
+export function useInfiniteOutlets(
+  tenantSlug: string,
+  filters?: OutletFilters,
+  limit = 20,
+) {
   return useInfiniteQuery({
-    queryKey: [...outletKeys.list(filters), "infinite"],
-    queryFn: ({ pageParam = 1 }) => fetchOutlets(filters, pageParam, limit),
+    queryKey: [tenantSlug, ...outletKeys.list(filters), "infinite"],
+    queryFn: ({ pageParam = 1 }) => fetchOutlets(tenantSlug, filters, pageParam, limit),
     initialPageParam: 1,
     getNextPageParam: (lastPage) => {
       const { page, totalPages } = lastPage.meta;
       return page < totalPages ? page + 1 : undefined;
     },
+    enabled: !!tenantSlug,
   });
 }
 
 /**
- * Hook to fetch a single outlet by ID
+ * Hook to fetch a single outlet/cafe by ID
  */
-export function useOutlet(id: string) {
+export function useOutlet(tenantSlug: string, id: string) {
   return useQuery({
-    queryKey: outletKeys.detail(id),
-    queryFn: () => fetchOutlet(id),
-    enabled: !!id,
+    queryKey: [tenantSlug, ...outletKeys.detail(id)],
+    queryFn: () => fetchOutlet(tenantSlug, id),
+    enabled: !!tenantSlug && !!id,
   });
 }
 
 /**
  * Hook to fetch menu items for a specific outlet
  */
-export function useOutletMenu(outletId: string, filters?: MenuFilters, page = 1, limit = 50) {
+export function useOutletMenu(
+  tenantSlug: string,
+  outletId: string,
+  filters?: MenuFilters,
+  page = 1,
+  limit = 50,
+) {
   return useQuery({
-    queryKey: outletKeys.menu(outletId, filters),
-    queryFn: () => fetchOutletMenu(outletId, filters, page, limit),
-    enabled: !!outletId,
+    queryKey: [tenantSlug, ...outletKeys.menu(outletId, filters), page, limit],
+    queryFn: () => fetchOutletMenu(tenantSlug, outletId, filters, page, limit),
+    enabled: !!tenantSlug && !!outletId,
     placeholderData: keepPreviousData,
   });
 }
@@ -172,15 +206,21 @@ export function useOutletMenu(outletId: string, filters?: MenuFilters, page = 1,
 /**
  * Hook to fetch outlet menu with infinite scroll
  */
-export function useInfiniteOutletMenu(outletId: string, filters?: MenuFilters, limit = 20) {
+export function useInfiniteOutletMenu(
+  tenantSlug: string,
+  outletId: string,
+  filters?: MenuFilters,
+  limit = 20,
+) {
   return useInfiniteQuery({
-    queryKey: [...outletKeys.menu(outletId, filters), "infinite"],
-    queryFn: ({ pageParam = 1 }) => fetchOutletMenu(outletId, filters, pageParam, limit),
+    queryKey: [tenantSlug, ...outletKeys.menu(outletId, filters), "infinite"],
+    queryFn: ({ pageParam = 1 }) =>
+      fetchOutletMenu(tenantSlug, outletId, filters, pageParam, limit),
     initialPageParam: 1,
     getNextPageParam: (lastPage) => {
       const { page, totalPages } = lastPage.meta;
       return page < totalPages ? page + 1 : undefined;
     },
-    enabled: !!outletId,
+    enabled: !!tenantSlug && !!outletId,
   });
 }

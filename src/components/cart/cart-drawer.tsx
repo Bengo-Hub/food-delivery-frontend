@@ -95,7 +95,7 @@ export function CartDrawer({ open, onOpenChange }: CartDrawerProps) {
   const itemCount = items.reduce((sum, item) => sum + item.quantity, 0);
   const cartSubtotal = subtotal();
 
-  // Delivery fee calculation (mock - would come from backend based on outlet/distance)
+  // Delivery fee: can be from backend by outlet/distance when API is wired
   const deliveryFee = cartSubtotal > 0 ? (cartSubtotal > 2000 ? 0 : 150) : 0;
   const total = cartSubtotal + deliveryFee;
 

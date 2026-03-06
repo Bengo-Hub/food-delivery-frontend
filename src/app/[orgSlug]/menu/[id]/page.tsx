@@ -9,131 +9,12 @@ import { toast } from "sonner";
 
 import { SiteShell } from "@/components/layout/site-shell";
 import { Button } from "@/components/ui/button";
+import { useMenuItem } from "@/hooks/use-menu";
 import { orgRoute } from "@/lib/routes";
 import { cn } from "@/lib/utils";
 import { useOrgSlug } from "@/providers/org-slug-provider";
 import { useCartStore } from "@/store/cart";
 import type { DietaryTag } from "@/types/menu";
-
-// Mock menu item data - In production, this would come from useMenuItem hook
-const mockMenuItem = {
-  id: "item-1",
-  name: "Classic Cappuccino",
-  description:
-    "Our signature cappuccino made with premium espresso beans, perfectly steamed milk, and topped with a layer of velvety foam. A classic Italian coffee experience that delivers rich, bold flavor with every sip.",
-  price: 350,
-  currency: "KES",
-  category: "Beverages",
-  categoryId: "beverages",
-  dietary: ["vegan"] as DietaryTag[],
-  image: "/images/menu/cappuccino.jpg",
-  outletId: "ulc-busia",
-  outletName: "Urban Loft Cafe Busia",
-  available: true,
-  featured: true,
-  preparationTime: 5,
-  calories: 120,
-  allergens: ["milk"],
-  customizations: [
-    {
-      id: "size",
-      name: "Size",
-      required: true,
-      maxSelections: 1,
-      options: [
-        { id: "small", name: "Small (8oz)", price: 0, available: true },
-        { id: "medium", name: "Medium (12oz)", price: 50, available: true },
-        { id: "large", name: "Large (16oz)", price: 100, available: true },
-      ],
-    },
-    {
-      id: "milk",
-      name: "Milk Type",
-      required: false,
-      maxSelections: 1,
-      options: [
-        { id: "whole", name: "Whole Milk", price: 0, available: true },
-        { id: "oat", name: "Oat Milk", price: 30, available: true },
-        { id: "almond", name: "Almond Milk", price: 30, available: true },
-        { id: "soy", name: "Soy Milk", price: 30, available: true },
-      ],
-    },
-    {
-      id: "extras",
-      name: "Extras",
-      required: false,
-      maxSelections: 3,
-      options: [
-        { id: "extra-shot", name: "Extra Espresso Shot", price: 50, available: true },
-        { id: "vanilla", name: "Vanilla Syrup", price: 30, available: true },
-        { id: "caramel", name: "Caramel Syrup", price: 30, available: true },
-        { id: "whipped-cream", name: "Whipped Cream", price: 20, available: true },
-      ],
-    },
-  ],
-};
-
-// Map of mock items for demo
-const mockMenuItems: Record<string, typeof mockMenuItem> = {
-  "item-1": mockMenuItem,
-  "item-2": {
-    ...mockMenuItem,
-    id: "item-2",
-    name: "Margherita Pizza",
-    description:
-      "Fresh mozzarella cheese, vine-ripened tomatoes, and fragrant basil leaves on our hand-stretched artisan crust. Drizzled with extra virgin olive oil and baked to perfection in our wood-fired oven.",
-    price: 850,
-    category: "Main Course",
-    categoryId: "main-course",
-    dietary: ["vegetarian"] as DietaryTag[],
-    image: "/images/menu/margherita-pizza.jpg",
-    preparationTime: 20,
-    calories: 680,
-    allergens: ["gluten", "dairy"],
-    customizations: [
-      {
-        id: "size",
-        name: "Size",
-        required: true,
-        maxSelections: 1,
-        options: [
-          { id: "personal", name: 'Personal (8")', price: 0, available: true },
-          { id: "medium", name: 'Medium (12")', price: 200, available: true },
-          { id: "large", name: 'Large (16")', price: 400, available: true },
-        ],
-      },
-      {
-        id: "crust",
-        name: "Crust Type",
-        required: false,
-        maxSelections: 1,
-        options: [
-          { id: "thin", name: "Thin Crust", price: 0, available: true },
-          { id: "thick", name: "Thick Crust", price: 0, available: true },
-          { id: "stuffed", name: "Stuffed Crust", price: 100, available: true },
-        ],
-      },
-    ],
-  },
-  "item-3": {
-    ...mockMenuItem,
-    id: "item-3",
-    name: "Classic Burger",
-    description:
-      "Juicy Angus beef patty cooked to perfection, topped with fresh lettuce, vine-ripened tomatoes, red onions, pickles, and our signature house sauce. Served on a toasted brioche bun.",
-    price: 750,
-    category: "Main Course",
-    categoryId: "main-course",
-    dietary: ["chefSpecial"] as DietaryTag[],
-    image: "/images/menu/burger.jpg",
-    outletId: "ulc-busia",
-    outletName: "Urban Loft Cafe Busia",
-    preparationTime: 15,
-    calories: 850,
-    allergens: ["gluten", "egg"],
-    customizations: [],
-  },
-};
 
 const dietaryLabels: Record<DietaryTag, string> = {
   vegan: "Vegan",
@@ -148,10 +29,9 @@ export default function MenuItemPage() {
   const params = useParams();
   const router = useRouter();
   const orgSlug = useOrgSlug();
-  const itemId = params.id as string;
+  const itemId = (params?.id as string) ?? "";
 
-  // In production, use: const { data: item, isLoading, error } = useMenuItem(itemId);
-  const item = mockMenuItems[itemId] || mockMenuItem;
+  const { data: item, isLoading, error } = useMenuItem(orgSlug, itemId);
 
   const [quantity, setQuantity] = useState(1);
   const [selectedOptions, setSelectedOptions] = useState<Record<string, string[]>>({});
@@ -159,19 +39,15 @@ export default function MenuItemPage() {
 
   const addItem = useCartStore((state) => state.addItem);
 
-  // Calculate total price including customizations
   const calculateTotalPrice = () => {
+    if (!item) return 0;
     let total = item.price * quantity;
-    Object.entries(selectedOptions).forEach(([customizationId, optionIds]) => {
-      const customization = item.customizations?.find((c) => c.id === customizationId);
-      if (customization) {
-        optionIds.forEach((optionId) => {
-          const option = customization.options.find((o) => o.id === optionId);
-          if (option) {
-            total += option.price * quantity;
-          }
-        });
-      }
+    item.customizations?.forEach((customization) => {
+      const optionIds = selectedOptions[customization.id] ?? [];
+      optionIds.forEach((optionId) => {
+        const option = customization.options.find((o) => o.id === optionId);
+        if (option) total += option.price * quantity;
+      });
     });
     return total;
   };
@@ -218,6 +94,30 @@ export default function MenuItemPage() {
     toast.success(`Added ${quantity} ${item.name} to cart`);
     router.back();
   };
+
+  if (isLoading) {
+    return (
+      <SiteShell>
+        <div className="mx-auto flex max-w-4xl items-center justify-center px-4 py-16 text-muted-foreground">
+          Loading menu item...
+        </div>
+      </SiteShell>
+    );
+  }
+  if (error || !item) {
+    return (
+      <SiteShell>
+        <div className="mx-auto flex max-w-4xl flex-col items-center justify-center gap-4 px-4 py-16">
+          <p className="text-muted-foreground">
+            {error ? "Failed to load menu item." : "Menu item not found."}
+          </p>
+          <Button variant="outline" onClick={() => router.back()}>
+            Go back
+          </Button>
+        </div>
+      </SiteShell>
+    );
+  }
 
   const totalPrice = calculateTotalPrice();
 
@@ -298,7 +198,7 @@ export default function MenuItemPage() {
                 {item.calories && (
                   <span className="text-sm text-muted-foreground">{item.calories} cal</span>
                 )}
-                {item.dietary.map((tag) => (
+                {(item.dietary ?? []).map((tag) => (
                   <span
                     key={tag}
                     className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary"

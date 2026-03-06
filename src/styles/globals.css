@@ -129,7 +129,14 @@ button:focus-visible {
 
 @layer utilities {
   .safe-area-pb {
-    padding-bottom: env(safe-area-inset-bottom, 0px);
+    padding-bottom: max(env(safe-area-inset-bottom, 0px), 0.5rem);
+  }
+  .safe-area-px {
+    padding-left: env(safe-area-inset-left, 0px);
+    padding-right: env(safe-area-inset-right, 0px);
+  }
+  .touch-manipulation {
+    touch-action: manipulation;
   }
 }
 

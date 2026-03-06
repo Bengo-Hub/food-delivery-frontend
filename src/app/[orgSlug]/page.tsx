@@ -17,7 +17,7 @@ import {
   type FeaturedItemProps,
 } from "@/components/menu/featured-item-card";
 import { OutletCard, OutletGrid, type OutletCardProps } from "@/components/outlet/outlet-card";
-import { PromoBannerCarousel, mockPromoBanners } from "@/components/promo/promo-banner-carousel";
+import { PromoBannerCarousel } from "@/components/promo/promo-banner-carousel";
 import { Button } from "@/components/ui/button";
 import { useCategories, useFeaturedItems, useOutlets } from "@/hooks/use-menu";
 import { orgRoute } from "@/lib/routes";
@@ -25,100 +25,6 @@ import { toast } from "@/lib/toast";
 import { useOrgSlug } from "@/providers/org-slug-provider";
 import { useCartStore } from "@/store/cart";
 import { useDiningModeStore } from "@/store/dining-mode";
-
-// =============================================================================
-// MOCK DATA - Fallbacks when API is unavailable
-// =============================================================================
-
-const mockOutlets: OutletCardProps[] = [
-  {
-    id: "ulc-busia",
-    name: "Urban Loft Cafe Busia",
-    rating: 4.8,
-    reviewCount: 2450,
-    deliveryTime: "20-30",
-    deliveryFee: "Free",
-    distance: "1.2 km",
-    cuisines: ["Cafe", "Bakery", "Breakfast", "Lunch"],
-    promoted: true,
-    offerBadge: "Free Delivery",
-    image: "/images/outlets/urban-loft-busia.jpeg",
-    businessType: "food",
-  },
-];
-
-const mockFeaturedItems: FeaturedItemProps[] = [
-  {
-    id: "item-1",
-    name: "Classic Cappuccino",
-    description: "Rich espresso with steamed milk and foam",
-    price: 350,
-    currency: "KES",
-    image: "/images/menu/cappuccino.jpg",
-    outletId: "ulc-busia",
-    outletName: "Urban Loft Cafe Busia",
-    category: "Beverages",
-  },
-  {
-    id: "item-2",
-    name: "Margherita Pizza",
-    description: "Fresh mozzarella, basil, and tomato on crispy crust",
-    price: 850,
-    currency: "KES",
-    image: "/images/menu/margherita-pizza.jpg",
-    outletId: "ulc-busia",
-    outletName: "Urban Loft Cafe Busia",
-    category: "Main Course",
-  },
-  {
-    id: "item-3",
-    name: "Classic Burger",
-    description: "Juicy beef patty with lettuce, tomato, and special sauce",
-    price: 750,
-    originalPrice: 850,
-    discountPercent: 12,
-    currency: "KES",
-    image: "/images/menu/burger.jpg",
-    outletId: "ulc-busia",
-    outletName: "Urban Loft Cafe Busia",
-    category: "Main Course",
-  },
-  {
-    id: "item-4",
-    name: "Espresso",
-    description: "Bold, rich espresso shot, perfectly pulled",
-    price: 280,
-    currency: "KES",
-    image: "/images/menu/espresso.jpg",
-    outletId: "ulc-busia",
-    outletName: "Urban Loft Cafe Busia",
-    category: "Beverages",
-  },
-  {
-    id: "item-5",
-    name: "Chocolate Lava Cake",
-    description: "Decadent chocolate cake with molten center and ice cream",
-    price: 520,
-    originalPrice: 600,
-    discountPercent: 13,
-    currency: "KES",
-    image: "/images/menu/chocolate-lava-cake.jpg",
-    outletId: "ulc-busia",
-    outletName: "Urban Loft Cafe Busia",
-    category: "Desserts",
-  },
-  {
-    id: "item-6",
-    name: "Caesar Salad",
-    description: "Fresh romaine lettuce with parmesan, croutons, and caesar dressing",
-    price: 620,
-    currency: "KES",
-    image: "/images/menu/salad.jpg",
-    outletId: "ulc-busia",
-    outletName: "Urban Loft Cafe Busia",
-    category: "Salads",
-  },
-];
 
 // =============================================================================
 // HELPER FUNCTIONS
@@ -203,14 +109,21 @@ export default function HomePage() {
   const deliveryLocation = useDiningModeStore((state) => state.deliveryLocation);
   const addItem = useCartStore((state) => state.addItem);
 
-  // Fetch data via TanStack Query hooks (with mock fallbacks)
-  const { data: categoriesData } = useCategories();
-  const { data: outletsData } = useOutlets(undefined, 1, 20);
-  const { data: featuredData } = useFeaturedItems(undefined, 10);
+  // Fetch cafes first; use first cafe id for categories and featured items (backend requires cafe_id for categories)
+  const { data: outletsData } = useOutlets(orgSlug, undefined, 1, 20);
+  const firstCafeId = outletsData?.data?.[0]?.id ?? "";
+  const firstCafeName = outletsData?.data?.[0]?.name ?? "";
 
-  // categoriesData is MenuCategory[] directly
-  const categories: Category[] = categoriesData?.length
-    ? categoriesData.map((c) => {
+  const { data: categoriesData } = useCategories(orgSlug, firstCafeId || undefined);
+  const { data: featuredData } = useFeaturedItems(
+    orgSlug,
+    firstCafeId || undefined,
+    10,
+  );
+
+  const categories: Category[] =
+    categoriesData?.length ?
+      categoriesData.map((c) => {
         const match = defaultCategories.find((dc) => dc.id === c.id);
         return {
           id: c.id,
@@ -220,50 +133,44 @@ export default function HomePage() {
       })
     : defaultCategories;
 
-  // outletsData is PaginatedResponse<Outlet> with .data array
-  const outlets: OutletCardProps[] = outletsData?.data?.length
-    ? outletsData.data.map((o) => {
-        const card: OutletCardProps = {
-          id: o.id,
-          name: o.name,
-          rating: o.rating,
-          reviewCount: o.reviewCount,
-          deliveryTime: o.deliveryTime,
-          deliveryFee: o.deliveryFee,
-          cuisines: o.cuisines,
-          businessType: o.businessType,
-          href: orgRoute(orgSlug, `/outlet/${o.id}`),
-        };
-        if (o.promoted) card.promoted = o.promoted;
-        if (o.offerBadge) card.offerBadge = o.offerBadge;
-        if (o.image) card.image = o.image;
-        return card;
-      })
-    : mockOutlets.map((o) => ({ ...o, href: orgRoute(orgSlug, `/outlet/${o.id}`) }));
+  const outlets: OutletCardProps[] =
+    outletsData?.data?.length ?
+      outletsData.data.map((o) => ({
+        id: o.id,
+        name: o.name,
+        rating: o.rating,
+        reviewCount: o.reviewCount,
+        deliveryTime: o.deliveryTime,
+        deliveryFee: o.deliveryFee,
+        cuisines: o.cuisines,
+        businessType: o.businessType,
+        href: orgRoute(orgSlug, `/outlet/${o.id}`),
+        ...(o.promoted && { promoted: o.promoted }),
+        ...(o.offerBadge && { offerBadge: o.offerBadge }),
+        ...(o.image && { image: o.image }),
+      }))
+    : [];
 
-  // featuredData is MenuItem[] directly
-  const featuredItems: FeaturedItemProps[] = featuredData?.length
-    ? featuredData.map((item) => {
-        const card: FeaturedItemProps = {
-          id: item.id,
-          name: item.name,
-          description: item.description,
-          price: item.price,
-          currency: "KES",
-          outletId: item.outletId,
-          outletName: item.outletName,
-          category: item.category,
-          href: orgRoute(orgSlug, `/outlet/${item.outletId}/item/${item.id}`),
-        };
-        if (item.image) card.image = item.image;
-        if (item.discountPercent) card.discountPercent = item.discountPercent;
-        if (item.originalPrice) card.originalPrice = item.originalPrice;
-        return card;
-      })
-    : mockFeaturedItems.map((item) => ({
-        ...item,
-        href: orgRoute(orgSlug, `/outlet/${item.outletId}/item/${item.id}`),
-      }));
+  const featuredItems: FeaturedItemProps[] =
+    featuredData?.length ?
+      featuredData.map((item) => ({
+        id: item.id,
+        name: item.name,
+        description: item.description,
+        price: item.price,
+        currency: item.currency ?? "KES",
+        image: item.image,
+        outletId: item.outletId || firstCafeId,
+        outletName: item.outletName || firstCafeName,
+        category: item.category,
+        href: orgRoute(
+          orgSlug,
+          `/outlet/${item.outletId || firstCafeId}/menu/${item.id}`,
+        ),
+        ...(item.discountPercent && { discountPercent: item.discountPercent }),
+        ...(item.originalPrice && { originalPrice: item.originalPrice }),
+      }))
+    : [];
 
   const handleFavoriteToggle = (id: string, isFavorite: boolean) => {
     setFavorites((prev) => {
@@ -314,10 +221,10 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Promo Banners */}
+      {/* Promo Banners - from backend when available */}
       <section className="bg-background py-4 sm:py-6">
         <div className="mx-auto w-full max-w-6xl px-3 sm:px-4 lg:px-8">
-          <PromoBannerCarousel banners={mockPromoBanners} />
+          <PromoBannerCarousel banners={[]} />
         </div>
       </section>
 

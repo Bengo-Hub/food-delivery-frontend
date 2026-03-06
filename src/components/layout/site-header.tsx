@@ -80,7 +80,8 @@ export function SiteHeader({ onMenuClick }: SiteHeaderProps) {
   const user = useAuthStore((state) => state.user);
   const logout = useAuthStore((state) => state.logout);
   const cartItems = useCartStore((state) => state.items);
-  const { data: outletsData } = useOutlets(undefined, 1, 10);
+  const orgSlug = useOrgSlug();
+  const { data: outletsData } = useOutlets(orgSlug, undefined, 1, 10);
   const outlets: SearchOutlet[] = (outletsData?.data ?? []).map((o) => ({
     id: o.id,
     name: o.name,
