@@ -40,28 +40,6 @@ const mockOutlets: Record<string, Outlet> = {
     offerBadge: "Free Delivery",
     businessType: "food",
   },
-  "ulc-kiambu": {
-    id: "ulc-kiambu",
-    name: "Urban Loft Cafe Kiambu",
-    description:
-      "Our Kiambu location brings the Urban Loft experience to the heart of the city. Enjoy our signature dishes and specialty coffees in a cozy environment.",
-    address: "Kiambu Road, Nairobi, Kenya",
-    latitude: -1.2324,
-    longitude: 36.8498,
-    phone: "+254 700 123 457",
-    email: "kiambu@urbanloftcafe.com",
-    rating: 4.7,
-    reviewCount: 1890,
-    deliveryTime: "25-35",
-    deliveryFee: "KES 50",
-    minimumOrder: 500,
-    cuisines: ["Cafe", "Bakery", "Breakfast", "Lunch"],
-    image: "/images/outlets/urban-loft-kiambu.jpeg",
-    isOpen: true,
-    promoted: true,
-    offerBadge: "20% Off Today",
-    businessType: "food",
-  },
 };
 
 // Mock menu items for outlets

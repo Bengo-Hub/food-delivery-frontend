@@ -14,7 +14,8 @@ interface BeforeInstallPromptEvent extends Event {
 }
 
 const DISMISS_KEY = "pwa-install-dismissed";
-const DISMISS_DURATION = 1 * 60 * 60 * 1000; // 1 hour
+const DISMISS_DURATION = 30 * 60 * 1000; // 30 minutes — re-prompt if not installed
+const RE_PROMPT_INTERVAL = 30 * 60 * 1000; // 30 minutes
 
 function isIOS(): boolean {
   if (typeof window === "undefined") return false;
@@ -49,13 +50,20 @@ export function PWAInstallPrompt() {
   const appLogo = brandConfig?.logoUrl || brand.assets.logo;
 
   useEffect(() => {
-    // Don't show if already installed or recently dismissed
-    if (isStandalone() || wasDismissedRecently()) return;
+    // Don't show if already installed
+    if (isStandalone()) return;
 
-    // iOS devices: show custom guide after a short delay
+    // iOS devices: show custom guide after a short delay; re-show every 30 min if dismissed
     if (isIOS()) {
-      const timer = setTimeout(() => setShowIOSGuide(true), 3000);
-      return () => clearTimeout(timer);
+      const maybeShow = () => {
+        if (!wasDismissedRecently()) setShowIOSGuide(true);
+      };
+      const timer = setTimeout(maybeShow, 3000);
+      const interval = setInterval(maybeShow, RE_PROMPT_INTERVAL);
+      return () => {
+        clearTimeout(timer);
+        clearInterval(interval);
+      };
     }
 
     // Chrome/Edge/Samsung: listen for beforeinstallprompt
@@ -64,12 +72,22 @@ export function PWAInstallPrompt() {
       const event = e as BeforeInstallPromptEvent;
       promptRef.current = event;
       setDeferredPrompt(event);
-      // Show banner after short delay to not be jarring
-      setTimeout(() => setShowBanner(true), 2000);
+      if (!wasDismissedRecently()) setTimeout(() => setShowBanner(true), 2000);
     };
 
     window.addEventListener("beforeinstallprompt", handler);
-    return () => window.removeEventListener("beforeinstallprompt", handler);
+
+    // Re-prompt at least once every 30 min if not installed and user had dismissed
+    const recheck = () => {
+      if (isStandalone()) return;
+      if (!wasDismissedRecently() && promptRef.current) setShowBanner(true);
+    };
+    const interval = setInterval(recheck, RE_PROMPT_INTERVAL);
+
+    return () => {
+      window.removeEventListener("beforeinstallprompt", handler);
+      clearInterval(interval);
+    };
   }, []);
 
   const handleInstall = useCallback(async () => {

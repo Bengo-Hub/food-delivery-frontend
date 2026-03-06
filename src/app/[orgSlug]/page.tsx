@@ -45,20 +45,6 @@ const mockOutlets: OutletCardProps[] = [
     image: "/images/outlets/urban-loft-busia.jpeg",
     businessType: "food",
   },
-  {
-    id: "ulc-kiambu",
-    name: "Urban Loft Cafe Kiambu",
-    rating: 4.7,
-    reviewCount: 1890,
-    deliveryTime: "25-35",
-    deliveryFee: "KES 50",
-    distance: "2.5 km",
-    cuisines: ["Cafe", "Bakery", "Breakfast", "Lunch"],
-    promoted: true,
-    offerBadge: "20% Off Today",
-    image: "/images/outlets/urban-loft-kiambu.jpeg",
-    businessType: "food",
-  },
 ];
 
 const mockFeaturedItems: FeaturedItemProps[] = [
@@ -93,8 +79,8 @@ const mockFeaturedItems: FeaturedItemProps[] = [
     discountPercent: 12,
     currency: "KES",
     image: "/images/menu/burger.jpg",
-    outletId: "ulc-kiambu",
-    outletName: "Urban Loft Cafe Kiambu",
+    outletId: "ulc-busia",
+    outletName: "Urban Loft Cafe Busia",
     category: "Main Course",
   },
   {
@@ -117,8 +103,8 @@ const mockFeaturedItems: FeaturedItemProps[] = [
     discountPercent: 13,
     currency: "KES",
     image: "/images/menu/chocolate-lava-cake.jpg",
-    outletId: "ulc-kiambu",
-    outletName: "Urban Loft Cafe Kiambu",
+    outletId: "ulc-busia",
+    outletName: "Urban Loft Cafe Busia",
     category: "Desserts",
   },
   {
