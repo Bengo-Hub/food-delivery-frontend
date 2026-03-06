@@ -16,6 +16,21 @@ ENV PNPM_HOME="/root/.local/share/pnpm" \
 RUN corepack enable pnpm
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
+
+# Next.js bakes NEXT_PUBLIC_* at build time. Pass these in CI/deploy to avoid production calling localhost.
+ARG NEXT_PUBLIC_API_URL=https://orderapi.codevertexitsolutions.com/api/v1
+ARG NEXT_PUBLIC_SSO_URL=https://sso.codevertexitsolutions.com
+ARG NEXT_PUBLIC_CAFE_WEBSITE_URL=https://theurbanloftcafe.com
+ARG NEXT_PUBLIC_LOGISTICS_UI_URL=https://logistics.codevertexitsolutions.com
+ARG NEXT_PUBLIC_NOTIFICATIONS_API_URL=https://notificationsapi.codevertexitsolutions.com
+ARG NEXT_PUBLIC_TREASURY_API_URL=https://treasuryapi.codevertexitsolutions.com
+ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
+ENV NEXT_PUBLIC_SSO_URL=$NEXT_PUBLIC_SSO_URL
+ENV NEXT_PUBLIC_CAFE_WEBSITE_URL=$NEXT_PUBLIC_CAFE_WEBSITE_URL
+ENV NEXT_PUBLIC_LOGISTICS_UI_URL=$NEXT_PUBLIC_LOGISTICS_UI_URL
+ENV NEXT_PUBLIC_NOTIFICATIONS_API_URL=$NEXT_PUBLIC_NOTIFICATIONS_API_URL
+ENV NEXT_PUBLIC_TREASURY_API_URL=$NEXT_PUBLIC_TREASURY_API_URL
+
 RUN pnpm build
 
 FROM node:20-alpine AS runner
