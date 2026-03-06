@@ -5,6 +5,7 @@ import type { ReactNode } from "react";
 
 import { usePathname, useRouter } from "next/navigation";
 
+import { useMe } from "@/hooks/use-me";
 import { orgRoute } from "@/lib/routes";
 import { useOrgSlug } from "@/providers/org-slug-provider";
 import { useAuthStore } from "@/store/auth";
@@ -44,9 +45,16 @@ export function RequireAuth({
   const router = useRouter();
   const pathname = usePathname();
   const status = useAuthStore((state) => state.status);
-  const user = useAuthStore((state) => state.user);
+  const storeUser = useAuthStore((state) => state.user);
+  const session = useAuthStore((state) => state.session);
+  const { data: meData, isLoading: meLoading, isError: meError } = useMe(!!session?.accessToken);
+  const user = meData?.user ?? storeUser;
 
   useEffect(() => {
+    if (meError) {
+      router.replace((orgRoute(orgSlug, "/auth") + `?redirectTo=${encodeURIComponent(pathname ?? "/")}`) as Parameters<typeof router.replace>[0]);
+      return;
+    }
     if (status === "authenticated" && user) {
       const accessParams: Parameters<typeof userCanAccess>[1] = {};
       if (roles) accessParams.roles = roles;
@@ -55,7 +63,7 @@ export function RequireAuth({
       if (permissionOperator) accessParams.permissionOperator = permissionOperator;
       const permitted = userCanAccess(user, accessParams);
       if (!permitted) {
-        router.replace((redirectTo ?? orgRoute(orgSlug, "/")) as Parameters<typeof router.replace>[0]);
+        router.replace((redirectTo ?? orgRoute(orgSlug, "/unauthorized")) as Parameters<typeof router.replace>[0]);
       }
       return;
     }
@@ -76,9 +84,11 @@ export function RequireAuth({
     router,
     pathname,
     redirectTo,
+    orgSlug,
+    meError,
   ]);
 
-  if (status === "loading") {
+  if (meLoading || status === "loading") {
     return <>{loadingFallback}</>;
   }
 
@@ -93,7 +103,8 @@ export function RequireAuth({
   if (permissionOperator) accessParams2.permissionOperator = permissionOperator;
   const canAccess = userCanAccess(user, accessParams2);
   if (!canAccess) {
-    return <>{denialFallback}</>;
+    router.replace(orgRoute(orgSlug, "/unauthorized") as Parameters<typeof router.replace>[0]);
+    return null;
   }
 
   return <>{children}</>;

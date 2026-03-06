@@ -72,10 +72,10 @@ export function MenuDiscovery() {
         priceValue: m.price ?? 0,
         category: m.category || "Other",
         dietary: (m.dietary ?? []) as DietaryTag[],
-        image: m.image,
+        ...(m.image != null && m.image !== "" && { image: m.image }),
         outletId: m.outletId,
         outletName: m.outletName,
-        feature: m.featured ? "recommended" : undefined,
+        ...(m.featured && { feature: "recommended" as const }),
       })),
     [apiItems],
   );

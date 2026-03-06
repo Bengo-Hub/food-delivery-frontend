@@ -20,6 +20,8 @@ export interface CreateOrderRequest {
   paymentMethod: "mpesa" | "cod";
   promoCode?: string;
   scheduledAt?: string;
+  /** Client-generated UUID for idempotent order creation (prevents duplicates on retry/double-click). */
+  idempotencyKey?: string;
 }
 
 export interface Order {

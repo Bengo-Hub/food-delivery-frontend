@@ -1,3 +1,4 @@
+import { BrandThemeSync } from "@/components/layout/brand-theme-sync";
 import { OrgSlugProvider } from "@/providers/org-slug-provider";
 
 export default async function OrgSlugLayout({
@@ -8,5 +9,10 @@ export default async function OrgSlugLayout({
   params: Promise<{ orgSlug: string }>;
 }) {
   const { orgSlug } = await params;
-  return <OrgSlugProvider orgSlug={orgSlug}>{children}</OrgSlugProvider>;
+  return (
+    <OrgSlugProvider orgSlug={orgSlug}>
+      <BrandThemeSync />
+      {children}
+    </OrgSlugProvider>
+  );
 }

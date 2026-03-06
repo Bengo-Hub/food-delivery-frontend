@@ -7,6 +7,12 @@
 - Uphold brand palette and accessibility (WCAG 2.1 AA) while ensuring sub-second perceived performance on mobile devices.
 - PWA features: Installable, offline menu browsing, push notifications, fast loading, responsive design.
 
+## Recent Progress (March 2026 — RBAC & TanStack Query)
+
+- **Roles/permissions from backend**: `useMe` hook (TanStack Query, 5-min TTL) fetches `GET /auth/me` from ordering-backend; result synced to auth store via `AuthSync`. Route protection and nav use roles/permissions from `useMe` with store fallback. Redirect to `/unauthorized` on access denial; 401 from me redirects to auth.
+- **404/unauthorized**: Root and tenant-scoped `not-found.tsx`; `[orgSlug]/unauthorized/page.tsx` for access-denied.
+- **TanStack Query**: All app data fetches use useQuery/useMutation via hooks (useMe, use-menu, use-orders, use-admin, use-brand, use-loyalty, use-notifications).
+
 ## Recent Progress (February 2026 — Week 2: Testing & Polish)
 
 - **Test Infrastructure** (Feb 16): Installed MSW v2, created mock handlers (17 HTTP endpoints), server setup, and TestWrapper (QueryClient + OrgSlugProvider).

@@ -6,14 +6,14 @@ import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 
 import {
-  ChevronDown,
-  LogIn,
-  LogOut,
-  MapPin,
-  MenuIcon,
-  Search,
-  ShoppingCart,
-  UserIcon,
+    ChevronDown,
+    LogIn,
+    LogOut,
+    MapPin,
+    MenuIcon,
+    Search,
+    ShoppingCart,
+    UserIcon,
 } from "lucide-react";
 
 import { CartDrawer } from "@/components/cart/cart-drawer";
@@ -25,13 +25,14 @@ import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { brand } from "@/config/brand";
+import { useBrandConfig } from "@/hooks/use-brand";
+import { useOutlets } from "@/hooks/use-menu";
 import { getShortLocationName } from "@/lib/geocoding";
 import { orgRoute } from "@/lib/routes";
 import { useOrgSlug } from "@/providers/org-slug-provider";
 import { useAuthStore } from "@/store/auth";
 import { useCartStore } from "@/store/cart";
 import { useDiningModeStore } from "@/store/dining-mode";
-import { useOutlets } from "@/hooks/use-menu";
 
 interface SiteHeaderProps {
   onMenuClick?: () => void;
@@ -80,8 +81,10 @@ export function SiteHeader({ onMenuClick }: SiteHeaderProps) {
   const user = useAuthStore((state) => state.user);
   const logout = useAuthStore((state) => state.logout);
   const cartItems = useCartStore((state) => state.items);
-  const orgSlug = useOrgSlug();
   const { data: outletsData } = useOutlets(orgSlug, undefined, 1, 10);
+  const { data: brandConfig } = useBrandConfig();
+  const displayName = brandConfig?.shortName ?? brand.shortName;
+  const displayLogo = brandConfig?.logoUrl ?? brand.assets.logo;
   const outlets: SearchOutlet[] = (outletsData?.data ?? []).map((o) => ({
     id: o.id,
     name: o.name,
@@ -147,14 +150,14 @@ export function SiteHeader({ onMenuClick }: SiteHeaderProps) {
             className="flex items-center gap-2 text-sm font-bold text-foreground sm:text-base"
           >
             <Image
-              src={brand.assets.logo}
-              alt={`${brand.name} logo`}
+              src={displayLogo}
+              alt={`${displayName} logo`}
               width={28}
               height={28}
               className="h-7 w-7 rounded-full object-cover"
               priority
             />
-            <span className="hidden sm:inline">{brand.shortName}</span>
+            <span className="hidden sm:inline">{displayName}</span>
           </Link>
         </div>
 
@@ -181,7 +184,7 @@ export function SiteHeader({ onMenuClick }: SiteHeaderProps) {
               <div className="relative flex-1">
                 <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
                 <input
-                  placeholder={`Search ${brand.shortName}`}
+                  placeholder={`Search ${displayName}`}
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   onFocus={() => setSearchOpen(true)}

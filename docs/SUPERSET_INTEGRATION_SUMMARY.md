@@ -275,7 +275,7 @@ BenchmarkService_ListAvailableDashboards PASS
 1. **Install Dependencies**
    ```bash
    cd ordering-service/ordering-frontend
-   npm install @superset-ui/embedded-sdk
+   pnpm add @superset-ui/embedded-sdk
    ```
 
 2. **Implement Core Components**

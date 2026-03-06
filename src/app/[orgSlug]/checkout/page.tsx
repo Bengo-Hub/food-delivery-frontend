@@ -38,6 +38,7 @@ export default function CheckoutPage() {
   const [promoMessage, setPromoMessage] = useState("");
   const [deliveryNotes, setDeliveryNotes] = useState("");
   const [orderId, setOrderId] = useState<string | null>(null);
+  const [orderError, setOrderError] = useState<string | null>(null);
 
   const createOrder = useCreateOrder();
   const initiateMpesa = useInitiateMpesaPayment();
@@ -106,12 +107,18 @@ export default function CheckoutPage() {
     }
 
     setStep("processing");
+    setOrderError(null);
 
     try {
       const outletId = items[0]?.outletId || "";
+      const idempotencyKey =
+        typeof crypto !== "undefined" && crypto.randomUUID
+          ? crypto.randomUUID()
+          : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
 
       const orderPayload: Parameters<typeof createOrder.mutateAsync>[0] = {
         outletId,
+        idempotencyKey,
         items: items.map((item) => ({
           menuItemId: item.id,
           name: item.name,
@@ -148,7 +155,9 @@ export default function CheckoutPage() {
       setStep("success");
     } catch (error) {
       setStep("payment");
-      toast.error("Failed to place order. Please try again.");
+      const message = error instanceof Error ? error.message : "Failed to place order. Please try again.";
+      setOrderError(message);
+      toast.error(message);
       console.error("Order placement failed:", error);
     }
   };
@@ -291,6 +300,15 @@ export default function CheckoutPage() {
                 </div>
               </div>
             </section>
+
+            {/* Failed order submission error - keep form data, allow retry */}
+            {orderError ? (
+              <div className="rounded-xl border border-destructive/50 bg-destructive/10 p-4 text-sm text-destructive">
+                <p className="font-medium">Order could not be placed</p>
+                <p className="mt-1 text-muted-foreground">{orderError}</p>
+                <p className="mt-2 text-muted-foreground">Check your details and try again.</p>
+              </div>
+            ) : null}
 
             {/* Place Order Button - Desktop inline */}
             <div className="hidden sm:block">

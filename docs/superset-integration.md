@@ -58,7 +58,7 @@ The ordering frontend consumes analytics endpoints from the ordering backend, wh
 
 **Install Dependencies**:
 ```bash
-npm install @superset-ui/embedded-sdk
+pnpm add @superset-ui/embedded-sdk
 # or
 pnpm add @superset-ui/embedded-sdk
 ```

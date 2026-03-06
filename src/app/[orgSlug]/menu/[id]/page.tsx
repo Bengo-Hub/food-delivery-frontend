@@ -83,6 +83,7 @@ export default function MenuItemPage() {
   };
 
   const handleAddToCart = () => {
+    if (!item) return;
     addItem({
       id: item.id,
       name: item.name,

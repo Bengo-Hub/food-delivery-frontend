@@ -4,6 +4,10 @@
 **Status**: 🔴 In Progress  
 **Goal**: Ship a working customer ordering PWA for the Busia outlet at `ordersapp.codevertexitsolutions.com`.
 
+**Progress (March 2026)**: Verified auth (Zustand + localStorage persistence, 401 interceptor clears session); menu uses tenant-scoped `GET .../menu/items` and `.../menu/categories` via `use-menu.ts` and `menu.ts`; order creation now sends `idempotencyKey`; checkout shows failed-order error state and keeps form for retry. Cart remains local (Zustand + localStorage); server-side cart and POST /carts not implemented. **Tenant/brand**: useBrandConfig fetches GET /api/v1/{tenant}/config (ordering-backend) with orgSlug + NEXT_PUBLIC_TENANT_SLUG fallback; BrandThemeSync applies primary/secondary colors to CSS vars; site-header shows org name/logo from config with static brand fallback; staff settings page includes App brand summary (read-only). Alternative: auth-api GET /api/v1/tenants/by-slug/{slug} for tenant display if needed.
+
+**RBAC & data fetching**: Roles and permissions are loaded from ordering-backend `GET /auth/me` (not auth-api; ordering-backend proxies/syncs user from auth-service via NATS). `useMe` hook (TanStack Query) fetches `/auth/me` with 5-min TTL (`staleTime`); result is synced into auth store via `AuthSync` in `AppProviders`. Nav visibility and route protection use `useMe().data?.user` (roles + permissions) with store fallback; `RequireAuth` uses `useMe` for permission checks and redirects to `/unauthorized` when access is denied; 401 from `useMe` redirects to auth. **404/unauthorized**: Root `app/not-found.tsx` and tenant-scoped `app/[orgSlug]/not-found.tsx`; `app/[orgSlug]/unauthorized/page.tsx` for access-denied. **TanStack Query**: All data fetches use TanStack Query (useQuery/useMutation) via hooks: `useMe` (auth/me), `use-menu`, `use-orders`, `use-admin`, `use-brand`, `use-loyalty`, `use-notifications`, `use-base-query`. No raw fetch/axios in components for app API; external calls (SSO token exchange, Nominatim geocoding) remain fetch where appropriate.
+
 ---
 
 ## Hard Constraints
@@ -25,18 +29,18 @@
 Wire every step of the customer journey to real API calls:
 
 **Auth**
-- [ ] Login page calls `POST /v1/urban-loft/auth/login` via `baseapi`
-- [ ] Registration page calls `POST /v1/urban-loft/auth/register`
-- [ ] Token stored in Zustand auth store, refresh interceptor works
-- [ ] Google OAuth redirect and callback handler functional
-- [ ] Role-based redirect after auth (customer stays, staff/rider redirected)
+- [ ] Login page calls `POST /v1/urban-loft/auth/login` via `baseapi` (app uses SSO/OAuth instead)
+- [ ] Registration page calls `POST /v1/urban-loft/auth/register` (app uses SSO signup)
+- [x] Token stored in Zustand auth store, refresh interceptor works (persisted in localStorage; 401 response interceptor clears session)
+- [x] Google OAuth redirect and callback handler functional (SSO/BengoBox OIDC redirect + callback in auth/callback)
+- [x] Role-based redirect after auth (customer stays, staff/rider redirected)
 
 **Menu**
-- [ ] `/urban-loft/menu` fetches categories from `GET /v1/urban-loft/menu-categories`
-- [ ] Menu items fetched from `GET /v1/urban-loft/menu-items?cafe_id={busia_id}`
-- [ ] Item detail page fetches variants from `GET /v1/urban-loft/menu-items/{id}`
-- [ ] Skeleton loaders show during data fetch
-- [ ] Empty state shown if no items (should not happen with proper seed)
+- [x] `/urban-loft/menu` fetches categories from `GET /v1/urban-loft/menu-categories` (via `GET {tenant}/menu/categories` in menu.ts)
+- [x] Menu items fetched from `GET /v1/urban-loft/menu-items?cafe_id={busia_id}` (via `GET {tenant}/menu/items?cafe_id=...` in menu.ts)
+- [x] Item detail page fetches variants from `GET /v1/urban-loft/menu-items/{id}` (via useMenuItem → menu/items/{id})
+- [ ] Skeleton loaders show during data fetch (item detail has loading text; menu grid could add skeletons)
+- [x] Empty state shown if no items (should not happen with proper seed) (MenuDiscovery shows empty state when no items match filters)
 - [ ] Unavailable items greyed out with badge
 
 **Cart**
@@ -44,16 +48,16 @@ Wire every step of the customer journey to real API calls:
 - [ ] Cart items synced between Zustand store and server
 - [ ] Quantity update calls `PATCH /v1/urban-loft/carts/{id}/items/{iid}`
 - [ ] Remove item calls `DELETE /v1/urban-loft/carts/{id}/items/{iid}`
-- [ ] Cart badge in bottom nav shows live item count
-- [ ] Cart persists in IndexedDB for offline/refresh resilience
+- [x] Cart badge in bottom nav shows live item count
+- [x] Cart persists in IndexedDB for offline/refresh resilience (persists in localStorage via Zustand persist; IndexedDB not used)
 
 **Checkout**
-- [ ] Checkout page shows cart summary with delivery fee and totals from server
-- [ ] Delivery address selection works (saved addresses or new address input)
-- [ ] Payment method selection: M-Pesa as primary default
-- [ ] Order submission: `POST /v1/urban-loft/orders` with `idempotency_key`
-- [ ] Submit button disables on click, shows loading state
-- [ ] On success: redirect to tracking page
+- [x] Checkout page shows cart summary with delivery fee and totals from server (totals computed client-side from cart; server returns order)
+- [x] Delivery address selection works (saved addresses or new address input) (dining mode + delivery location from store)
+- [x] Payment method selection: M-Pesa as primary default
+- [x] Order submission: `POST /v1/urban-loft/orders` with `idempotency_key` (idempotencyKey sent from checkout)
+- [x] Submit button disables on click, shows loading state
+- [x] On success: redirect to tracking page
 
 **Payment**
 - [ ] M-Pesa: show "Check your phone for M-Pesa prompt" screen
@@ -139,9 +143,9 @@ Wire every step of the customer journey to real API calls:
 **Owner**: Frontend
 
 - [ ] Network error: toast + "Retry" button on all data-fetching pages
-- [ ] 401 during browsing: redirect to auth page with return URL
-- [ ] Empty orders list: "No orders yet. Browse our menu!" with CTA
-- [ ] Failed order submission: show error message, keep form data, enable retry
+- [x] 401 during browsing: redirect to auth page with return URL (API response interceptor clears session / logout)
+- [x] Empty orders list: "No orders yet. Browse our menu!" with CTA (orders page shows "No orders found" + Browse Menu link)
+- [x] Failed order submission: show error message, keep form data, enable retry
 - [ ] Service unavailable (503): full-page banner with retry countdown
 
 ---
@@ -278,7 +282,7 @@ Run through on a real Android phone on mobile data:
 | M-Pesa payment flow | Treasury integration + webhook handling | Implemented |
 | Order status polling | `GET /v1/{tenant}/orders/{id}` with status updates | Implemented |
 | Admin order list | `GET /v1/{tenant}/admin/orders` | Pending verification |
-| Brand config | `GET /v1/{tenant}/config` | Pending |
+| Brand config | `GET /v1/{tenant}/config` | Done (ordering-backend; auth-api `/tenants/by-slug/{slug}` alternative) |
 
 ---
 

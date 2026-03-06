@@ -17,6 +17,7 @@ import { useParams } from "next/navigation";
 
 import { RequireAuth } from "@/components/auth/require-auth";
 import { SiteShell } from "@/components/layout/site-shell";
+import { useBrandConfig } from "@/hooks/use-brand";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -70,6 +71,40 @@ interface Addon {
 
 type ActiveTab = "payments" | "notifications" | "subscription";
 
+// ── App brand summary (from GET /api/v1/{tenant}/config) ──────────────────────
+
+function AppBrandSummary() {
+  const { data } = useBrandConfig();
+  if (!data) return null;
+  return (
+    <Card className="mb-6 border-primary/20 bg-primary/5">
+      <CardContent className="flex flex-wrap items-center gap-4 py-4">
+        {data.logoUrl ? (
+          <img
+            src={data.logoUrl}
+            alt=""
+            className="h-10 w-10 rounded-full object-cover"
+          />
+        ) : null}
+        <div>
+          <p className="text-sm font-medium text-muted-foreground">App brand (read-only)</p>
+          <p className="text-lg font-bold">{data.name}</p>
+          <p className="text-xs text-muted-foreground">
+            Display name and theme colors come from tenant config. Notification branding (logo, from name) is editable in the Notifications tab.
+          </p>
+        </div>
+        {data.primaryColor ? (
+          <div
+            className="h-8 w-8 rounded-full border border-border"
+            style={{ backgroundColor: data.primaryColor }}
+            title="Primary color"
+          />
+        ) : null}
+      </CardContent>
+    </Card>
+  );
+}
+
 // ── Main Component ───────────────────────────────────────────────────────────
 
 export default function TenantSettingsPage() {
@@ -96,6 +131,8 @@ export default function TenantSettingsPage() {
               Manage payment gateways, notifications, and subscription add-ons
             </p>
           </header>
+
+          <AppBrandSummary />
 
           {/* Tabs */}
           <div className="mb-6 flex flex-wrap gap-1.5">

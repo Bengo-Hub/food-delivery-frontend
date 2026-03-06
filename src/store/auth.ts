@@ -41,6 +41,8 @@ interface AuthState {
   session: SessionTokens | null;
   user: UserProfile | null;
   orders: OrderSummary[];
+  /** Sync user/roles/permissions from GET /auth/me (e.g. from useMe query). */
+  syncFromProfile: (response: AuthResponse) => void;
   initialize: () => Promise<void>;
   redirectToSSO: (returnTo?: string) => Promise<void>;
   handleSSOCallback: (code: string, callbackUrl: string) => Promise<void>;
@@ -100,6 +102,11 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   status: "idle",
   error: null,
   orders: [],
+
+  syncFromProfile: (response) => {
+    applyAuthResponse(set, response);
+    void hydrateOrders(set);
+  },
 
   initialize: async () => {
     const { session, user } = get();

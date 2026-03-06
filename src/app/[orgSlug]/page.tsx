@@ -152,25 +152,29 @@ export default function HomePage() {
     : [];
 
   const featuredItems: FeaturedItemProps[] =
-    featuredData?.length ?
-      featuredData.map((item) => ({
-        id: item.id,
-        name: item.name,
-        description: item.description,
-        price: item.price,
-        currency: item.currency ?? "KES",
-        image: item.image,
-        outletId: item.outletId || firstCafeId,
-        outletName: item.outletName || firstCafeName,
-        category: item.category,
-        href: orgRoute(
-          orgSlug,
-          `/outlet/${item.outletId || firstCafeId}/menu/${item.id}`,
-        ),
-        ...(item.discountPercent && { discountPercent: item.discountPercent }),
-        ...(item.originalPrice && { originalPrice: item.originalPrice }),
-      }))
-    : [];
+    featuredData?.length
+      ? featuredData.map((item) => ({
+          id: item.id,
+          name: item.name,
+          description: item.description,
+          price: item.price,
+          currency: item.currency ?? "KES",
+          ...(item.image != null && item.image !== "" && { image: item.image }),
+          outletId: item.outletId || firstCafeId,
+          outletName: item.outletName || firstCafeName,
+          category: item.category,
+          href: orgRoute(
+            orgSlug,
+            `/outlet/${item.outletId || firstCafeId}/menu/${item.id}`,
+          ),
+          ...(item.discountPercent != null && {
+            discountPercent: item.discountPercent,
+          }),
+          ...(item.originalPrice != null && {
+            originalPrice: item.originalPrice,
+          }),
+        }))
+      : [];
 
   const handleFavoriteToggle = (id: string, isFavorite: boolean) => {
     setFavorites((prev) => {
