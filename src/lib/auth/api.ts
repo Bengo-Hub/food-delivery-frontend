@@ -1,10 +1,10 @@
 import { api } from "@/lib/api/base";
 import type {
-  AuthResponse,
-  OrderSummary,
-  PreferencesUpdateInput,
-  ProfileUpdateInput,
-  SecurityUpdateInput,
+    AuthResponse,
+    OrderSummary,
+    PreferencesUpdateInput,
+    ProfileUpdateInput,
+    SecurityUpdateInput,
 } from "./types";
 
 // SSO configuration
@@ -97,42 +97,64 @@ export async function exchangeCodeForTokens(params: {
 }
 
 /**
+ * Resolve tenant slug for API calls: explicit param, or from localStorage (e.g. set by OrgSlugProvider).
+ */
+function getTenantSlug(tenantSlug?: string): string | null {
+  if (tenantSlug != null && tenantSlug !== "") return tenantSlug;
+  if (typeof window !== "undefined") return localStorage.getItem("tenantSlug");
+  return null;
+}
+
+/**
  * Fetch the current user's profile from the ordering-backend.
- * This confirms the user has been synced from SSO via NATS events.
+ * Backend route is GET /api/v1/{tenant}/auth/me — tenant slug must be in path.
+ * Use tenantSlug when available (e.g. from useOrgSlug()); otherwise reads from localStorage.
  */
-export async function fetchProfile(): Promise<AuthResponse> {
-  const { data } = await api.get<AuthResponse>("auth/me");
+export async function fetchProfile(tenantSlug?: string): Promise<AuthResponse> {
+  const slug = getTenantSlug(tenantSlug);
+  if (!slug) {
+    return Promise.reject(new Error("Tenant slug required for /auth/me (set by URL or localStorage)"));
+  }
+  const { data } = await api.get<AuthResponse>(`${slug}/auth/me`);
   return data;
 }
 
 /**
- * Update user profile via ordering-backend.
+ * Update user profile via ordering-backend. Requires tenant in path.
  */
-export async function updateProfile(input: ProfileUpdateInput): Promise<AuthResponse> {
-  const { data } = await api.patch<AuthResponse>("users/profile", input);
+export async function updateProfile(input: ProfileUpdateInput, tenantSlug?: string): Promise<AuthResponse> {
+  const slug = getTenantSlug(tenantSlug);
+  if (!slug) return Promise.reject(new Error("Tenant slug required"));
+  const { data } = await api.patch<AuthResponse>(`${slug}/users/profile`, input);
   return data;
 }
 
 /**
- * Update user preferences via ordering-backend.
+ * Update user preferences via ordering-backend. Requires tenant in path.
  */
-export async function updatePreferences(input: PreferencesUpdateInput): Promise<AuthResponse> {
-  const { data } = await api.patch<AuthResponse>("users/preferences", input);
+export async function updatePreferences(input: PreferencesUpdateInput, tenantSlug?: string): Promise<AuthResponse> {
+  const slug = getTenantSlug(tenantSlug);
+  if (!slug) return Promise.reject(new Error("Tenant slug required"));
+  const { data } = await api.patch<AuthResponse>(`${slug}/users/preferences`, input);
   return data;
 }
 
 /**
- * Update security settings via ordering-backend.
+ * Update security settings via ordering-backend. Requires tenant in path.
  */
-export async function updateSecurity(input: SecurityUpdateInput): Promise<AuthResponse> {
-  const { data } = await api.post<AuthResponse>("users/security", input);
+export async function updateSecurity(input: SecurityUpdateInput, tenantSlug?: string): Promise<AuthResponse> {
+  const slug = getTenantSlug(tenantSlug);
+  if (!slug) return Promise.reject(new Error("Tenant slug required"));
+  const { data } = await api.post<AuthResponse>(`${slug}/users/security`, input);
   return data;
 }
 
 /**
- * Fetch the current user's recent order summary.
+ * Fetch the current user's recent order summary. Requires tenant in path.
  */
-export async function fetchOrderSummary(): Promise<OrderSummary[]> {
-  const { data } = await api.get<OrderSummary[]>("customers/orders/summary");
+export async function fetchOrderSummary(tenantSlug?: string): Promise<OrderSummary[]> {
+  const slug = getTenantSlug(tenantSlug);
+  if (!slug) return Promise.reject(new Error("Tenant slug required"));
+  const { data } = await api.get<OrderSummary[]>(`${slug}/customers/orders/summary`);
   return data;
 }

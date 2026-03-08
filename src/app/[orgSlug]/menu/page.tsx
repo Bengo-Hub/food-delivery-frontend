@@ -1,11 +1,11 @@
 import Link from "next/link";
 
 import {
-  ArrowLeftRight,
-  ClockIcon,
-  MapPinIcon,
-  ShoppingCartIcon,
-  SparklesIcon,
+    ArrowLeftRight,
+    ClockIcon,
+    MapPinIcon,
+    ShoppingCartIcon,
+    SparklesIcon,
 } from "lucide-react";
 
 import { SiteShell } from "@/components/layout/site-shell";
@@ -14,7 +14,12 @@ import { MenuDiscovery } from "@/components/menu/menu-discovery";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 
-export default function MenuPage() {
+type MenuPageProps = {
+  searchParams: Promise<{ category?: string; outlet?: string; search?: string; dietary?: string }>;
+};
+
+export default async function MenuPage({ searchParams }: MenuPageProps) {
+  const params = await searchParams;
   return (
     <SiteShell>
       <section className="border-b border-border bg-brand-surface/60 py-6 sm:py-10 md:py-16">
@@ -67,7 +72,12 @@ export default function MenuPage() {
         </div>
       </section>
       <div id="menu-browser">
-        <MenuDiscovery />
+        <MenuDiscovery
+          initialCategory={params.category}
+          initialOutlet={params.outlet}
+          initialSearch={params.search}
+          initialDietary={params.dietary?.split(",").filter(Boolean)}
+        />
       </div>
     </SiteShell>
   );

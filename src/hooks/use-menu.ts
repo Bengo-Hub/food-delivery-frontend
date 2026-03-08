@@ -3,17 +3,17 @@
  * These hooks provide data fetching with caching, loading states, and error handling
  */
 
-import { useQuery, useInfiniteQuery, keepPreviousData } from "@tanstack/react-query";
+import { keepPreviousData, useInfiniteQuery, useQuery } from "@tanstack/react-query";
 
 import {
-  fetchMenuItems,
-  fetchMenuItem,
-  fetchFeaturedItems,
-  fetchCategories,
-  fetchCategory,
-  fetchOutlets,
-  fetchOutlet,
-  fetchOutletMenu,
+    fetchCategories,
+    fetchCategory,
+    fetchFeaturedItems,
+    fetchMenuItem,
+    fetchMenuItems,
+    fetchOutlet,
+    fetchOutletMenu,
+    fetchOutlets,
 } from "@/lib/api/menu";
 import type { MenuFilters, OutletFilters } from "@/types/menu";
 
@@ -40,6 +40,10 @@ export const outletKeys = {
     [...outletKeys.all, outletId, "menu", filters] as const,
 };
 
+// Catalog cache TTL: 5 min (plan §3)
+const CATALOG_STALE_MS = 5 * 60 * 1000;
+const CATALOG_GC_MS = CATALOG_STALE_MS * 2;
+
 // =============================================================================
 // MENU ITEMS HOOKS
 // =============================================================================
@@ -58,6 +62,8 @@ export function useMenuItems(
     queryFn: () => fetchMenuItems(tenantSlug, filters, page, limit),
     enabled: !!tenantSlug,
     placeholderData: keepPreviousData,
+    staleTime: CATALOG_STALE_MS,
+    gcTime: CATALOG_GC_MS,
   });
 }
 
@@ -78,6 +84,8 @@ export function useInfiniteMenuItems(
       return page < totalPages ? page + 1 : undefined;
     },
     enabled: !!tenantSlug,
+    staleTime: CATALOG_STALE_MS,
+    gcTime: CATALOG_GC_MS,
   });
 }
 
@@ -89,6 +97,8 @@ export function useMenuItem(tenantSlug: string, id: string) {
     queryKey: [tenantSlug, ...menuKeys.item(id)],
     queryFn: () => fetchMenuItem(tenantSlug, id),
     enabled: !!tenantSlug && !!id,
+    staleTime: CATALOG_STALE_MS,
+    gcTime: CATALOG_GC_MS,
   });
 }
 
@@ -104,6 +114,8 @@ export function useFeaturedItems(
     queryKey: [tenantSlug, ...menuKeys.featured(outletId)],
     queryFn: () => fetchFeaturedItems(tenantSlug, outletId, limit),
     enabled: !!tenantSlug,
+    staleTime: CATALOG_STALE_MS,
+    gcTime: CATALOG_GC_MS,
   });
 }
 
@@ -119,6 +131,8 @@ export function useCategories(tenantSlug: string, cafeId?: string) {
     queryKey: [tenantSlug, ...menuKeys.categoryList(cafeId)],
     queryFn: () => fetchCategories(tenantSlug, cafeId),
     enabled: !!tenantSlug,
+    staleTime: CATALOG_STALE_MS,
+    gcTime: CATALOG_GC_MS,
   });
 }
 
@@ -130,6 +144,8 @@ export function useCategory(tenantSlug: string, id: string) {
     queryKey: [tenantSlug, ...menuKeys.category(id)],
     queryFn: () => fetchCategory(tenantSlug, id),
     enabled: !!tenantSlug && !!id,
+    staleTime: CATALOG_STALE_MS,
+    gcTime: CATALOG_GC_MS,
   });
 }
 
@@ -151,6 +167,8 @@ export function useOutlets(
     queryFn: () => fetchOutlets(tenantSlug, filters, page, limit),
     enabled: !!tenantSlug,
     placeholderData: keepPreviousData,
+    staleTime: CATALOG_STALE_MS,
+    gcTime: CATALOG_GC_MS,
   });
 }
 
@@ -182,6 +200,8 @@ export function useOutlet(tenantSlug: string, id: string) {
     queryKey: [tenantSlug, ...outletKeys.detail(id)],
     queryFn: () => fetchOutlet(tenantSlug, id),
     enabled: !!tenantSlug && !!id,
+    staleTime: CATALOG_STALE_MS,
+    gcTime: CATALOG_GC_MS,
   });
 }
 
@@ -200,6 +220,8 @@ export function useOutletMenu(
     queryFn: () => fetchOutletMenu(tenantSlug, outletId, filters, page, limit),
     enabled: !!tenantSlug && !!outletId,
     placeholderData: keepPreviousData,
+    staleTime: CATALOG_STALE_MS,
+    gcTime: CATALOG_GC_MS,
   });
 }
 
@@ -222,5 +244,7 @@ export function useInfiniteOutletMenu(
       return page < totalPages ? page + 1 : undefined;
     },
     enabled: !!tenantSlug && !!outletId,
+    staleTime: CATALOG_STALE_MS,
+    gcTime: CATALOG_GC_MS,
   });
 }

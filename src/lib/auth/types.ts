@@ -77,6 +77,10 @@ export interface UserProfile {
 export interface AuthResponse {
   session: SessionTokens;
   user: UserProfile;
+  /** Tenant UUID from auth/ordering-backend; set in X-Tenant-ID and localStorage after login */
+  tenant_id?: string;
+  /** Tenant slug (e.g. urban-loft); set in localStorage for path/headers */
+  tenant_slug?: string;
 }
 
 export interface ProfileUpdateInput {

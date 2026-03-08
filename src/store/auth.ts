@@ -3,33 +3,33 @@ import { create } from "zustand";
 
 import { attachAuthTokenGetter } from "@/lib/api/base";
 import {
-  buildAuthorizeUrl,
-  buildLogoutUrl,
-  exchangeCodeForTokens,
-  fetchOrderSummary,
-  fetchProfile,
-  updatePreferences,
-  updateProfile,
-  updateSecurity,
+    buildAuthorizeUrl,
+    buildLogoutUrl,
+    exchangeCodeForTokens,
+    fetchOrderSummary,
+    fetchProfile,
+    updatePreferences,
+    updateProfile,
+    updateSecurity,
 } from "@/lib/auth/api";
 import {
-  consumeState,
-  consumeVerifier,
-  generateCodeChallenge,
-  generateCodeVerifier,
-  generateState,
-  storeState,
-  storeVerifier,
+    consumeState,
+    consumeVerifier,
+    generateCodeChallenge,
+    generateCodeVerifier,
+    generateState,
+    storeState,
+    storeVerifier,
 } from "@/lib/auth/pkce";
 import { loadAuthState, persistAuthState } from "@/lib/auth/session";
 import type {
-  AuthResponse,
-  OrderSummary,
-  PreferencesUpdateInput,
-  ProfileUpdateInput,
-  SecurityUpdateInput,
-  SessionTokens,
-  UserProfile,
+    AuthResponse,
+    OrderSummary,
+    PreferencesUpdateInput,
+    ProfileUpdateInput,
+    SecurityUpdateInput,
+    SessionTokens,
+    UserProfile,
 } from "@/lib/auth/types";
 import { toast } from "@/lib/toast";
 
@@ -54,6 +54,10 @@ interface AuthState {
 }
 
 function applyAuthResponse(set: (value: Partial<AuthState>) => void, response: AuthResponse) {
+  if (typeof window !== "undefined") {
+    if (response.tenant_id) localStorage.setItem("tenantId", response.tenant_id);
+    if (response.tenant_slug) localStorage.setItem("tenantSlug", response.tenant_slug);
+  }
   const newState = {
     status: "authenticated" as const,
     session: response.session,
@@ -87,6 +91,10 @@ function extractStatus(error: unknown): number | undefined {
 }
 
 function clearSession(set: (value: Partial<AuthState>) => void) {
+  if (typeof window !== "undefined") {
+    localStorage.removeItem("tenantId");
+    // Keep tenantSlug so next login can still resolve org; optional: localStorage.removeItem("tenantSlug");
+  }
   persistAuthState({ session: null, user: null });
   set({
     status: "idle",
