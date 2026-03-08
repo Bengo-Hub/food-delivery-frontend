@@ -18,7 +18,7 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
 # Next.js bakes NEXT_PUBLIC_* at build time. Pass these in CI/deploy to avoid production calling localhost.
-ARG NEXT_PUBLIC_API_URL=https://orderapi.codevertexitsolutions.com/api/v1
+ARG NEXT_PUBLIC_API_URL=https://orderingapi.codevertexitsolutions.com/api/v1
 ARG NEXT_PUBLIC_SSO_URL=https://sso.codevertexitsolutions.com
 ARG NEXT_PUBLIC_CAFE_WEBSITE_URL=https://theurbanloftcafe.com
 ARG NEXT_PUBLIC_LOGISTICS_UI_URL=https://logistics.codevertexitsolutions.com

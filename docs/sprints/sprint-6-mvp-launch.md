@@ -15,7 +15,7 @@
 - **Tenant**: `urban-loft` only
 - **Outlet**: Busia only (Kiambu mock data must not appear)
 - **Platform**: Mobile-first PWA, must work on Chrome Android and Safari iOS
-- **Backend**: `orderapi.codevertexitsolutions.com` (Go, see backend Sprint 9)
+- **Backend**: `orderingapi.codevertexitsolutions.com` (Go, see backend Sprint 9)
 
 ---
 

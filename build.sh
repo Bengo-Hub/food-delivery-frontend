@@ -75,7 +75,7 @@ trivy fs . --exit-code "$TRIVY_ECODE" --format table || true
 log_info "Building Docker image (with production API URLs for Next.js build-time env)"
 # NEXT_PUBLIC_* are baked at build time; without these the app would call localhost and cause CORS/network errors in production.
 DOCKER_BUILDKIT=1 docker build . -t "${IMAGE_REPO}:${GIT_COMMIT_ID}" \
-  --build-arg NEXT_PUBLIC_API_URL="${NEXT_PUBLIC_API_URL:-https://orderapi.codevertexitsolutions.com/api/v1}" \
+  --build-arg NEXT_PUBLIC_API_URL="${NEXT_PUBLIC_API_URL:-https://orderingapi.codevertexitsolutions.com/api/v1}" \
   --build-arg NEXT_PUBLIC_SSO_URL="${NEXT_PUBLIC_SSO_URL:-https://sso.codevertexitsolutions.com}" \
   --build-arg NEXT_PUBLIC_CAFE_WEBSITE_URL="${NEXT_PUBLIC_CAFE_WEBSITE_URL:-https://theurbanloftcafe.com}" \
   --build-arg NEXT_PUBLIC_LOGISTICS_UI_URL="${NEXT_PUBLIC_LOGISTICS_UI_URL:-https://logistics.codevertexitsolutions.com}" \
@@ -121,7 +121,7 @@ fi
 if ! kubectl -n "$NAMESPACE" get secret "$ENV_SECRET_NAME" >/dev/null 2>&1; then
   log_warn "Secret $ENV_SECRET_NAME not found - creating placeholder"
   kubectl -n "$NAMESPACE" create secret generic "$ENV_SECRET_NAME" \
-    --from-literal=NEXT_PUBLIC_API_URL="https://orderapi.codevertexitsolutions.com" \
+    --from-literal=NEXT_PUBLIC_API_URL="https://orderingapi.codevertexitsolutions.com" \
     --from-literal=NEXT_PUBLIC_NOTIFICATIONS_URL="https://notifications.codevertexitsolutions.com" \
     --from-literal=MAPBOX_TOKEN="set-me" \
     --from-literal=SENTRY_DSN="" || true

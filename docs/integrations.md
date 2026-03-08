@@ -8,7 +8,7 @@ How the ordering frontend (`ordersapp.codevertexitsolutions.com`) connects to ba
 
 ## Primary Backend: Ordering API
 
-**Base URL**: `https://orderapi.codevertexitsolutions.com`  
+**Base URL**: `https://orderingapi.codevertexitsolutions.com`  
 **Config**: `NEXT_PUBLIC_API_BASE_URL` environment variable  
 **Client**: Axios instance in `src/lib/baseapi.ts`
 
@@ -51,7 +51,7 @@ Mutations use `useMutation` with optimistic updates for cart operations and `onS
 The frontend does NOT call auth-service directly. All auth requests go through the ordering backend proxy:
 
 ```
-Frontend → orderapi.codevertexitsolutions.com/v1/{tenant}/auth/login
+Frontend → orderingapi.codevertexitsolutions.com/v1/{tenant}/auth/login
            → proxies to → sso.codevertexitsolutions.com/api/v1/auth/login
 ```
 
@@ -223,7 +223,7 @@ All redirects preserve `tenant_slug` in the URL and include `return_url` for nav
 
 | Variable | Example | Required | Purpose |
 |----------|---------|----------|---------|
-| `NEXT_PUBLIC_API_BASE_URL` | `https://orderapi.codevertexitsolutions.com` | Yes | Ordering backend |
+| `NEXT_PUBLIC_API_BASE_URL` | `https://orderingapi.codevertexitsolutions.com` | Yes | Ordering backend |
 | `NEXT_PUBLIC_AUTH_SERVICE_URL` | `https://sso.codevertexitsolutions.com` | Yes | OAuth redirects |
 | `NEXT_PUBLIC_LOGISTICS_UI_URL` | `https://logistics.codevertexitsolutions.com` | Yes | Rider redirects |
 | `NEXT_PUBLIC_CAFE_WEBSITE_URL` | `https://theurbanloftcafe.com` | Yes | Staff redirects |
