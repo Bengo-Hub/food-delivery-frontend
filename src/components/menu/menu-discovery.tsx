@@ -3,12 +3,12 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import {
-    ChefHatIcon,
-    FilterIcon,
-    SearchIcon,
-    ShoppingCart as ShoppingCartIcon,
-    SproutIcon,
-    WheatIcon,
+  ChefHatIcon,
+  FilterIcon,
+  SearchIcon,
+  ShoppingCart as ShoppingCartIcon,
+  SproutIcon,
+  WheatIcon,
 } from "lucide-react";
 import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -52,10 +52,10 @@ const dietaryFilterOpts: Array<{ value: DietaryTag; label: string; icon: React.R
 const MENU_PAGE_SIZE = 24;
 
 type MenuDiscoveryProps = {
-  initialCategory?: string;
-  initialOutlet?: string;
-  initialSearch?: string;
-  initialDietary?: string[];
+  initialCategory?: string | undefined;
+  initialOutlet?: string | undefined;
+  initialSearch?: string | undefined;
+  initialDietary?: string[] | undefined;
 };
 
 export function MenuDiscovery({
@@ -70,7 +70,7 @@ export function MenuDiscovery({
   const [search, setSearch] = useState(initialSearch ?? "");
   const [activeCategoryId, setActiveCategoryId] = useState<string | "all">(initialCategory ?? "all");
   const [activeOutletId, setActiveOutletId] = useState<string>(initialOutlet ?? "");
-  const [activeDietary, setActiveDietary] = useState<DietaryTag[]>(initialDietary ?? []);
+  const [activeDietary, setActiveDietary] = useState<DietaryTag[]>((initialDietary as DietaryTag[]) ?? []);
   const [page, setPage] = useState(1);
   const addItem = useCartStore((state) => state.addItem);
 
@@ -115,7 +115,7 @@ export function MenuDiscovery({
   );
 
   const updateUrl = useCallback(
-    (updates: { category?: string; outlet?: string; search?: string; dietary?: string }) => {
+    (updates: { category?: string | undefined; outlet?: string | undefined; search?: string | undefined; dietary?: string | undefined }) => {
       const p = new URLSearchParams(searchParams?.toString() ?? "");
       if (updates.category !== undefined) (updates.category && updates.category !== "all") ? p.set("category", updates.category) : p.delete("category");
       if (updates.outlet !== undefined) updates.outlet ? p.set("outlet", updates.outlet) : p.delete("outlet");
@@ -131,7 +131,7 @@ export function MenuDiscovery({
     if (initialCategory != null) setActiveCategoryId(initialCategory || "all");
     if (initialOutlet != null) setActiveOutletId(initialOutlet);
     if (initialSearch != null) setSearch(initialSearch);
-    if (initialDietary != null) setActiveDietary(initialDietary);
+    if (initialDietary != null) setActiveDietary(initialDietary as DietaryTag[]);
   }, [initialCategory, initialOutlet, initialSearch, initialDietary]);
 
   const handleAddToCart = (item: MenuItem) => {

@@ -1,13 +1,23 @@
 "use client";
 
 import Link from "next/link";
+import { useEffect, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { orgRoute } from "@/lib/routes";
-import { useOrgSlug } from "@/providers/org-slug-provider";
 
 export default function OrgNotFound() {
-  const orgSlug = useOrgSlug();
+  // Use state to get orgSlug from URL on client side only
+  const [orgSlug, setOrgSlug] = useState<string>("urban-loft");
+
+  useEffect(() => {
+    // Extract orgSlug from URL path (e.g., /urban-loft/...)
+    const pathSlug = window.location.pathname.split("/")[1];
+    if (pathSlug) {
+      setOrgSlug(pathSlug);
+    }
+  }, []);
+
   return (
     <div className="flex min-h-[60vh] flex-col items-center justify-center gap-4 px-4 text-center">
       <h1 className="text-2xl font-semibold">Page not found</h1>
