@@ -4,7 +4,7 @@
 **Status**: 🔴 In Progress  
 **Goal**: Ship a working customer ordering PWA for the Busia outlet at `ordersapp.codevertexitsolutions.com`.
 
-**Progress (March 2026)**: Verified auth (Zustand + localStorage persistence, 401 interceptor clears session); menu uses tenant-scoped `GET .../menu/items` and `.../menu/categories` via `use-menu.ts` and `menu.ts`; order creation now sends `idempotencyKey`; checkout shows failed-order error state and keeps form for retry. Cart remains local (Zustand + localStorage); server-side cart and POST /carts not implemented. **Tenant/brand**: useBrandConfig fetches GET /api/v1/{tenant}/config (ordering-backend) with orgSlug + NEXT_PUBLIC_TENANT_SLUG fallback; BrandThemeSync applies primary/secondary colors to CSS vars; site-header shows org name/logo from config with static brand fallback; staff settings page includes App brand summary (read-only). Alternative: auth-api GET /api/v1/tenants/by-slug/{slug} for tenant display if needed.
+**Progress (March 2026)**: Verified auth (Zustand + localStorage persistence, 401 interceptor clears session); menu uses tenant-scoped `GET .../menu/items` and `.../menu/categories` via `use-menu.ts` and `menu.ts`; order creation now sends `idempotencyKey`; checkout shows failed-order error state and keeps form for retry. Cart remains local (Zustand + localStorage); server-side cart and POST /carts not implemented. **E2E status**: See shared-docs/e2e-gap-analysis.md for current E2E doc refs and blocker (DNS for auth); canonical production UI domain: ordering.codevertexitsolutions.com (mvp-critical-path §9). **Tenant/brand**: useBrandConfig fetches GET /api/v1/{tenant}/config (ordering-backend) with orgSlug + NEXT_PUBLIC_TENANT_SLUG fallback; BrandThemeSync applies primary/secondary colors to CSS vars; site-header shows org name/logo from config with static brand fallback; staff settings page includes App brand summary (read-only). Alternative: auth-api GET /api/v1/tenants/by-slug/{slug} for tenant display if needed.
 
 **RBAC & data fetching**: Roles and permissions are loaded from ordering-backend `GET /auth/me` (not auth-api; ordering-backend proxies/syncs user from auth-service via NATS). `useMe` hook (TanStack Query) fetches `/auth/me` with 5-min TTL (`staleTime`); result is synced into auth store via `AuthSync` in `AppProviders`. Nav visibility and route protection use `useMe().data?.user` (roles + permissions) with store fallback; `RequireAuth` uses `useMe` for permission checks and redirects to `/unauthorized` when access is denied; 401 from `useMe` redirects to auth. **404/unauthorized**: Root `app/not-found.tsx` and tenant-scoped `app/[orgSlug]/not-found.tsx`; `app/[orgSlug]/unauthorized/page.tsx` for access-denied. **TanStack Query**: All data fetches use TanStack Query (useQuery/useMutation) via hooks: `useMe` (auth/me), `use-menu`, `use-orders`, `use-admin`, `use-brand`, `use-loyalty`, `use-notifications`, `use-base-query`. No raw fetch/axios in components for app API; external calls (SSO token exchange, Nominatim geocoding) remain fetch where appropriate.
 
@@ -60,17 +60,17 @@ Wire every step of the customer journey to real API calls:
 - [x] On success: redirect to tracking page
 
 **Payment**
-- [ ] M-Pesa: show "Check your phone for M-Pesa prompt" screen
-- [ ] Poll order status every 3 seconds for payment confirmation
-- [ ] On payment confirmed: show success animation, transition to tracking
-- [ ] On payment failed: show error with "Retry" option
-- [ ] On timeout (2 min): show "Payment taking longer than expected" with options
+- [x] M-Pesa: show "Check your phone for M-Pesa prompt" screen (AwaitingMpesaView)
+- [x] Poll order status every 3 seconds for payment confirmation
+- [x] On payment confirmed: show success, transition to tracking
+- [ ] On payment failed: show error with "Retry" option (backend-driven; track page shows status)
+- [x] On timeout (2 min): show "Payment taking longer than expected" with link to track
 
 **Tracking**
-- [ ] `/urban-loft/track/{orderId}` shows order status timeline
-- [ ] Auto-poll order status every 10 seconds
-- [ ] Display ETA when out_for_delivery
-- [ ] Show rider name/phone when assigned
+- [x] `/urban-loft/track/{orderId}` shows order status timeline
+- [x] Auto-poll order status every 10 seconds (useOrder refetchWhilePending)
+- [x] Display ETA when out_for_delivery (tracking.eta)
+- [x] Show rider name/phone when assigned
 - [ ] Map placeholder (static map with delivery pin for MVP; live tracking post-MVP)
 
 ### CP-2: Busia-Only Outlet Enforcement

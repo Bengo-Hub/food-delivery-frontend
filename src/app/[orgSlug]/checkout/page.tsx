@@ -3,12 +3,12 @@
 import { ArrowLeft, CheckCircle2, CreditCard, Loader2, MapPin, Phone, Tag } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import { SiteShell } from "@/components/layout/site-shell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { useApplyPromoCode, useCreateOrder, useInitiateMpesaPayment } from "@/hooks/use-orders";
+import { useApplyPromoCode, useCreateOrder, useInitiateMpesaPayment, useOrder } from "@/hooks/use-orders";
 import { orgRoute } from "@/lib/routes";
 import { toast } from "@/lib/toast";
 import { useOrgSlug } from "@/providers/org-slug-provider";
@@ -17,7 +17,7 @@ import { useCartStore, type CartItem } from "@/store/cart";
 import { useDiningModeStore } from "@/store/dining-mode";
 
 type PaymentMethod = "mpesa" | "cod";
-type CheckoutStep = "review" | "payment" | "processing" | "success";
+type CheckoutStep = "review" | "payment" | "processing" | "awaiting_mpesa" | "success";
 
 export default function CheckoutPage() {
   const router = useRouter();
@@ -147,8 +147,9 @@ export default function CheckoutPage() {
           orderId: order.id,
           phoneNumber: mpesaPhone.startsWith("0") ? `254${mpesaPhone.slice(1)}` : mpesaPhone,
         });
-
         toast.success("M-Pesa payment request sent! Check your phone.");
+        setStep("awaiting_mpesa");
+        return;
       }
 
       clearCart();
@@ -177,7 +178,15 @@ export default function CheckoutPage() {
           <h1 className="text-xl font-bold sm:text-2xl">Checkout</h1>
         </div>
 
-        {step === "success" ? (
+        {step === "awaiting_mpesa" && orderId ? (
+          <AwaitingMpesaView
+            orderId={orderId}
+            onPaymentConfirmed={() => {
+              clearCart();
+              setStep("success");
+            }}
+          />
+        ) : step === "success" ? (
           <SuccessView orderId={orderId!} paymentMethod={paymentMethod} />
         ) : (
           <div className="space-y-4 pb-24 sm:space-y-6 sm:pb-6">
@@ -333,7 +342,7 @@ export default function CheckoutPage() {
       </div>
 
       {/* Mobile sticky order button */}
-      {step !== "success" && items.length > 0 && (
+      {step !== "success" && step !== "awaiting_mpesa" && items.length > 0 && (
         <div className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-background p-3 safe-area-pb sm:hidden">
           <Button
             className="w-full min-h-[48px] text-base"
@@ -404,6 +413,66 @@ function PaymentOption({
   );
 }
 
+const MPESA_POLL_MS = 3_000;
+const PAYMENT_TIMEOUT_MS = 2 * 60 * 1_000;
+
+function AwaitingMpesaView({ orderId, onPaymentConfirmed }: { orderId: string; onPaymentConfirmed: () => void }) {
+  const orgSlug = useOrgSlug();
+  const { data: order } = useOrder(orderId, { refetchWhilePending: true, refetchIntervalMs: MPESA_POLL_MS });
+  const [timedOut, setTimedOut] = useState(false);
+
+  useEffect(() => {
+    const t = setTimeout(() => setTimedOut(true), PAYMENT_TIMEOUT_MS);
+    return () => clearTimeout(t);
+  }, []);
+
+  useEffect(() => {
+    if (!order) return;
+    const paid = order.paymentStatus === "paid" || order.paymentStatus === "authorized";
+    const confirmed = ["confirmed", "preparing", "ready", "picked_up", "enroute", "delivered", "completed"].includes(order.status ?? "");
+    if (paid || confirmed) onPaymentConfirmed();
+  }, [order, onPaymentConfirmed]);
+
+  if (timedOut) {
+    return (
+      <div className="flex flex-col items-center gap-6 py-12 text-center">
+        <div className="flex size-20 items-center justify-center rounded-full bg-amber-100 dark:bg-amber-900/30">
+          <Phone className="size-10 text-amber-600" />
+        </div>
+        <div>
+          <h2 className="text-xl font-bold">Payment taking longer than expected</h2>
+          <p className="mt-2 text-sm text-muted-foreground">
+            You can track your order below. If you completed M-Pesa on your phone, the order will update shortly.
+          </p>
+        </div>
+        <div className="space-y-3 w-full max-w-xs">
+          <Button asChild className="w-full">
+            <Link href={orgRoute(orgSlug, `/track/${orderId}`)}>Track Your Order</Link>
+          </Button>
+          <Button variant="outline" asChild className="w-full">
+            <Link href={orgRoute(orgSlug, "/menu")}>Back to Menu</Link>
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex flex-col items-center gap-6 py-12 text-center">
+      <div className="flex size-20 items-center justify-center rounded-full bg-primary/10">
+        <Loader2 className="size-10 animate-spin text-primary" />
+      </div>
+      <div>
+        <h2 className="text-xl font-bold">Check your phone</h2>
+        <p className="mt-2 text-muted-foreground">
+          Complete the M-Pesa prompt on your phone to confirm payment. This page will update automatically.
+        </p>
+      </div>
+      <p className="text-xs text-muted-foreground">Polling for confirmation every few seconds…</p>
+    </div>
+  );
+}
+
 function SuccessView({ orderId, paymentMethod }: { orderId: string; paymentMethod: PaymentMethod }) {
   const orgSlug = useOrgSlug();
   return (
@@ -415,7 +484,7 @@ function SuccessView({ orderId, paymentMethod }: { orderId: string; paymentMetho
         <h2 className="text-2xl font-bold">Order Placed!</h2>
         <p className="mt-2 text-muted-foreground">
           {paymentMethod === "mpesa"
-            ? "Check your phone for the M-Pesa payment prompt."
+            ? "Payment confirmed. You can track your order below."
             : "Your order has been placed. Pay on delivery."}
         </p>
       </div>

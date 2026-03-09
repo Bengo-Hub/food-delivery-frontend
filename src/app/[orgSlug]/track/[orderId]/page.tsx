@@ -52,7 +52,7 @@ export default function TrackOrderPage() {
   const orgSlug = useOrgSlug();
   const orderId = params.orderId;
 
-  const { data: order, isLoading, error } = useOrder(orderId);
+  const { data: order, isLoading, error } = useOrder(orderId, { refetchWhilePending: true });
   const { data: tracking } = useOrderTracking(orderId, !!order && order.status !== "delivered" && order.status !== "cancelled");
   const cancelOrder = useCancelOrder();
   const [showRatingDialog, setShowRatingDialog] = useState(false);

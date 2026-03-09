@@ -95,6 +95,8 @@ if (roles.includes('rider')) {
 
 **Integration**: Indirect — frontend calls ordering backend, backend calls treasury-service.
 
+**Payment workflow (invoice-first)**: Backend creates a payment intent via treasury-api with `payment_method: "pending"`, returns intent_id and details. Frontend redirects the user to the **shared treasury-ui pay page** (`/pay`) with query params (intent_id, amount, tenant, initiate_url, redirect_url, button_text). User selects gateway (Paystack, M-Pesa, COD); modals support QR and “I paid at till”. See [shared-docs/payment-workflow.md](../../../shared-docs/payment-workflow.md).
+
 ### Order creation and payment flow
 
 The frontend currently sends `POST /v1/{tenant}/orders` with body `{ outletId, items, deliveryAddress, paymentMethod }`. The ordering-backend exposes `POST /checkout` with `{ cartId, deliveryAddressId, ... }` (cart-based). Ensure backend either supports a direct create-order-from-items endpoint matching the frontend contract or frontend is updated to use cart API (`POST /cart/items`, then `POST /checkout` with `cartId`). See e2e-gap-analysis.md.
@@ -102,14 +104,13 @@ The frontend currently sends `POST /v1/{tenant}/orders` with body `{ outletId, i
 ### Payment Flow
 
 ```
-1. Frontend: POST /v1/{tenant}/orders  (with payment_method: "mpesa" or "cod")
-2. Backend: Creates order → calls treasury POST /api/v1/payments/intents (or /checkout flow)
-3. Backend: Returns { order_id, payment_status: "pending" }
-4. Backend: Treasury triggers M-Pesa STK push to customer phone
-5. Frontend: Polls GET /v1/{tenant}/orders/{id} every 3 seconds
-6. Customer: Confirms payment on phone
-7. Treasury: Sends webhook to backend → payment_status: "paid"
-8. Frontend: Poll detects status change → shows "Payment Confirmed"
+1. Frontend: POST /v1/{tenant}/orders (with payment_method: "mpesa" or "cod")
+2. Backend: Creates order → calls treasury POST /api/v1/{tenant}/payments/intents with payment_method: "pending" (invoice-only), returns intent_id + order_id
+3. Frontend: Redirects to treasury-ui /pay with intent_id, amount, tenant, initiate_url, redirect_url, button_text
+4. User selects gateway on pay page; modal POSTs to initiate_url; backend calls treasury POST .../intents/{id}/initiate (Paystack → authorization_url; M-Pesa → STK push)
+5. Frontend: For M-Pesa, polls GET /v1/{tenant}/orders/{id}; for Paystack, user returns to callback page then redirect_url
+6. Treasury: Webhook updates intent → backend updates order payment_status: "paid"
+7. Frontend: Poll or callback detects status → shows "Payment Confirmed"
 ```
 
 ### Payment Status Polling

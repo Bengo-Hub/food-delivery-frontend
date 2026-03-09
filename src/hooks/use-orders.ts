@@ -31,13 +31,24 @@ export const orderKeys = {
 
 // ─── Queries ─────────────────────────────────────────────────────────
 
-export function useOrder(orderId: string) {
+/** When refetchWhilePending, poll while order is not in a terminal state (track page: 10s; payment confirmation: 3s). */
+export function useOrder(
+  orderId: string,
+  options?: { refetchWhilePending?: boolean; refetchIntervalMs?: number },
+) {
   const slug = useOrgSlug();
+  const intervalMs = options?.refetchIntervalMs ?? 10_000;
   return useQuery({
     queryKey: orderKeys.detail(orderId),
     queryFn: () => getOrder(slug, orderId),
     enabled: !!orderId,
-    staleTime: 30_000,
+    staleTime: options?.refetchWhilePending ? 2_000 : 30_000,
+    refetchInterval: (query) => {
+      if (!options?.refetchWhilePending || !query.state.data) return false;
+      const status = (query.state.data as { status?: string }).status;
+      if (['delivered', 'completed', 'cancelled'].includes(status ?? '')) return false;
+      return intervalMs;
+    },
   });
 }
 
