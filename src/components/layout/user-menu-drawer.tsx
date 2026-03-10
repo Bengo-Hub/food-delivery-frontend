@@ -7,6 +7,7 @@ import {
   Heart,
   HelpCircle,
   Package,
+  Shield,
   Smartphone,
   Tag,
   User,
@@ -56,6 +57,9 @@ export function UserMenuDrawer({ open, onOpenChange }: UserMenuDrawerProps) {
     onOpenChange(false);
   };
 
+  const isPlatformOwner = orgSlug === 'codevertex';
+  const hasStaffAccess = user && (user as any).roles?.some((r: string) => ["staff", "admin", "superuser", "super_admin"].includes(r));
+
   const handleClose = () => {
     onOpenChange(false);
   };
@@ -74,6 +78,27 @@ export function UserMenuDrawer({ open, onOpenChange }: UserMenuDrawerProps) {
 
   // Main menu items - Uber Eats style
   const menuItems = [
+    ...(isPlatformOwner
+      ? [
+          {
+            icon: Shield,
+            label: "Platform Admin",
+            href: orgRoute(orgSlug, "/platform"),
+            description: "Global System Management",
+            highlight: true,
+          },
+        ]
+      : []),
+    ...(hasStaffAccess && !isPlatformOwner
+      ? [
+          {
+            icon: Package,
+            label: "Staff Dashboard",
+            href: orgRoute(orgSlug, "/dashboard/staff"),
+            description: "Manage orders and queue",
+          },
+        ]
+      : []),
     {
       icon: Package,
       label: "Orders",
