@@ -44,7 +44,8 @@ interface AuthState {
   /** Sync user/roles/permissions from GET /auth/me (e.g. from useMe query). */
   syncFromProfile: (response: AuthResponse) => void;
   initialize: () => Promise<void>;
-  redirectToSSO: (returnTo?: string) => Promise<void>;
+  /** @param tenant Optional tenant slug (e.g. from path orgSlug); defaults to urban-loft for token/tenant sync. */
+  redirectToSSO: (returnTo?: string, tenant?: string) => Promise<void>;
   handleSSOCallback: (code: string, callbackUrl: string) => Promise<void>;
   logout: () => Promise<void>;
   updateProfile: (input: ProfileUpdateInput) => Promise<void>;
@@ -155,7 +156,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
    * Redirect the user to the SSO authorization page.
    * Generates PKCE code verifier/challenge and stores in sessionStorage.
    */
-  redirectToSSO: async (returnTo?: string) => {
+  redirectToSSO: async (returnTo?: string, tenant?: string) => {
     set({ status: "loading", error: null });
     try {
       const verifier = generateCodeVerifier();
@@ -175,10 +176,12 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         ? `${window.location.origin}${window.location.pathname.split("/").slice(0, 2).join("/")}/auth/callback`
         : "";
 
+      // Pass tenant so auth-api can mint token for that org; default urban-loft per plan.
       const authorizeUrl = buildAuthorizeUrl({
         codeChallenge: challenge,
         state,
         redirectUri: callbackUrl,
+        tenant: tenant ?? "urban-loft",
       });
 
       if (typeof window !== "undefined") {

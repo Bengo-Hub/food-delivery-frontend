@@ -17,7 +17,7 @@ log_error()   { echo -e "${RED}[ERROR]${NC} $1"; }
 
 APP_NAME=${APP_NAME:-"ordering-frontend"}
 NAMESPACE=${NAMESPACE:-"food-delivery"}
-ENV_SECRET_NAME=${ENV_SECRET_NAME:-"ordering-frontend-env"}
+ENV_SECRET_NAME=${ENV_SECRET_NAME:-"ordering-frontend-secrets"}
 DEPLOY=${DEPLOY:-true}
 SETUP_DATABASES=${SETUP_DATABASES:-false}
 
@@ -117,14 +117,13 @@ if [[ -n ${REGISTRY_USERNAME:-} && -n ${REGISTRY_PASSWORD:-} ]]; then
     --dry-run=client -o yaml | kubectl apply -f - || log_warn "registry secret creation failed"
 fi
 
-# Ensure basic env secret exists
+# Ensure env secret exists (values expect ordering-frontend-secrets with mapboxToken, sentryDsn)
 if ! kubectl -n "$NAMESPACE" get secret "$ENV_SECRET_NAME" >/dev/null 2>&1; then
   log_warn "Secret $ENV_SECRET_NAME not found - creating placeholder"
   kubectl -n "$NAMESPACE" create secret generic "$ENV_SECRET_NAME" \
-    --from-literal=NEXT_PUBLIC_API_URL="https://orderingapi.codevertexitsolutions.com" \
-    --from-literal=NEXT_PUBLIC_NOTIFICATIONS_URL="https://notifications.codevertexitsolutions.com" \
-    --from-literal=MAPBOX_TOKEN="set-me" \
-    --from-literal=SENTRY_DSN="" || true
+    --from-literal=mapboxToken="${MAPBOX_TOKEN:-}" \
+    --from-literal=sentryDsn="${SENTRY_DSN:-}" \
+    --dry-run=client -o yaml | kubectl apply -f - || true
 fi
 
 # Clone devops-k8s repo (needed for helm values update)
@@ -135,8 +134,9 @@ if [[ ! -d "$DEVOPS_DIR" ]]; then
   git clone "$CLONE_URL" "$DEVOPS_DIR" || log_warn "Unable to clone devops repo for helm values update"
 fi
 
-# Update Helm values using centralized script
-source "${HOME}/devops-k8s/scripts/helm/update-values.sh" 2>/dev/null || {
+# Update Helm values using centralized script (prefer DEVOPS_DIR from clone)
+[[ -d "$DEVOPS_DIR" ]] || DEVOPS_DIR="$HOME/devops-k8s"
+source "${DEVOPS_DIR}/scripts/helm/update-values.sh" 2>/dev/null || {
   log_warn "Centralized helm update script not available"
 }
 if declare -f update_helm_values >/dev/null 2>&1; then

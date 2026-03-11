@@ -6,21 +6,23 @@ import { Loader2 } from "lucide-react";
 
 import { SiteShell } from "@/components/layout/site-shell";
 import { useAuthStore } from "@/store/auth";
-import { useSearchParams } from "next/navigation";
+import { useParams, useSearchParams } from "next/navigation";
 
 /**
  * Auth page: no standalone form. Immediately redirects to SSO (OIDC + PKCE).
  * All login entry points should land here or trigger redirectToSSO(); this page
- * just redirects with optional returnTo from query.
+ * just redirects with optional returnTo from query. Passes org slug as tenant for token/tenant sync.
  */
 function AuthPageContent() {
+  const params = useParams();
   const searchParams = useSearchParams();
   const redirectToSSO = useAuthStore((s) => s.redirectToSSO);
+  const orgSlug = params?.orgSlug as string | undefined;
 
   useEffect(() => {
     const returnTo = searchParams?.get("redirectTo") ?? undefined;
-    redirectToSSO(returnTo);
-  }, [redirectToSSO, searchParams]);
+    redirectToSSO(returnTo, orgSlug);
+  }, [redirectToSSO, searchParams, orgSlug]);
 
   return (
     <SiteShell>
