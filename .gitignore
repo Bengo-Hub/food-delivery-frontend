@@ -32,3 +32,18 @@ coverage/
 
 # Misc
 *.tsbuildinfo
+
+# MCP
+mcp.json
+/playwright-report/
+/test-results/
+/coverage/
+/cypress/
+/cypress/videos/
+/cypress/screenshots/
+/cypress/downloads/
+/cypress/logs/
+/cypress/reports/
+/cypress/fixtures/
+/cypress/plugins/
+/cypress/support/
