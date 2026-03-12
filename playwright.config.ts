@@ -21,6 +21,7 @@ export default defineConfig({
     baseURL: process.env.BASE_URL
       ? `${process.env.BASE_URL}/${defaultOrgSlug}`
       : `https://ordersapp.codevertexitsolutions.com/${defaultOrgSlug}`,
+    headless: process.env.CI === 'true',
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
     video: 'on-first-retry',

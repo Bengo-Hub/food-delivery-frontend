@@ -66,6 +66,8 @@ pnpm test:e2e -- ordering-authenticated-requests
 
 After deploying the ordering-backend router fix, re-run the test; if 401 persists, check backend logs for "invalid token" vs "user not found" (JIT) and ensure `AUTH_ISSUER` / `AUTH_JWKS_URL` match auth-api and the demo user/tenant exist in ordering DB.
 
+**Auth-ui redirect fix (service-originated login):** For the test to reach the ordering callback after login, auth-ui must do a **full page redirect** to the sso authorize URL (not `router.push`), so the session cookie is sent to sso and the redirect loop is avoided. This is implemented in auth-ui `LoginForm.tsx` (when `return_to` is absolute and valid, `window.location.href = returnTo`) and `utils.ts` (SSO issuer allowed in `isValidReturnUrl`). Deploy auth-ui with these changes for the "login from ordering" flow to work in production.
+
 ## 401 causes (reference)
 
 If this test fails with 401 on `/auth/me`:
