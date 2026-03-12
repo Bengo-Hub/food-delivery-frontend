@@ -7,6 +7,7 @@ import { useEffect, useMemo, useState } from "react";
 
 import {
     ChevronDown,
+    LayoutDashboard,
     LogIn,
     LogOut,
     MapPin,
@@ -370,6 +371,12 @@ export function SiteHeader({ onMenuClick }: SiteHeaderProps) {
           {/* Auth Buttons */}
           {user ? (
             <div className="hidden items-center gap-1 sm:flex">
+              <Button variant="ghost" size="sm" asChild>
+                <Link href={orgRoute(orgSlug, "/dashboard/customer")}>
+                  <LayoutDashboard className="size-4" />
+                  <span className="hidden lg:inline">Dashboard</span>
+                </Link>
+              </Button>
               <Button variant="ghost" size="sm" asChild>
                 <Link href={orgRoute(orgSlug, "/profile")}>
                   <UserIcon className="size-4" />

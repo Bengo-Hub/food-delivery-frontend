@@ -23,15 +23,14 @@ function AuthCallbackContent() {
   const error = useAuthStore((s) => s.error);
   const hasStarted = useRef(false);
 
-  // Step 1: Exchange code for tokens and sync user
+  // Step 1: Exchange code for tokens and sync user (pass orgSlug so fetchProfile has tenant)
   useEffect(() => {
     if (oauthError || !code || hasStarted.current) return;
     hasStarted.current = true;
 
-    // Build the callback URL that matches what was sent to the authorize endpoint
     const callbackUrl = `${window.location.origin}${window.location.pathname}`;
-    void handleSSOCallback(code, callbackUrl);
-  }, [code, oauthError, handleSSOCallback]);
+    void handleSSOCallback(code, callbackUrl, orgSlug);
+  }, [code, oauthError, handleSSOCallback, orgSlug]);
 
   // Step 2: Once synced and authenticated, redirect to the right destination
   useEffect(() => {
@@ -58,10 +57,14 @@ function AuthCallbackContent() {
         return;
       }
 
-      // Default: customer dashboard
-      const returnTo = typeof window !== "undefined"
+      // Prefer dashboard over landing so navbar shows authenticated state
+      let returnTo = typeof window !== "undefined"
         ? sessionStorage.getItem("sso_return_to") ?? orgRoute(orgSlug, "/dashboard/customer")
         : orgRoute(orgSlug, "/dashboard/customer");
+      const landingPath = orgRoute(orgSlug, "/");
+      if (returnTo === landingPath || returnTo === `/${orgSlug}` || returnTo === `/${orgSlug}/`) {
+        returnTo = orgRoute(orgSlug, "/dashboard/customer");
+      }
       sessionStorage.removeItem("sso_return_to");
       router.replace(returnTo);
     }, 1500);

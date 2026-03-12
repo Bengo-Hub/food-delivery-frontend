@@ -46,7 +46,7 @@ interface AuthState {
   initialize: () => Promise<void>;
   /** @param tenant Optional tenant slug (e.g. from path orgSlug); defaults to urban-loft for token/tenant sync. */
   redirectToSSO: (returnTo?: string, tenant?: string) => Promise<void>;
-  handleSSOCallback: (code: string, callbackUrl: string) => Promise<void>;
+  handleSSOCallback: (code: string, callbackUrl: string, tenantSlug?: string) => Promise<void>;
   logout: () => Promise<void>;
   updateProfile: (input: ProfileUpdateInput) => Promise<void>;
   updatePreferences: (input: PreferencesUpdateInput) => Promise<void>;
@@ -106,11 +106,14 @@ function clearSession(set: (value: Partial<AuthState>) => void) {
   });
 }
 
+function getInitialAuthState(): Pick<AuthState, "session" | "user" | "status" | "error" | "orders"> {
+  const loaded = loadAuthState();
+  const status = loaded.session && loaded.user ? "authenticated" : "idle";
+  return { ...loaded, status, error: null, orders: [] };
+}
+
 export const useAuthStore = create<AuthState>((set, get) => ({
-  ...loadAuthState(),
-  status: "idle",
-  error: null,
-  orders: [],
+  ...getInitialAuthState(),
 
   syncFromProfile: (response) => {
     applyAuthResponse(set, response);
@@ -196,8 +199,9 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
   /**
    * Handle the SSO callback: exchange auth code for tokens, then sync user.
+   * @param tenantSlug Optional tenant slug (e.g. from path); required so fetchProfile can call GET /api/v1/{tenant}/auth/me.
    */
-  handleSSOCallback: async (code: string, callbackUrl: string) => {
+  handleSSOCallback: async (code: string, callbackUrl: string, tenantSlug?: string) => {
     set({ status: "syncing", error: null });
 
     const verifier = consumeVerifier();
@@ -206,6 +210,10 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     if (!verifier) {
       set({ status: "error", error: "Authentication session expired. Please try again." });
       return;
+    }
+
+    if (tenantSlug && typeof window !== "undefined") {
+      window.localStorage.setItem("tenantSlug", tenantSlug);
     }
 
     try {
@@ -234,7 +242,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
       while (syncAttempts < maxAttempts) {
         try {
-          const response = await fetchProfile();
+          const response = await fetchProfile(tenantSlug ?? undefined);
           applyAuthResponse(set, {
             session: { ...session, sessionId: response.session?.sessionId ?? "" },
             user: response.user,
