@@ -2,9 +2,12 @@ import { api } from "@/lib/api/base";
 import type {
     AuthResponse,
     OrderSummary,
+    Permission,
     PreferencesUpdateInput,
     ProfileUpdateInput,
     SecurityUpdateInput,
+    UserProfile,
+    UserRole,
 } from "./types";
 
 // SSO configuration
@@ -117,6 +120,68 @@ export async function fetchProfile(tenantSlug?: string): Promise<AuthResponse> {
   }
   const { data } = await api.get<AuthResponse>(`${slug}/auth/me`);
   return data;
+}
+
+/** SSO /me response shape (auth-api GET /api/v1/auth/me). */
+interface SSOMeResponse {
+  id: string;
+  email: string;
+  profile?: Record<string, unknown>;
+  roles?: string[];
+  permissions?: string[];
+  tenant_id?: string;
+  tenant_slug?: string;
+  tenant?: { id: string; name: string; slug: string };
+}
+
+/**
+ * Fetch user profile from SSO when ordering-backend /auth/me is not ready (e.g. user not yet synced).
+ * Caller must pass the access token; response is mapped to AuthResponse so the UI can show authenticated state.
+ */
+export async function fetchProfileFromSSO(accessToken: string): Promise<AuthResponse> {
+  const res = await fetch(`${SSO_BASE_URL}/api/v1/auth/me`, {
+    headers: { Authorization: `Bearer ${accessToken}` },
+  });
+  if (!res.ok) {
+    throw new Error(res.status === 401 ? "Unauthorized" : "SSO /me failed");
+  }
+  const raw = (await res.json()) as SSOMeResponse;
+  const profile = (raw.profile ?? {}) as Record<string, unknown>;
+  const name = (profile.name as string) ?? (profile.full_name as string) ?? "";
+  const tenantSlug = raw.tenant_slug ?? raw.tenant?.slug;
+  const out: AuthResponse = {
+    session: {
+      accessToken,
+      refreshToken: "",
+      expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+      sessionId: "",
+    },
+    user: {
+      id: raw.id,
+      email: raw.email,
+      fullName: name || raw.email,
+      phone: (profile.phone as string) ?? null,
+      roles: (raw.roles ?? []) as UserRole[],
+      permissions: (raw.permissions ?? []) as Permission[],
+      avatarUrl: (profile.avatar_url as string) ?? null,
+      loyaltyPoints: 0,
+      availableCoupons: 0,
+      defaultLocationLabel: null,
+      twoFactorEnabled: false,
+      backupCodesEnabled: false,
+      preferences: {
+        theme: "system",
+        notifications: { email: true, sms: false, push: false },
+        language: "en",
+      },
+      lastLoginAt: null,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    } as UserProfile,
+  };
+  if (raw.tenant_id != null) out.tenant_id = raw.tenant_id;
+  if (tenantSlug != null) out.tenant_slug = tenantSlug;
+  return out;
 }
 
 /**

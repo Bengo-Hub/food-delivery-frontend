@@ -8,6 +8,7 @@ import {
     exchangeCodeForTokens,
     fetchOrderSummary,
     fetchProfile,
+    fetchProfileFromSSO,
     updatePreferences,
     updateProfile,
     updateSecurity,
@@ -144,13 +145,29 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       if (status === 401 || status === 403) {
         clearSession(set);
         toast.error("Session expired. Please sign in again.");
-      } else {
-        // For network errors, keep cached session for offline access
-        if (user && session) {
-          set({ status: "authenticated" });
-        } else {
-          set({ status: "error", error: "Connection failed" });
+        return;
+      }
+      // Ordering /auth/me failed (e.g. 404 user not synced): try SSO /me so UI shows authenticated state
+      if (session?.accessToken) {
+        try {
+          const ssoResponse = await fetchProfileFromSSO(session.accessToken);
+          const payload: AuthResponse = {
+            session: { ...session, sessionId: ssoResponse.session?.sessionId ?? "" },
+            user: ssoResponse.user,
+          };
+          if (ssoResponse.tenant_id != null) payload.tenant_id = ssoResponse.tenant_id;
+          if (ssoResponse.tenant_slug != null) payload.tenant_slug = ssoResponse.tenant_slug;
+          applyAuthResponse(set, payload);
+          await hydrateOrders(set);
+          return;
+        } catch {
+          // fall through
         }
+      }
+      if (user && session) {
+        set({ status: "authenticated" });
+      } else {
+        set({ status: "error", error: "Connection failed" });
       }
     }
   },
@@ -262,14 +279,28 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         }
       }
 
-      // If sync didn't complete, still set authenticated with SSO tokens
-      // The user can try refreshing later
-      set({
-        status: "authenticated",
-        session,
-        error: null,
-      });
-      toast.info("Signed in. Your profile is still syncing.");
+      // Ordering-backend user not synced yet: fall back to SSO /me so the UI shows authenticated state
+      try {
+        const ssoResponse = await fetchProfileFromSSO(session.accessToken);
+        const payload: AuthResponse = {
+          session: { ...session, sessionId: ssoResponse.session?.sessionId ?? "" },
+          user: ssoResponse.user,
+        };
+        if (ssoResponse.tenant_id != null) payload.tenant_id = ssoResponse.tenant_id;
+        if (ssoResponse.tenant_slug != null) payload.tenant_slug = ssoResponse.tenant_slug;
+        applyAuthResponse(set, payload);
+        await hydrateOrders(set);
+        toast.success("Welcome back!");
+        return;
+      } catch {
+        // SSO /me also failed; still mark authenticated so user can retry or refresh
+        set({
+          status: "authenticated",
+          session,
+          error: null,
+        });
+        toast.info("Signed in. Your profile is still syncing.");
+      }
     } catch (error) {
       const message = error instanceof Error ? error.message : "Sign-in failed";
       set({ status: "error", error: message });
