@@ -101,8 +101,8 @@ const config: Config = {
         },
       },
       fontFamily: {
-        sans: ["Inter", ...defaultTheme.fontFamily.sans],
-        display: ["Cal Sans", ...defaultTheme.fontFamily.sans],
+        sans: ["var(--font-geist-sans)", ...defaultTheme.fontFamily.sans],
+        mono: ["var(--font-geist-mono)", ...defaultTheme.fontFamily.mono],
       },
       fontSize: {
         xs: [

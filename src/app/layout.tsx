@@ -1,6 +1,6 @@
 import "@/styles/globals.css";
 import type { Metadata, Viewport } from "next";
-import { Inter, Playfair_Display as PlayfairDisplay } from "next/font/google";
+import { Geist, Geist_Mono } from "next/font/google";
 import type { CSSProperties } from "react";
 
 import { Toaster } from "@/components/ui/sonner";
@@ -8,16 +8,14 @@ import { brand } from "@/config/brand";
 import { cn } from "@/lib/utils";
 import { AppProviders } from "@/providers/app-providers";
 
-const inter = Inter({
+const geistSans = Geist({
   subsets: ["latin"],
-  display: "swap",
-  variable: "--font-sans",
+  variable: "--font-geist-sans",
 });
 
-const display = PlayfairDisplay({
+const geistMono = Geist_Mono({
   subsets: ["latin"],
-  display: "swap",
-  variable: "--font-display",
+  variable: "--font-geist-mono",
 });
 
 export const metadata: Metadata = {
@@ -77,8 +75,8 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
       <body
         style={brandCssVariables as CSSProperties}
         className={cn(
-          inter.variable,
-          display.variable,
+          geistSans.variable,
+          geistMono.variable,
           "font-sans antialiased min-h-[100dvh] overflow-x-hidden",
         )}
       >
