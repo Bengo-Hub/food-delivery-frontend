@@ -44,7 +44,7 @@ export function AppProviders({ children }: PropsWithChildren) {
   }, [logout]);
 
   return (
-    <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+    <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
       <QueryClientProvider client={queryClient}>
         <TenantBrandingProvider>
           <AuthSync />

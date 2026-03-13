@@ -1,71 +1,20 @@
-"use client";
-
-import { useEffect, useState } from "react";
-
-import { LaptopIcon, MoonIcon, SunIcon } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { MoonIcon, SunIcon } from "lucide-react";
 import { useTheme } from "next-themes";
 
-import { Button } from "@/components/ui/button";
-
 export function ThemeToggle() {
-  const { theme, resolvedTheme, setTheme } = useTheme();
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => setMounted(true), []);
-
-  const current = theme === "system" ? resolvedTheme : theme;
-
-  if (!mounted) {
-    return (
-      <div
-        className="flex items-center gap-1 rounded-full border border-border bg-card/60 p-1 opacity-0"
-        aria-hidden
-      >
-        <Button type="button" size="icon" variant="ghost">
-          <SunIcon className="size-4" />
-        </Button>
-        <Button type="button" size="icon" variant="ghost">
-          <MoonIcon className="size-4" />
-        </Button>
-        <Button type="button" size="icon" variant="ghost">
-          <LaptopIcon className="size-4" />
-        </Button>
-      </div>
-    );
-  }
+  const { theme, setTheme } = useTheme();
 
   return (
-    <div className="flex items-center gap-1 rounded-full border border-border bg-card/80 p-1 shadow-sm backdrop-blur">
-      <Button
-        type="button"
-        size="icon"
-        variant={current === "light" ? "secondary" : "ghost"}
-        onClick={() => setTheme("light")}
-        aria-pressed={current === "light" ? true : undefined}
-        aria-label="Activate light theme"
-      >
-        <SunIcon className="size-4" />
-      </Button>
-      <Button
-        type="button"
-        size="icon"
-        variant={current === "dark" ? "secondary" : "ghost"}
-        onClick={() => setTheme("dark")}
-        aria-pressed={current === "dark" ? true : undefined}
-        aria-label="Activate dark theme"
-      >
-        <MoonIcon className="size-4" />
-      </Button>
-      <Button
-        type="button"
-        size="icon"
-        variant={theme === "system" ? "secondary" : "ghost"}
-        onClick={() => setTheme("system")}
-        aria-pressed={theme === "system" ? true : undefined}
-        aria-label="Follow system theme"
-      >
-        <LaptopIcon className="size-4" />
-      </Button>
-    </div>
+    <Button
+      variant="ghost"
+      size="icon"
+      onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+      className="relative w-10 h-10 rounded-xl bg-slate-100/50 dark:bg-slate-800/50 hover:bg-slate-200 dark:hover:bg-slate-700 transition-all border border-slate-200/50 dark:border-slate-800"
+    >
+      <SunIcon className="h-5 w-5 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0 text-amber-500" />
+      <MoonIcon className="absolute h-5 w-5 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100 text-blue-400" />
+      <span className="sr-only">Toggle theme</span>
+    </Button>
   );
 }

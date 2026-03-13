@@ -3,7 +3,7 @@ import withPWA from "@ducanh2912/next-pwa";
 const DEFAULT_SLUG = process.env.NEXT_PUBLIC_TENANT_SLUG || "urban-loft";
 
 const nextConfig = {
-  output: "standalone",
+  ...(process.env.SKIP_STANDALONE !== 'true' && { output: 'standalone' }),
   reactStrictMode: true,
   typescript: {
     tsconfigPath: "./tsconfig.json",
