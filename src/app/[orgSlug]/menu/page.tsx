@@ -15,7 +15,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 
 type MenuPageProps = {
-  searchParams: Promise<{ category?: string; outlet?: string; search?: string; dietary?: string }>;
+  searchParams: Promise<{ category?: string; outlet?: string; search?: string; dietary?: string; item_id?: string; action?: string }>;
 };
 
 export default async function MenuPage({ searchParams }: MenuPageProps) {
@@ -77,6 +77,8 @@ export default async function MenuPage({ searchParams }: MenuPageProps) {
           initialOutlet={params.outlet}
           initialSearch={params.search}
           initialDietary={params.dietary?.split(",").filter(Boolean)}
+          initialItemId={params.item_id}
+          initialAction={params.action}
         />
       </div>
     </SiteShell>

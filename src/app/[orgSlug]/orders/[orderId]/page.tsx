@@ -1,18 +1,18 @@
 "use client";
 
 import {
-  ArrowLeft,
-  Bike,
-  Check,
-  ChefHat,
-  Clock,
-  CreditCard,
-  Loader2,
-  MapPin,
-  Package,
-  Phone,
-  RefreshCw,
-  XCircle,
+    ArrowLeft,
+    Bike,
+    Check,
+    ChefHat,
+    Clock,
+    CreditCard,
+    Loader2,
+    MapPin,
+    Package,
+    Phone,
+    RefreshCw,
+    XCircle,
 } from "lucide-react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
@@ -26,8 +26,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useCancelOrder, useOrder, useOrderTracking } from "@/hooks/use-orders";
 import { formatDateTime } from "@/lib/datetime";
 import { orgRoute } from "@/lib/routes";
-import { cn } from "@/lib/utils";
 import { toast } from "@/lib/toast";
+import { cn } from "@/lib/utils";
 import { useOrgSlug } from "@/providers/org-slug-provider";
 import { useCartStore } from "@/store/cart";
 
@@ -332,15 +332,15 @@ export default function OrderDetailPage() {
                 </Button>
 
                 {isActive && (
-                  <Button
-                    variant="outline"
-                    className="gap-2"
-                    asChild
-                  >
-                    <Link href={orgRoute(orgSlug, `/track/${order.id}`)}>
+                  <Button variant="outline" className="gap-2" asChild>
+                    <a
+                      href={`${
+                        process.env.NEXT_PUBLIC_LOGISTICS_UI_URL ?? "https://logistics.codevertexitsolutions.com"
+                      }/${orgSlug}/tracking?orderId=${encodeURIComponent(order.id)}`}
+                    >
                       <Bike className="size-4" />
                       Track Delivery
-                    </Link>
+                    </a>
                   </Button>
                 )}
 

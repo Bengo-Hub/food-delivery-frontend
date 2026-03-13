@@ -13,6 +13,8 @@ import { useAuthStore } from "@/store/auth";
 
 import type { QueryClient } from "@tanstack/react-query";
 
+import { TenantBrandingProvider } from "./branding-provider";
+
 /** Syncs GET /auth/me (useMe) result into auth store so roles/permissions stay current. */
 function AuthSync() {
   const session = useAuthStore((s) => s.session);
@@ -44,11 +46,13 @@ export function AppProviders({ children }: PropsWithChildren) {
   return (
     <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
       <QueryClientProvider client={queryClient}>
-        <AuthSync />
-        {children}
-        {showDevtools ? (
-          <ReactQueryDevtools initialIsOpen={false} buttonPosition="bottom-right" />
-        ) : null}
+        <TenantBrandingProvider>
+          <AuthSync />
+          {children}
+          {showDevtools ? (
+            <ReactQueryDevtools initialIsOpen={false} buttonPosition="bottom-right" />
+          ) : null}
+        </TenantBrandingProvider>
       </QueryClientProvider>
     </ThemeProvider>
   );

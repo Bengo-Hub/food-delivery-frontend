@@ -3,12 +3,12 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import {
-  ChefHatIcon,
-  FilterIcon,
-  SearchIcon,
-  ShoppingCart as ShoppingCartIcon,
-  SproutIcon,
-  WheatIcon,
+    ChefHatIcon,
+    FilterIcon,
+    SearchIcon,
+    ShoppingCart as ShoppingCartIcon,
+    SproutIcon,
+    WheatIcon,
 } from "lucide-react";
 import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -56,6 +56,9 @@ type MenuDiscoveryProps = {
   initialOutlet?: string | undefined;
   initialSearch?: string | undefined;
   initialDietary?: string[] | undefined;
+  /** Optional deep-link action, e.g. /menu?item_id=...&action=add-to-cart|view|whitelist */
+  initialItemId?: string | undefined;
+  initialAction?: string | undefined;
 };
 
 export function MenuDiscovery({
@@ -63,6 +66,8 @@ export function MenuDiscovery({
   initialOutlet,
   initialSearch,
   initialDietary,
+  initialItemId,
+  initialAction,
 }: MenuDiscoveryProps = {}) {
   const orgSlug = useOrgSlug();
   const router = useRouter();
@@ -144,6 +149,24 @@ export function MenuDiscovery({
     });
     toast.success(`Added ${item.name} to cart`);
   };
+
+  // Handle deep-linked item actions from /menu?item_id=&action=
+  useEffect(() => {
+    if (!initialItemId || !initialAction) return;
+    const action = initialAction as "add-to-cart" | "view" | "whitelist";
+    const target = menuItems.find((m) => m.id === initialItemId);
+    if (!target) return;
+
+    if (action === "add-to-cart") {
+      handleAddToCart(target);
+      toast.success(`Added ${target.name} to cart`);
+    } else if (action === "view") {
+      // Scroll to the item card and highlight; for now just scroll into view.
+      const el = document.querySelector<HTMLElement>(`[data-menu-item-id="${target.id}"]`);
+      el?.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+    // Whitelist action intentionally no-op here; reserved for future feature flags.
+  }, [initialItemId, initialAction, menuItems]);
 
   return (
     <section className="border-t border-border bg-card py-8 sm:py-12 md:py-16">
@@ -290,6 +313,7 @@ export function MenuDiscovery({
             menuItems.map((item) => (
               <article
                 key={item.id}
+                data-menu-item-id={item.id}
                 className="flex h-full flex-col justify-between overflow-hidden rounded-2xl border border-border bg-card shadow-sm transition hover:-translate-y-1 hover:shadow-lg sm:rounded-3xl"
               >
                 {/* Image - Fixed 240x240 */}

@@ -138,6 +138,59 @@ button:focus-visible {
   .touch-manipulation {
     touch-action: manipulation;
   }
+
+  /* Brand Utils */
+  .magical-card {
+    position: relative;
+    overflow: hidden;
+    border-radius: 1rem;
+    background-color: color-mix(in srgb, white, transparent 90%);
+    backdrop-filter: blur(12px);
+    border: 1px solid color-mix(in srgb, #ea8022, transparent 80%);
+    transition: all 0.5s ease;
+  }
+
+  .magical-card:hover {
+    border-color: color-mix(in srgb, #ea8022, transparent 50%);
+    box-shadow: 0 0 30px color-mix(in srgb, #ea8022, transparent 70%);
+  }
+
+  .electrical-border {
+    position: relative;
+  }
+
+  .electrical-border::after {
+    content: '';
+    position: absolute;
+    inset: -1px;
+    border-radius: inherit;
+    pointer-events: none;
+    background: linear-gradient(90deg, transparent, #ea8022, #ae6221, #d46c1a, transparent);
+    background-size: 200% 100%;
+    animation: wave-move 3s linear infinite;
+    mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    mask-composite: exclude;
+    z-index: 10;
+    opacity: 0.2;
+    transition: opacity 0.5s ease;
+  }
+
+  .electrical-border:hover::after {
+    opacity: 0.8;
+    animation-duration: 1.5s;
+  }
+
+  .glass-morphism {
+    backdrop-filter: blur(12px);
+    background-color: color-mix(in srgb, white, transparent 90%);
+    border: 1px solid color-mix(in srgb, #ea8022, transparent 90%);
+    transition: all 0.5s ease;
+  }
+
+  @keyframes wave-move {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+  }
 }
 
 /* Scrollbar hiding for carousels */

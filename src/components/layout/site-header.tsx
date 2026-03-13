@@ -68,9 +68,12 @@ const searchCategories: SearchCategory[] = [
 ];
 
 
+import { useTenantBranding } from "@/providers/branding-provider";
+
 export function SiteHeader({ onMenuClick }: SiteHeaderProps) {
   const orgSlug = useOrgSlug();
   const router = useRouter();
+  const { getServiceTitle, tenant } = useTenantBranding();
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [cartOpen, setCartOpen] = useState(false);
   const [locationDialogOpen, setLocationDialogOpen] = useState(false);
@@ -83,9 +86,8 @@ export function SiteHeader({ onMenuClick }: SiteHeaderProps) {
   const logout = useAuthStore((state) => state.logout);
   const cartItems = useCartStore((state) => state.items);
   const { data: outletsData } = useOutlets(orgSlug, undefined, 1, 10);
-  const { data: brandConfig } = useBrandConfig();
-  const displayName = brandConfig?.shortName ?? brand.shortName;
-  const displayLogo = brandConfig?.logoUrl ?? brand.assets.logo;
+  const displayName = getServiceTitle('OrderApp');
+  const displayLogo = tenant?.logoUrl || brand.assets.logo;
   const outlets: SearchOutlet[] = (outletsData?.data ?? []).map((o) => ({
     id: o.id,
     name: o.name,

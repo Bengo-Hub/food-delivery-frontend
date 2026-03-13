@@ -111,9 +111,11 @@ export default function CustomerDashboardPage() {
                   </div>
                 ) : (
                   orders.map((order) => (
-                    <Link
+                    <a
                       key={order.id}
-                      href={orgRoute(orgSlug, `/track/${order.id}`)}
+                      href={`${
+                        process.env.NEXT_PUBLIC_LOGISTICS_UI_URL ?? "https://logistics.codevertexitsolutions.com"
+                      }/${orgSlug}/tracking?orderId=${encodeURIComponent(order.id)}`}
                       className="flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-border bg-muted/30 px-4 py-3 text-sm transition-colors hover:bg-muted/60"
                     >
                       <div>
@@ -142,7 +144,7 @@ export default function CustomerDashboardPage() {
                       >
                         {order.status.replace(/_/g, " ")}
                       </Badge>
-                    </Link>
+                    </a>
                   ))
                 )}
               </CardContent>

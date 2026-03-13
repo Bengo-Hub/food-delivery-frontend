@@ -447,7 +447,13 @@ function AwaitingMpesaView({ orderId, onPaymentConfirmed }: { orderId: string; o
         </div>
         <div className="space-y-3 w-full max-w-xs">
           <Button asChild className="w-full">
-            <Link href={orgRoute(orgSlug, `/track/${orderId}`)}>Track Your Order</Link>
+            <a
+              href={`${
+                process.env.NEXT_PUBLIC_LOGISTICS_UI_URL ?? "https://logistics.codevertexitsolutions.com"
+              }/${orgSlug}/tracking?orderId=${encodeURIComponent(orderId)}`}
+            >
+              Track Your Order
+            </a>
           </Button>
           <Button variant="outline" asChild className="w-full">
             <Link href={orgRoute(orgSlug, "/menu")}>Back to Menu</Link>
@@ -490,7 +496,13 @@ function SuccessView({ orderId, paymentMethod }: { orderId: string; paymentMetho
       </div>
       <div className="space-y-3">
         <Button asChild className="w-full">
-          <Link href={orgRoute(orgSlug, `/track/${orderId}`)}>Track Your Order</Link>
+          <a
+            href={`${
+              process.env.NEXT_PUBLIC_LOGISTICS_UI_URL ?? "https://logistics.codevertexitsolutions.com"
+            }/${orgSlug}/tracking?orderId=${encodeURIComponent(orderId)}`}
+          >
+            Track Your Order
+          </a>
         </Button>
         <Button variant="outline" asChild className="w-full">
           <Link href={orgRoute(orgSlug, "/menu")}>Continue Browsing</Link>
