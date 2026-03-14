@@ -97,7 +97,7 @@ export interface CreateMenuItemRequest {
   name: string;
   description?: string;
   price: number;
-  imageUrl?: string;
+  imageUrl?: string | null | undefined;
   isAvailable?: boolean;
   preparationTime?: number;
   calories?: number;

@@ -111,12 +111,13 @@ export function UserMenuDrawer({ open, onOpenChange }: UserMenuDrawerProps) {
     {
       icon: HelpCircle,
       label: "Help",
-      href: "/help",
+      href: "https://ticketing.codevertexitsolutions.com",
+      external: true,
     },
     {
       icon: Car,
       label: "Get a ride",
-      href: "https://riderapp.codevertexitsolutions.com",
+      href: `https://riderapp.codevertexitsolutions.com/${orgSlug}`,
       external: true,
     },
     {
@@ -301,9 +302,9 @@ export function UserMenuDrawer({ open, onOpenChange }: UserMenuDrawerProps) {
               </Link>
             </li>
             <li>
-              <Link href={orgRoute(orgSlug, "/deliver")} onClick={handleClose} className="block px-5 py-2 text-sm font-medium text-foreground hover:underline">
+              <a href={`https://riderapp.codevertexitsolutions.com/${orgSlug}`} target="_blank" rel="noopener noreferrer" onClick={handleClose} className="block px-5 py-2 text-sm font-medium text-foreground hover:underline">
                 Sign up to deliver
-              </Link>
+              </a>
             </li>
           </ul>
 

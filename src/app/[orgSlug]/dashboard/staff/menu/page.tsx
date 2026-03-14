@@ -11,6 +11,7 @@ import {
   UtensilsCrossed,
 } from "lucide-react";
 import { useState } from "react";
+import { ImageUpload } from "@/components/ui/image-upload";
 
 import { RequireAuth } from "@/components/auth/require-auth";
 import { SiteShell } from "@/components/layout/site-shell";
@@ -29,6 +30,7 @@ import {
 import { toast } from "@/lib/toast";
 
 export default function MenuManagementPage() {
+  const [editingItem, setEditingItem] = useState<any>(null);
   const [search, setSearch] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string | undefined>();
   const [showAddItem, setShowAddItem] = useState(false);
@@ -104,6 +106,15 @@ export default function MenuManagementPage() {
             <AddItemForm
               categories={categories ?? []}
               onClose={() => setShowAddItem(false)}
+            />
+          )}
+
+          {/* Edit Item Form */}
+          {editingItem && (
+            <EditItemForm
+              item={editingItem}
+              categories={categories ?? []}
+              onClose={() => setEditingItem(null)}
             />
           )}
 
@@ -206,11 +217,12 @@ export default function MenuManagementPage() {
                             <ToggleLeft className="size-4 text-muted-foreground" />
                           )}
                         </Button>
-                        <Button
+                         <Button
                           variant="ghost"
                           size="icon"
                           className="size-8"
                           title="Edit"
+                          onClick={() => setEditingItem(item)}
                         >
                           <Edit2 className="size-3.5" />
                         </Button>
@@ -309,6 +321,7 @@ function AddItemForm({
   const [categoryId, setCategoryId] = useState(categories[0]?.id ?? "");
   const [price, setPrice] = useState("");
   const [description, setDescription] = useState("");
+  const [imageUrl, setImageUrl] = useState("");
   const createItem = useCreateMenuItem();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -319,6 +332,7 @@ function AddItemForm({
         categoryId,
         name: name.trim(),
         price: Number(price),
+        imageUrl: imageUrl || undefined,
       };
       if (description.trim()) itemPayload.description = description.trim();
       await createItem.mutateAsync(itemPayload);
@@ -332,66 +346,190 @@ function AddItemForm({
   return (
     <Card className="mb-4">
       <CardContent className="pt-4">
-        <form onSubmit={handleSubmit} className="flex flex-wrap items-end gap-3">
-          <div className="flex-1 min-w-[160px]">
-            <label className="mb-1 block text-xs font-medium text-muted-foreground">
-              Item Name
-            </label>
-            <Input
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="e.g., Grilled Chicken"
-              required
-            />
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="flex flex-wrap items-end gap-3">
+            <div className="w-40 flex-shrink-0">
+              <ImageUpload
+                label="Item Photo"
+                value={imageUrl}
+                onChange={setImageUrl}
+              />
+            </div>
+            <div className="flex-1 min-w-[200px]">
+              <label className="mb-1 block text-xs font-medium text-muted-foreground">
+                Item Name
+              </label>
+              <Input
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="e.g., Grilled Chicken"
+                required
+              />
+            </div>
+            <div className="w-40">
+              <label className="mb-1 block text-xs font-medium text-muted-foreground">
+                Category
+              </label>
+              <select
+                value={categoryId}
+                onChange={(e) => setCategoryId(e.target.value)}
+                className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm"
+                required
+              >
+                {categories.map((cat) => (
+                  <option key={cat.id} value={cat.id}>
+                    {cat.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="w-28">
+              <label className="mb-1 block text-xs font-medium text-muted-foreground">
+                Price (KES)
+              </label>
+              <Input
+                type="number"
+                min="0"
+                step="1"
+                value={price}
+                onChange={(e) => setPrice(e.target.value)}
+                placeholder="850"
+                required
+              />
+            </div>
+            <div className="flex-1 min-w-[200px]">
+              <label className="mb-1 block text-xs font-medium text-muted-foreground">
+                Description
+              </label>
+              <Input
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                placeholder="Optional"
+              />
+            </div>
+            <Button type="submit" size="sm" disabled={createItem.isPending}>
+              {createItem.isPending ? <Loader2 className="mr-1 size-3 animate-spin" /> : null}
+              Add
+            </Button>
+            <Button type="button" variant="ghost" size="sm" onClick={onClose}>
+              Cancel
+            </Button>
           </div>
-          <div className="w-40">
-            <label className="mb-1 block text-xs font-medium text-muted-foreground">
-              Category
-            </label>
-            <select
-              value={categoryId}
-              onChange={(e) => setCategoryId(e.target.value)}
-              className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm"
-              required
-            >
-              {categories.map((cat) => (
-                <option key={cat.id} value={cat.id}>
-                  {cat.name}
-                </option>
-              ))}
-            </select>
+        </form>
+      </CardContent>
+    </Card>
+  );
+}
+
+function EditItemForm({
+  item,
+  categories,
+  onClose,
+}: {
+  item: any;
+  categories: { id: string; name: string }[];
+  onClose: () => void;
+}) {
+  const [name, setName] = useState(item.name);
+  const [categoryId, setCategoryId] = useState(item.categoryId);
+  const [price, setPrice] = useState(item.price.toString());
+  const [description, setDescription] = useState(item.description || "");
+  const [imageUrl, setImageUrl] = useState(item.imageUrl || "");
+  const updateItem = useUpdateMenuItem();
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!name.trim() || !categoryId || !price) return;
+    try {
+      await updateItem.mutateAsync({
+        id: item.id,
+        data: {
+          categoryId,
+          name: name.trim(),
+          price: Number(price),
+          description: description.trim() || undefined,
+          imageUrl: imageUrl || undefined,
+        },
+      });
+      toast.success("Menu item updated");
+      onClose();
+    } catch {
+      toast.error("Failed to update menu item");
+    }
+  };
+
+  return (
+    <Card className="mb-4 border-primary/20 bg-primary/5 shadow-md">
+      <CardContent className="pt-4">
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="flex flex-wrap items-end gap-3">
+            <div className="w-40 flex-shrink-0">
+              <ImageUpload
+                label="Item Photo"
+                value={imageUrl}
+                onChange={setImageUrl}
+              />
+            </div>
+            <div className="flex-1 min-w-[200px]">
+              <label className="mb-1 block text-xs font-medium text-muted-foreground">
+                Item Name
+              </label>
+              <Input
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="e.g., Grilled Chicken"
+                required
+              />
+            </div>
+            <div className="w-40">
+              <label className="mb-1 block text-xs font-medium text-muted-foreground">
+                Category
+              </label>
+              <select
+                value={categoryId}
+                onChange={(e) => setCategoryId(e.target.value)}
+                className="flex h-9 w-full rounded-md border border-input bg-background/50 px-3 py-1 text-sm"
+                required
+              >
+                {categories.map((cat) => (
+                  <option key={cat.id} value={cat.id}>
+                    {cat.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="w-28">
+              <label className="mb-1 block text-xs font-medium text-muted-foreground">
+                Price (KES)
+              </label>
+              <Input
+                type="number"
+                min="0"
+                step="1"
+                value={price}
+                onChange={(e) => setPrice(e.target.value)}
+                placeholder="850"
+                required
+              />
+            </div>
+            <div className="flex-1 min-w-[200px]">
+              <label className="mb-1 block text-xs font-medium text-muted-foreground">
+                Description
+              </label>
+              <Input
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                placeholder="Optional"
+              />
+            </div>
+            <Button type="submit" size="sm" disabled={updateItem.isPending}>
+              {updateItem.isPending ? <Loader2 className="mr-1 size-3 animate-spin" /> : null}
+              Update
+            </Button>
+            <Button type="button" variant="ghost" size="sm" onClick={onClose}>
+              Cancel
+            </Button>
           </div>
-          <div className="w-28">
-            <label className="mb-1 block text-xs font-medium text-muted-foreground">
-              Price (KES)
-            </label>
-            <Input
-              type="number"
-              min="0"
-              step="1"
-              value={price}
-              onChange={(e) => setPrice(e.target.value)}
-              placeholder="850"
-              required
-            />
-          </div>
-          <div className="flex-1 min-w-[160px]">
-            <label className="mb-1 block text-xs font-medium text-muted-foreground">
-              Description
-            </label>
-            <Input
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder="Optional"
-            />
-          </div>
-          <Button type="submit" size="sm" disabled={createItem.isPending}>
-            {createItem.isPending ? <Loader2 className="mr-1 size-3 animate-spin" /> : null}
-            Add
-          </Button>
-          <Button type="button" variant="ghost" size="sm" onClick={onClose}>
-            Cancel
-          </Button>
         </form>
       </CardContent>
     </Card>

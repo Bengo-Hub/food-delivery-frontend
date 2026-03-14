@@ -20,6 +20,12 @@ api.interceptors.request.use((config) => {
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
+
+  // If the body is FormData, let the browser set the Content-Type with boundary
+  if (config.data instanceof FormData) {
+    delete config.headers["Content-Type"];
+  }
+
   if (typeof window !== "undefined") {
     const tenantId = localStorage.getItem("tenantId");
     if (tenantId) {
