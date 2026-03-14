@@ -1,6 +1,4 @@
-import Link from "next/link";
 
-import { brand } from "@/config/brand";
 
 const footerLinks = [
   { href: "/auth", label: "Sign in" },
@@ -25,7 +23,7 @@ export function SiteFooter() {
             <div className="text-sm font-medium text-slate-500 dark:text-slate-400 text-center md:text-left">
               All Rights Reserved. <span className="text-slate-900 dark:text-white font-bold">{tenantName}</span> &copy; {currentYear}.
             </div>
-            
+
             <div className="flex items-center gap-2">
               <a
                 href="https://codevertexitsolutions.com"
@@ -33,10 +31,10 @@ export function SiteFooter() {
                 rel="noopener noreferrer"
                 className="group flex items-center gap-2 px-4 py-1.5 rounded-full bg-slate-900 dark:bg-white text-white dark:text-slate-900 transition-all hover:ring-4 hover:ring-primary/20"
               >
-                <img 
-                  src="/images/logo/codevertex.png" 
-                  alt="Codevertex" 
-                  className="h-3.5 w-auto brightness-0 invert dark:brightness-100 dark:invert-0" 
+                <img
+                  src="/logo.png"
+                  alt="Codevertex"
+                  className="h-3.5 w-auto brightness-0 invert dark:brightness-100 dark:invert-0"
                 />
                 <span className="text-[10px] font-black tracking-tight uppercase">
                   Powered by <span className="text-primary">Codevertex IT Solutions</span>

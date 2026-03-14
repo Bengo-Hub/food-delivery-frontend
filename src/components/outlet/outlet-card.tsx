@@ -6,7 +6,8 @@ import Link from "next/link";
 import { useState } from "react";
 
 import { Badge } from "@/components/ui/badge";
-import { cn } from "@/lib/utils";
+import { cn, getMediaUrl } from "@/lib/utils";
+import { useOrgSlug } from "@/providers/org-slug-provider";
 import { useIsPickupMode } from "@/store/dining-mode";
 
 export type OutletCardProps = {
@@ -45,10 +46,11 @@ export function OutletCard({
   offerBadge,
   isFavorite: initialFavorite = false,
   onFavoriteToggle,
-  href = `/outlet/${id}`,
+  href,
   className,
   businessType,
 }: OutletCardProps) {
+  const orgSlug = useOrgSlug();
   const [isFavorite, setIsFavorite] = useState(initialFavorite);
   const isPickupMode = useIsPickupMode();
 
@@ -59,6 +61,8 @@ export function OutletCard({
     setIsFavorite(newState);
     onFavoriteToggle?.(id, newState);
   };
+
+  const outletUrl = href || `/${orgSlug}/outlet/${id}`;
 
   // Format delivery fee display
   const formatDeliveryFee = (fee: string) => {
@@ -76,7 +80,7 @@ export function OutletCard({
 
   return (
     <Link
-      href={href as any}
+      href={outletUrl as any}
       className={cn(
         "group block overflow-hidden rounded-xl bg-card transition-all hover:shadow-lg",
         className,
@@ -86,7 +90,7 @@ export function OutletCard({
       <div className="relative aspect-[16/10] overflow-hidden bg-muted">
         {image ? (
           <Image
-            src={image}
+            src={getMediaUrl(image)}
             alt={name}
             fill
             className="object-cover transition-transform duration-300 group-hover:scale-105"

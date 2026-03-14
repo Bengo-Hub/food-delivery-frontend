@@ -1,11 +1,13 @@
 "use client";
 
-import { Plus } from "lucide-react";
+import React, { useState } from "react";
+import { Heart, Plus } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 
 import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
+import { cn, getMediaUrl } from "@/lib/utils";
+import { useOrgSlug } from "@/providers/org-slug-provider";
 
 export interface FeaturedItemProps {
   id: string;
@@ -40,13 +42,22 @@ export function FeaturedItemCard({
   className,
   onAddToCart,
 }: FeaturedItemProps) {
+  const orgSlug = useOrgSlug();
+  const [isWhitelisted, setIsWhitelisted] = useState(false);
+
   const handleAddToCart = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
     onAddToCart?.(id);
   };
 
-  const itemHref = href || `/outlet/${outletId}/item/${id}`;
+  const handleWhitelist = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsWhitelisted(!isWhitelisted);
+  };
+
+  const itemHref = href || `/${orgSlug}/menu/${id}`;
 
   return (
     <Link
@@ -60,7 +71,7 @@ export function FeaturedItemCard({
       <div className="relative h-44 w-full overflow-hidden bg-muted sm:h-60">
         {image ? (
           <Image
-            src={image}
+            src={getMediaUrl(image)}
             alt={name}
             fill
             className="object-cover transition-transform duration-300 group-hover:scale-105"
@@ -80,6 +91,15 @@ export function FeaturedItemCard({
             </span>
           </div>
         )}
+
+        {/* Whitelist Toggle */}
+        <button
+          onClick={handleWhitelist}
+          className="absolute right-2 top-2 flex size-8 items-center justify-center rounded-full bg-white/90 shadow-sm transition-all hover:scale-110 sm:size-9"
+          aria-label="Add to whitelist"
+        >
+          <Heart className={cn("size-4 transition-colors", isWhitelisted ? "fill-red-500 text-red-500" : "text-muted-foreground")} />
+        </button>
 
         {/* Add to Cart Button */}
         <Button

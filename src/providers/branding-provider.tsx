@@ -1,9 +1,9 @@
 'use client';
 
 import { fetchTenantBySlug, type TenantBrand } from '@/lib/api/tenant';
-import { useOrgSlug } from './org-slug-provider';
-import { createContext, ReactNode, useContext, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { createContext, ReactNode, useContext, useMemo } from 'react';
+import { useOrgSlug } from './org-slug-provider';
 
 interface TenantBrandingContextType {
   slug: string;
@@ -16,13 +16,13 @@ interface TenantBrandingContextType {
 const TenantBrandingContext = createContext<TenantBrandingContextType | undefined>(undefined);
 
 const DEFAULT_BRAND: TenantBrand = {
-  id: 'platform',
-  name: 'Codevertex',
-  slug: 'codevertex',
-  logoUrl: '/images/logo/codevertex.png',
+  id: 'urban-loft',
+  name: 'Urban Loft Cafe',
+  slug: 'urban-loft',
+  logoUrl: '/images/logo/logo.jpg',
   primaryColor: '#5B1C4D',
   secondaryColor: '#ea8022',
-  orgName: 'Codevertex IT Solutions',
+  orgName: 'Urban-Loft',
 };
 
 export function TenantBrandingProvider({ children }: { children: ReactNode }) {
@@ -48,7 +48,7 @@ export function TenantBrandingProvider({ children }: { children: ReactNode }) {
       const primary = effectiveBrand?.primaryColor || DEFAULT_BRAND.primaryColor!;
       const secondary = effectiveBrand?.secondaryColor || DEFAULT_BRAND.secondaryColor!;
       const logo = effectiveBrand?.logoUrl || DEFAULT_BRAND.logoUrl!;
-      
+
       document.documentElement.style.setProperty('--tenant-primary', primary);
       document.documentElement.style.setProperty('--tenant-secondary', secondary);
       document.documentElement.style.setProperty('--tenant-logo-url', `url(${logo})`);

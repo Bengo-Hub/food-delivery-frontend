@@ -4,7 +4,7 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
+import { cn, getMediaUrl } from "@/lib/utils";
 
 export type Category = {
   id: string;
@@ -168,7 +168,7 @@ export function CategoryCarousel({
                   <span>{category.emoji}</span>
                 ) : category.imageUrl ? (
                   <img
-                    src={category.imageUrl}
+                    src={getMediaUrl(category.imageUrl)}
                     alt={category.name}
                     className="size-full rounded-full object-cover"
                   />
@@ -214,9 +214,9 @@ export function CategoryCarousel({
  */
 export const defaultCategories: Category[] = [
   // Food & Restaurants
-  { id: "restaurants", name: "Restaurants", emoji: "🍽️" },
+  { id: "restaurants", name: "Restaurants", emoji: "🍽️", imageUrl: "/images/promo-fresh.svg" },
   { id: "grocery", name: "Grocery", emoji: "🛒" },
-  { id: "pizza", name: "Pizza", emoji: "🍕" },
+  { id: "pizza", name: "Pizza", emoji: "🍕", imageUrl: "/images/promo-pizza.svg" },
   { id: "chicken", name: "Chicken", emoji: "🍗" },
   { id: "sushi", name: "Sushi", emoji: "🍣" },
   { id: "fast-food", name: "Fast Food", emoji: "🍟" },
@@ -224,7 +224,7 @@ export const defaultCategories: Category[] = [
   { id: "indian", name: "Indian", emoji: "🍛" },
   { id: "burgers", name: "Burgers", emoji: "🍔" },
   { id: "healthy", name: "Healthy", emoji: "🥗" },
-  { id: "breakfast", name: "Breakfast", emoji: "🥞" },
+  { id: "breakfast", name: "Breakfast", emoji: "🥞", imageUrl: "/images/promo-cake.svg" },
   { id: "desserts", name: "Desserts", emoji: "🍰" },
   { id: "coffee", name: "Coffee & Tea", emoji: "☕" },
   // Retail & Shopping

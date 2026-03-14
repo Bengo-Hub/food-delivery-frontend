@@ -59,7 +59,7 @@ const supportPhone = process.env.NEXT_PUBLIC_BRAND_SUPPORT_PHONE?.trim() || "+25
 const headquarters =
   process.env.NEXT_PUBLIC_BRAND_HQ?.trim() ||
   "Oginga Road, Pioneer House, Second Floor, Kisumu, Kenya";
-const logo = process.env.NEXT_PUBLIC_BRAND_LOGO_URL?.trim() || "/logo.jpg";
+const logo = process.env.NEXT_PUBLIC_BRAND_LOGO_URL?.trim() || "/images/logo/logo.jpg";
 
 // Brand defaults are env-configurable per tenant. Backend-managed settings planned for post-MVP.
 export const brand = {

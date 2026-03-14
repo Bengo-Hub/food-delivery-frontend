@@ -2,6 +2,7 @@
 
 import { Clock, MapPin, Tag, Zap } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 import {
@@ -103,6 +104,7 @@ function SectionHeader({
 
 export default function HomePage() {
   const orgSlug = useOrgSlug();
+  const router = useRouter();
   const [activeCategory, setActiveCategory] = useState("all");
   const [favorites, setFavorites] = useState<Set<string>>(new Set());
 
@@ -129,6 +131,7 @@ export default function HomePage() {
           id: c.id,
           name: c.name,
           ...(match?.emoji ? { emoji: match.emoji } : {}),
+          ...(c.image ? { imageUrl: c.image } : {}),
         };
       })
     : defaultCategories;
@@ -165,7 +168,7 @@ export default function HomePage() {
           category: item.category,
           href: orgRoute(
             orgSlug,
-            `/outlet/${item.outletId || firstCafeId}/menu/${item.id}`,
+            `/menu/${item.id}`,
           ),
           ...(item.discountPercent != null && {
             discountPercent: item.discountPercent,
@@ -212,7 +215,13 @@ export default function HomePage() {
           <CategoryCarousel
             categories={categories}
             activeCategory={activeCategory}
-            onCategoryChange={setActiveCategory}
+            onCategoryChange={(id) => {
+              if (id === "all") {
+                router.push(orgRoute(orgSlug, "/menu"));
+              } else {
+                router.push(orgRoute(orgSlug, `/menu?category=${id}`));
+              }
+            }}
             variant="icons"
           />
         </div>

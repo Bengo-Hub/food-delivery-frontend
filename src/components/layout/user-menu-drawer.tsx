@@ -1,26 +1,31 @@
-"use client";
-
 import {
   Car,
   CreditCard,
   ExternalLink,
+  Flower,
   Heart,
   HelpCircle,
+  Home,
   Package,
+  Pill,
   Shield,
+  ShoppingCart,
   Smartphone,
   Tag,
   User,
-  Users,
+  Wine,
   X,
+  Zap
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 
 import { Button } from "@/components/ui/button";
 import { brand } from "@/config/brand";
 import { orgRoute } from "@/lib/routes";
 import { cn } from "@/lib/utils";
+import { useTenantBranding } from "@/providers/branding-provider";
 import { useOrgSlug } from "@/providers/org-slug-provider";
 import { useAuthStore } from "@/store/auth";
 
@@ -29,28 +34,12 @@ interface UserMenuDrawerProps {
   onOpenChange: (open: boolean) => void;
 }
 
-// Custom icon component for subscription (circle with 1)
-function SubscriptionIcon({ className }: { className?: string }) {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className={className}
-    >
-      <circle cx="12" cy="12" r="10" />
-      <path d="M12 8v8M12 8l-2 2" />
-    </svg>
-  );
-}
-
 export function UserMenuDrawer({ open, onOpenChange }: UserMenuDrawerProps) {
   const orgSlug = useOrgSlug();
+  const pathname = usePathname();
   const user = useAuthStore((state) => state.user);
   const logout = useAuthStore((state) => state.logout);
+  const { tenant } = useTenantBranding();
 
   const handleLogout = () => {
     logout();
@@ -64,7 +53,6 @@ export function UserMenuDrawer({ open, onOpenChange }: UserMenuDrawerProps) {
     onOpenChange(false);
   };
 
-  // Get user display info with proper typing
   const getUserName = () => {
     if (!user) return "Guest";
     const userData = user as { fullName?: string; name?: string; email?: string };
@@ -76,72 +64,101 @@ export function UserMenuDrawer({ open, onOpenChange }: UserMenuDrawerProps) {
     return (user as { avatarUrl?: string }).avatarUrl;
   };
 
-  // Main menu items - Uber Eats style
+  // Logic to determine logo with fallback
+  const menuLogo = tenant?.logoUrl || "/images/logo/logo.jpg";
+
+  // Navigation logic from sidebar
   const menuItems = [
     ...(isPlatformOwner
       ? [
-          {
-            icon: Shield,
-            label: "Platform Admin",
-            href: orgRoute(orgSlug, "/platform"),
-            description: "Global System Management",
-            highlight: true,
-          },
-        ]
+        {
+          icon: Shield,
+          label: "Platform Admin",
+          href: "/platform",
+          highlight: true,
+        },
+      ]
       : []),
     ...(hasStaffAccess && !isPlatformOwner
       ? [
-          {
-            icon: Package,
-            label: "Staff Dashboard",
-            href: orgRoute(orgSlug, "/dashboard/staff"),
-            description: "Manage orders and queue",
-          },
-        ]
+        {
+          icon: Package,
+          label: "Staff Dashboard",
+          href: "/dashboard/staff",
+        },
+      ]
       : []),
+    {
+      icon: Home,
+      label: "Home",
+      href: "/",
+    },
     {
       icon: Package,
       label: "Orders",
-      href: orgRoute(orgSlug, "/orders"),
+      href: "/orders",
     },
     {
       icon: Heart,
       label: "Favorites",
-      href: orgRoute(orgSlug, "/favorites"),
+      href: "/favorites", // Redirect to favorites page
     },
     {
       icon: CreditCard,
       label: "Wallet",
-      href: orgRoute(orgSlug, "/wallet"),
+      href: "/wallet",
     },
     {
       icon: HelpCircle,
       label: "Help",
-      href: orgRoute(orgSlug, "/help"),
+      href: "/help",
     },
     {
       icon: Car,
       label: "Get a ride",
-      href: "https://www.uber.com",
+      href: "https://riderapp.codevertexitsolutions.com",
       external: true,
     },
     {
       icon: Tag,
       label: "Promotions",
-      href: orgRoute(orgSlug, "/promotions"),
+      href: "/promotions",
+    },
+    // Category items moved from sidebar
+    {
+      icon: ShoppingCart,
+      label: "Grocery",
+      href: "/menu?category=grocery",
     },
     {
-      icon: SubscriptionIcon,
-      label: `${brand.shortName} One`,
-      href: orgRoute(orgSlug, "/subscription"),
-      highlight: true,
-      description: "Try free for 4 weeks",
+      icon: Package,
+      label: "Convenience",
+      href: "/menu?category=convenience",
     },
     {
-      icon: Users,
-      label: "Invite friends",
-      href: orgRoute(orgSlug, "/referral"),
-      description: "You get KES 25 off",
+      icon: Wine,
+      label: "Alcohol",
+      href: "/menu?category=alcohol",
+    },
+    {
+      icon: Pill,
+      label: "Health",
+      href: "/menu?category=health",
+    },
+    {
+      icon: Package,
+      label: "Retail",
+      href: "/menu?category=retail",
+    },
+    {
+      icon: Flower,
+      label: "Flowers",
+      href: "/menu?category=flowers",
+    },
+    {
+      icon: Zap,
+      label: "Offers",
+      href: "/menu?filter=offers",
     },
   ];
 
@@ -151,64 +168,74 @@ export function UserMenuDrawer({ open, onOpenChange }: UserMenuDrawerProps) {
 
   return (
     <>
-      {/* Backdrop */}
-      <div className="fixed inset-0 z-50 bg-black/50" onClick={handleClose} aria-hidden />
+      <div className="fixed inset-0 z-[100] bg-black/50 backdrop-blur-sm transition-opacity" onClick={handleClose} aria-hidden />
 
-      {/* Drawer - Left side slide in (Uber Eats style) */}
       <div
         className={cn(
-          "fixed inset-y-0 left-0 z-50 flex w-80 max-w-[85vw] flex-col bg-background shadow-2xl",
-          "duration-300 animate-in slide-in-from-left",
+          "fixed inset-y-0 left-0 z-[101] flex w-80 max-w-[85vw] flex-col bg-background shadow-2xl transition-transform duration-300 ease-in-out",
+          "animate-in slide-in-from-left",
         )}
         role="dialog"
         aria-modal="true"
         aria-label="User menu"
       >
-        {/* Close Button */}
-        <div className="flex items-center justify-end px-4 py-3">
+        {/* Close Button & Logo */}
+        <div className="flex items-center justify-between px-4 pt-4 pb-2">
+          <div className="size-10 overflow-hidden rounded-lg">
+            <Image
+              src={menuLogo}
+              alt={tenant?.name || brand.name}
+              width={40}
+              height={40}
+              className="size-full object-cover"
+              onError={(e) => {
+                (e.target as HTMLImageElement).src = "/images/logo/logo.jpg";
+              }}
+            />
+          </div>
           <button
             type="button"
             onClick={handleClose}
-            className="inline-flex items-center justify-center rounded-md p-1 hover:bg-muted"
+            className="inline-flex items-center justify-center rounded-full p-2 hover:bg-muted"
             aria-label="Close menu"
           >
-            <X className="h-5 w-5" />
+            <X className="h-6 w-6" />
           </button>
         </div>
 
-        {/* Header - User Profile Section */}
-        <div className="px-5 py-3">
+        {/* Header - Sign in / Profile Section */}
+        <div className="px-5 py-4">
           {user ? (
             <div className="flex items-center gap-3">
-              <div className="flex size-12 shrink-0 items-center justify-center rounded-full bg-muted">
+              <div className="flex size-14 shrink-0 items-center justify-center rounded-full bg-muted overflow-hidden">
                 {avatarUrl ? (
                   <Image
                     src={avatarUrl}
                     alt="Profile"
-                    width={48}
-                    height={48}
-                    className="size-full rounded-full object-cover"
+                    width={56}
+                    height={56}
+                    className="size-full object-cover"
                   />
                 ) : (
-                  <User className="size-6 text-muted-foreground" />
+                  <User className="size-8 text-muted-foreground" />
                 )}
               </div>
               <div className="min-w-0 flex-1">
-                <h2 className="truncate text-base font-semibold text-foreground">
+                <h2 className="truncate text-lg font-bold text-foreground">
                   {getUserName()}
                 </h2>
                 <Link
                   href={orgRoute(orgSlug, "/profile")}
                   onClick={handleClose}
-                  className="text-sm text-green-600 hover:underline"
+                  className="text-sm font-medium text-brand-emphasis hover:underline"
                 >
                   Manage account
                 </Link>
               </div>
             </div>
           ) : (
-            <div className="space-y-3">
-              <Button asChild className="w-full" size="lg">
+            <div className="py-2">
+              <Button asChild className="h-14 w-full rounded-full bg-brand-emphasis text-lg font-bold text-white hover:bg-brand-emphasis/90" size="lg">
                 <Link href={orgRoute(orgSlug, "/auth")} onClick={handleClose}>
                   Sign in
                 </Link>
@@ -218,70 +245,73 @@ export function UserMenuDrawer({ open, onOpenChange }: UserMenuDrawerProps) {
         </div>
 
         {/* Menu Items */}
-        <nav className="flex-1 overflow-y-auto">
-          <ul className="space-y-0">
-            {menuItems.map((item) => {
+        <nav className="flex-1 overflow-y-auto pt-2">
+          <ul className="space-y-0.5">
+            {menuItems.map((item, idx) => {
               const Icon = item.icon;
+              const fullHref = item.external ? item.href : orgRoute(orgSlug, item.href);
+              const active = pathname === fullHref || (item.href !== '/' && pathname.startsWith(fullHref.split('?')[0]));
+
               const content = (
-                <>
-                  <Icon className="size-5 shrink-0 text-foreground" />
-                  <div className="min-w-0 flex-1">
-                    <span
-                      className={cn("text-sm font-medium", item.highlight && "text-foreground")}
-                    >
-                      {item.label}
-                    </span>
-                    {item.description && (
-                      <p
-                        className={cn(
-                          "text-xs",
-                          item.highlight ? "text-green-600" : "text-muted-foreground",
-                        )}
-                      >
-                        {item.description}
-                      </p>
-                    )}
+                <div className="flex items-center gap-5 px-5 py-3 transition-colors hover:bg-muted/50">
+                  <div className={cn(
+                    "flex size-10 shrink-0 items-center justify-center rounded-full transition-colors",
+                    active ? "bg-brand-emphasis/10 text-brand-emphasis" : "bg-transparent text-foreground"
+                  )}>
+                    <Icon className="size-6" />
                   </div>
-                  {item.external && <ExternalLink className="size-4 text-muted-foreground" />}
-                </>
+                  <span className={cn(
+                    "text-base font-semibold",
+                    active ? "text-brand-emphasis" : "text-foreground"
+                  )}>
+                    {item.label}
+                  </span>
+                  {item.external && <ExternalLink className="ml-auto size-4 text-muted-foreground" />}
+                </div>
               );
 
-              if (item.external) {
-                return (
-                  <li key={item.href}>
-                    <a
-                      href={item.href}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      onClick={handleClose}
-                      className="flex items-center gap-4 px-5 py-3.5 transition-colors hover:bg-muted"
-                    >
+              return (
+                <li key={idx}>
+                  {item.external ? (
+                    <a href={item.href} target="_blank" rel="noopener noreferrer" onClick={handleClose}>
                       {content}
                     </a>
-                  </li>
-                );
-              }
-
-              return (
-                <li key={item.href}>
-                  <Link
-                    href={item.href}
-                    onClick={handleClose}
-                    className="flex items-center gap-4 px-5 py-3.5 transition-colors hover:bg-muted"
-                  >
-                    {content}
-                  </Link>
+                  ) : (
+                    <Link href={fullHref} onClick={handleClose}>
+                      {content}
+                    </Link>
+                  )}
                 </li>
               );
             })}
           </ul>
 
-          {/* Sign Out - as text link like in image */}
+          <div className="my-4 h-px bg-border mx-5" />
+
+          {/* Footer Items */}
+          <ul className="space-y-1 py-2">
+            <li>
+              <Link href={orgRoute(orgSlug, "/business")} onClick={handleClose} className="block px-5 py-2 text-sm font-medium text-foreground hover:underline">
+                Create a business account
+              </Link>
+            </li>
+            <li>
+              <Link href={orgRoute(orgSlug, "/add-restaurant")} onClick={handleClose} className="block px-5 py-2 text-sm font-medium text-foreground hover:underline">
+                Add your restaurant
+              </Link>
+            </li>
+            <li>
+              <Link href={orgRoute(orgSlug, "/deliver")} onClick={handleClose} className="block px-5 py-2 text-sm font-medium text-foreground hover:underline">
+                Sign up to deliver
+              </Link>
+            </li>
+          </ul>
+
           {user && (
             <div className="mt-2 px-5 py-3">
               <button
                 onClick={handleLogout}
-                className="text-sm font-medium text-green-600 hover:underline"
+                className="text-sm font-bold text-brand-emphasis hover:underline"
               >
                 Sign out
               </button>
@@ -289,66 +319,41 @@ export function UserMenuDrawer({ open, onOpenChange }: UserMenuDrawerProps) {
           )}
         </nav>
 
-        {/* Footer Links */}
-        <div className="border-t border-border px-5 py-4">
-          {/* Business Links */}
-          <div className="space-y-3 text-sm">
-            <Link
-              href={orgRoute(orgSlug, "/business")}
-              onClick={handleClose}
-              className="block text-foreground hover:underline"
-            >
-              Create a business account
-            </Link>
-            <Link
-              href={orgRoute(orgSlug, "/add-restaurant")}
-              onClick={handleClose}
-              className="block text-foreground hover:underline"
-            >
-              Add your restaurant
-            </Link>
-            <Link
-              href={orgRoute(orgSlug, "/deliver")}
-              onClick={handleClose}
-              className="block text-foreground hover:underline"
-            >
-              Sign up to deliver
-            </Link>
+        {/* App Download Section */}
+        <div className="border-t border-border bg-muted/30 px-5 py-6">
+          <div className="flex items-center gap-4">
+            <div className="flex size-14 items-center justify-center rounded-2xl bg-foreground shadow-lg overflow-hidden">
+              <Image
+                src={menuLogo}
+                alt={brand.name}
+                width={48}
+                height={48}
+                className="size-full object-cover"
+                onError={(e) => {
+                  (e.target as HTMLImageElement).src = "/images/logo/logo.jpg";
+                }}
+              />
+            </div>
+            <div>
+              <p className="text-base font-bold">There&apos;s more to love</p>
+              <p className="text-sm text-muted-foreground">in the app.</p>
+            </div>
           </div>
-
-          {/* App Download Section */}
-          <div className="mt-4 border-t border-border pt-4">
-            <div className="flex items-center gap-3">
-              <div className="flex size-12 items-center justify-center rounded-lg bg-foreground">
-                <Image
-                  src={brand.assets.logo}
-                  alt={brand.name}
-                  width={32}
-                  height={32}
-                  className="size-8 rounded object-cover"
-                />
-              </div>
-              <div>
-                <p className="text-sm font-medium">There&apos;s more to love</p>
-                <p className="text-xs text-muted-foreground">in the app.</p>
-              </div>
-            </div>
-            <div className="mt-3 flex gap-2">
-              <Button variant="outline" size="sm" className="flex-1 gap-1.5" asChild>
-                <a href="#" onClick={(e) => e.preventDefault()}>
-                  <svg className="size-4" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z" />
-                  </svg>
-                  iPhone
-                </a>
-              </Button>
-              <Button variant="outline" size="sm" className="flex-1 gap-1.5" asChild>
-                <a href="#" onClick={(e) => e.preventDefault()}>
-                  <Smartphone className="size-4" />
-                  Android
-                </a>
-              </Button>
-            </div>
+          <div className="mt-5 flex gap-3">
+            <Button variant="outline" size="lg" className="flex-1 rounded-full border-border bg-background shadow-sm transition-all hover:shadow-md" asChild>
+              <a href="#" onClick={(e) => e.preventDefault()} className="gap-2">
+                <svg className="size-5" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z" />
+                </svg>
+                <span className="font-bold">iPhone</span>
+              </a>
+            </Button>
+            <Button variant="outline" size="lg" className="flex-1 rounded-full border-border bg-background shadow-sm transition-all hover:shadow-md" asChild>
+              <a href="#" onClick={(e) => e.preventDefault()} className="gap-2">
+                <Smartphone className="size-5" />
+                <span className="font-bold">Android</span>
+              </a>
+            </Button>
           </div>
         </div>
       </div>

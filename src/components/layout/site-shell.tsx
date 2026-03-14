@@ -4,7 +4,6 @@ import { cn } from "@/lib/utils";
 import { useState } from "react";
 
 import { MobileBottomNav } from "./mobile-bottom-nav";
-import { Sidebar } from "./sidebar";
 import { SiteFooter } from "./site-footer";
 import { SiteHeader } from "./site-header";
 import { UserMenuDrawer } from "./user-menu-drawer";
@@ -25,7 +24,7 @@ export function SiteShell({
   className,
   mainClassName,
   hideBottomNav,
-  hideSidebar,
+  hideSidebar: _hideSidebar,
 }: SiteShellProps) {
   const [userMenuOpen, setUserMenuOpen] = useState(false);
 
@@ -38,8 +37,6 @@ export function SiteShell({
     >
       <SiteHeader onMenuClick={() => setUserMenuOpen(true)} />
       <div className="flex flex-1">
-        {/* Static Categories Sidebar - Desktop only */}
-        {!hideSidebar && <Sidebar />}
         {/* Main Content - extra bottom padding on mobile for bottom nav */}
         <main
           className={cn(

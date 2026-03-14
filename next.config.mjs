@@ -5,6 +5,28 @@ const DEFAULT_SLUG = process.env.NEXT_PUBLIC_TENANT_SLUG || "urban-loft";
 const nextConfig = {
   ...(process.env.SKIP_STANDALONE !== 'true' && { output: 'standalone' }),
   reactStrictMode: true,
+  images: {
+    unoptimized: true,
+    remotePatterns: [
+      {
+        protocol: "http",
+        hostname: "localhost",
+        port: "4000",
+        pathname: "/media/**",
+      },
+      {
+        protocol: "http",
+        hostname: "127.0.0.1",
+        port: "4000",
+        pathname: "/media/**",
+      },
+      {
+        protocol: "https",
+        hostname: "orderingapi.codevertexitsolutions.com",
+        pathname: "/media/**",
+      },
+    ],
+  },
   typescript: {
     tsconfigPath: "./tsconfig.json",
   },

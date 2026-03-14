@@ -5,6 +5,8 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import {
     ChefHatIcon,
     FilterIcon,
+    Heart,
+    Plus,
     SearchIcon,
     ShoppingCart as ShoppingCartIcon,
     SproutIcon,
@@ -17,7 +19,8 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useCategories, useMenuItems, useOutlets } from "@/hooks/use-menu";
-import { cn } from "@/lib/utils";
+import { orgRoute } from "@/lib/routes";
+import { cn, getMediaUrl } from "@/lib/utils";
 import { useOrgSlug } from "@/providers/org-slug-provider";
 import { useCartStore } from "@/store/cart";
 import type { DietaryTag } from "@/types/menu";
@@ -36,6 +39,120 @@ type MenuItem = {
   outletId?: string;
   outletName?: string;
 };
+
+function DiscoveryMenuItem({
+  item,
+  orgSlug,
+  onAddToCart,
+}: {
+  item: MenuItem;
+  orgSlug: string;
+  onAddToCart: (item: MenuItem) => void;
+}) {
+  const router = useRouter();
+  const itemUrl = `/${orgSlug}/menu/${item.id}`;
+  const [isWhitelisted, setIsWhitelisted] = useState(false);
+
+  const toggleWhitelist = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsWhitelisted(!isWhitelisted);
+  };
+
+  return (
+    <article
+      key={item.id}
+      data-menu-item-id={item.id}
+      onClick={() => router.push(itemUrl)}
+      className="flex h-full cursor-pointer flex-col justify-between overflow-hidden rounded-2xl border border-border bg-card shadow-sm transition hover:-translate-y-1 hover:shadow-lg sm:rounded-3xl"
+    >
+      {/* Image - Fixed 240x240 */}
+      <div className="relative h-60 w-full overflow-hidden bg-muted">
+        {item.image ? (
+          <Image
+            src={getMediaUrl(item.image)}
+            alt={item.name}
+            fill
+            className="object-cover transition-transform duration-300 hover:scale-105"
+            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+          />
+        ) : (
+          <div className="flex size-full items-center justify-center bg-gradient-to-br from-muted to-muted/50">
+            <span className="text-4xl opacity-30">🍽️</span>
+          </div>
+        )}
+
+        {/* Whitelist Toggle */}
+        <button
+          onClick={toggleWhitelist}
+          className="absolute right-2 top-2 z-10 flex size-8 items-center justify-center rounded-full bg-white/90 shadow-sm transition-all hover:scale-110 sm:size-9"
+          aria-label="Add to whitelist"
+        >
+          <Heart
+            className={cn(
+              "size-4 transition-colors",
+              isWhitelisted ? "fill-red-500 text-red-500" : "text-muted-foreground",
+            )}
+          />
+        </button>
+      </div>
+
+      {/* Content */}
+      <div className="flex flex-1 flex-col p-4 sm:p-6">
+        <div className="space-y-2 sm:space-y-3">
+          <header className="flex items-start justify-between gap-2 sm:gap-3">
+            <h3 className="text-base font-semibold text-foreground sm:text-lg">
+              {item.name}
+            </h3>
+            <div className="flex shrink-0 gap-1">
+              {item.feature === "recommended" ? (
+                <span className="rounded-full bg-brand-muted px-2 py-0.5 text-[10px] font-medium text-brand-emphasis sm:px-3 sm:py-1 sm:text-xs">
+                  ⭐
+                </span>
+              ) : null}
+              {item.feature === "new" ? (
+                <span className="rounded-full bg-brand-emphasis/10 px-2 py-0.5 text-[10px] font-medium text-brand-emphasis sm:px-3 sm:py-1 sm:text-xs">
+                  New
+                </span>
+              ) : null}
+            </div>
+          </header>
+          <p className="line-clamp-2 text-xs leading-relaxed text-muted-foreground sm:text-sm">
+            {item.description}
+          </p>
+        </div>
+        <footer className="mt-4 space-y-3 sm:mt-6">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+            <span className="text-base font-semibold text-foreground sm:text-sm">
+              {item.price}
+            </span>
+            <div className="flex flex-wrap gap-1">
+              {item.dietary.slice(0, 3).map((tag) => (
+                <span
+                  key={tag}
+                  className="rounded-full bg-brand-muted px-1.5 py-0.5 text-[10px] font-medium text-brand-dark sm:px-2 sm:text-[11px]"
+                >
+                  {dietaryFilterOpts.find((f) => f.value === tag)?.label ?? tag}
+                </span>
+              ))}
+            </div>
+          </div>
+          <Button
+            onClick={(e) => {
+              e.stopPropagation();
+              onAddToCart(item);
+            }}
+            className="w-full min-h-[44px]"
+            size="sm"
+          >
+            <ShoppingCartIcon className="mr-2 size-4" />
+            Add to Cart
+          </Button>
+        </footer>
+      </div>
+    </article>
+  );
+}
 
 const dietaryFilterOpts: Array<{ value: DietaryTag; label: string; icon: React.ReactNode }> = [
   { value: "vegan", label: "Vegan", icon: <SproutIcon className="size-4" aria-hidden /> },
@@ -270,6 +387,21 @@ export function MenuDiscovery({
 
         {/* Dietary filters */}
         <div className="flex gap-2 overflow-x-auto pb-2 sm:flex-wrap sm:overflow-x-visible sm:pb-0">
+          <button
+            type="button"
+            onClick={() => {
+              router.push(orgRoute(orgSlug, "/favorites"));
+            }}
+            className={cn(
+              "inline-flex items-center gap-1 rounded-full border px-3 py-1 text-xs font-medium transition-colors",
+              initialAction === "whitelist"
+                ? "border-red-500 bg-red-50 text-red-600"
+                : "border-border text-muted-foreground hover:border-red-500 hover:text-red-600",
+            )}
+          >
+            <Heart className={cn("size-4", initialAction === "whitelist" && "fill-current")} aria-hidden />
+            <span>Favorites</span>
+          </button>
           {dietaryFilterOpts.map((filter) => {
             const isActive = activeDietary.includes(filter.value);
             return (
@@ -311,76 +443,12 @@ export function MenuDiscovery({
             </div>
           ) : (
             menuItems.map((item) => (
-              <article
+              <DiscoveryMenuItem
                 key={item.id}
-                data-menu-item-id={item.id}
-                className="flex h-full flex-col justify-between overflow-hidden rounded-2xl border border-border bg-card shadow-sm transition hover:-translate-y-1 hover:shadow-lg sm:rounded-3xl"
-              >
-                {/* Image - Fixed 240x240 */}
-                {item.image && (
-                  <div className="relative h-60 w-full overflow-hidden bg-muted">
-                    <Image
-                      src={item.image}
-                      alt={item.name}
-                      fill
-                      className="object-cover transition-transform duration-300 hover:scale-105"
-                      sizes="100vw"
-                    />
-                  </div>
-                )}
-
-                {/* Content */}
-                <div className="flex flex-1 flex-col p-4 sm:p-6">
-                  <div className="space-y-2 sm:space-y-3">
-                    <header className="flex items-start justify-between gap-2 sm:gap-3">
-                      <h3 className="text-base font-semibold text-foreground sm:text-lg">
-                        {item.name}
-                      </h3>
-                      <div className="flex shrink-0 gap-1">
-                        {item.feature === "recommended" ? (
-                          <span className="rounded-full bg-brand-muted px-2 py-0.5 text-[10px] font-medium text-brand-emphasis sm:px-3 sm:py-1 sm:text-xs">
-                            ⭐
-                          </span>
-                        ) : null}
-                        {item.feature === "new" ? (
-                          <span className="rounded-full bg-brand-emphasis/10 px-2 py-0.5 text-[10px] font-medium text-brand-emphasis sm:px-3 sm:py-1 sm:text-xs">
-                            New
-                          </span>
-                        ) : null}
-                      </div>
-                    </header>
-                    <p className="text-xs leading-relaxed text-muted-foreground sm:text-sm">
-                      {item.description}
-                    </p>
-                  </div>
-                  <footer className="mt-4 space-y-3 sm:mt-6">
-                    <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                      <span className="text-base font-semibold text-foreground sm:text-sm">
-                        {item.price}
-                      </span>
-                      <div className="flex flex-wrap gap-1">
-                        {item.dietary.slice(0, 3).map((tag) => (
-                          <span
-                            key={tag}
-                            className="rounded-full bg-brand-muted px-1.5 py-0.5 text-[10px] font-medium text-brand-dark sm:px-2 sm:text-[11px]"
-                          >
-                            {dietaryFilterOpts.find((f) => f.value === tag)?.label ?? tag}
-                          </span>
-                        ))}
-                        {item.dietary.length > 3 && (
-                          <span className="rounded-full bg-brand-muted px-1.5 py-0.5 text-[10px] font-medium text-brand-dark sm:px-2 sm:text-[11px]">
-                            +{item.dietary.length - 3}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                    <Button onClick={() => handleAddToCart(item)} className="w-full min-h-[44px]" size="sm">
-                      <ShoppingCartIcon className="mr-2 size-4" />
-                      Add to Cart
-                    </Button>
-                  </footer>
-                </div>
-              </article>
+                item={item}
+                orgSlug={orgSlug}
+                onAddToCart={handleAddToCart}
+              />
             ))
           )}
         </div>

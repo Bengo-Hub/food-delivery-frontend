@@ -47,7 +47,7 @@ export function PWAInstallPrompt() {
   // Tenant branding with fallback to static config
   const { data: brandConfig } = useBrandConfig();
   const appName = brandConfig?.shortName || brand.shortName;
-  const appLogo = brandConfig?.logoUrl || brand.assets.logo;
+  const appLogo = brandConfig?.logoUrl || brand.assets.logo || "/images/logo/logo.jpg";
 
   useEffect(() => {
     // Don't show if already installed

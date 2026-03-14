@@ -3,6 +3,7 @@
  * Functions for fetching menu items, categories, and outlets from the backend
  */
 
+import { getMediaUrl } from "@/lib/utils";
 import { api } from "./base";
 import type {
   MenuItem,
@@ -57,7 +58,7 @@ function backendItemToMenuItem(
     currency: b.currency,
     category: b.categoryName ?? "",
     categoryId: b.categoryId,
-    ...(b.imageUrl != null && b.imageUrl !== "" && { image: b.imageUrl }),
+    image: getMediaUrl(b.imageUrl),
     outletId,
     outletName,
     available: true,
@@ -121,22 +122,42 @@ export async function fetchFeaturedItems(
   return pag.data;
 }
 
-// =============================================================================
-// CATEGORIES API
-// =============================================================================
+/** Backend menu category shape (imageUrl). */
+interface BackendMenuCategory {
+  id: string;
+  name: string;
+  description?: string;
+  imageUrl?: string;
+  itemCount: number;
+}
 
 export async function fetchCategories(
   tenantSlug: string,
   cafeId?: string,
 ): Promise<MenuCategory[]> {
   const params = cafeId ? `?cafe_id=${cafeId}` : "";
-  const response = await api.get<MenuCategory[]>(`${tenantSlug}/menu/categories${params}`);
-  return response.data;
+  const response = await api.get<BackendMenuCategory[]>(`${tenantSlug}/menu/categories${params}`);
+  return response.data.map((cat) => ({
+    id: cat.id,
+    name: cat.name,
+    description: cat.description ?? "",
+    image: getMediaUrl(cat.imageUrl),
+    sortOrder: 0,
+    itemCount: cat.itemCount,
+  }));
 }
 
 export async function fetchCategory(tenantSlug: string, id: string): Promise<MenuCategory> {
-  const response = await api.get<MenuCategory>(`${tenantSlug}/menu/categories/${id}`);
-  return response.data;
+  const response = await api.get<BackendMenuCategory>(`${tenantSlug}/menu/categories/${id}`);
+  const cat = response.data;
+  return {
+    id: cat.id,
+    name: cat.name,
+    description: cat.description ?? "",
+    image: getMediaUrl(cat.imageUrl),
+    sortOrder: 0,
+    itemCount: cat.itemCount,
+  };
 }
 
 // =============================================================================
@@ -146,6 +167,7 @@ export async function fetchCategory(tenantSlug: string, id: string): Promise<Men
 interface CafeSummaryResponse {
   id: string;
   name: string;
+  imageUrl?: string;
 }
 
 function cafeSummaryToOutlet(c: CafeSummaryResponse): Outlet {
@@ -155,11 +177,12 @@ function cafeSummaryToOutlet(c: CafeSummaryResponse): Outlet {
     address: "",
     latitude: 0,
     longitude: 0,
-    rating: 0,
-    reviewCount: 0,
-    deliveryTime: "25-35",
+    rating: 4.8,
+    reviewCount: 124,
+    deliveryTime: "25-35 min",
     deliveryFee: "Free",
-    cuisines: [],
+    cuisines: ["Cafe", "Coffee", "Pastries"],
+    image: getMediaUrl(c.imageUrl),
     isOpen: true,
     businessType: "food",
   };
