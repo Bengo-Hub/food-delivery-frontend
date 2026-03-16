@@ -117,7 +117,7 @@ export function UserMenuDrawer({ open, onOpenChange }: UserMenuDrawerProps) {
     {
       icon: Car,
       label: "Get a ride",
-      href: `https://riderapp.codevertexitsolutions.com/${orgSlug}`,
+      href: `https://riderapp.codevertexitsolutions.com/${orgSlug}/request-ride`,
       external: true,
     },
     {
@@ -302,7 +302,7 @@ export function UserMenuDrawer({ open, onOpenChange }: UserMenuDrawerProps) {
               </Link>
             </li>
             <li>
-              <a href={`https://riderapp.codevertexitsolutions.com/${orgSlug}`} target="_blank" rel="noopener noreferrer" onClick={handleClose} className="block px-5 py-2 text-sm font-medium text-foreground hover:underline">
+              <a href={`https://riderapp.codevertexitsolutions.com/${orgSlug}/profile`} target="_blank" rel="noopener noreferrer" onClick={handleClose} className="block px-5 py-2 text-sm font-medium text-foreground hover:underline">
                 Sign up to deliver
               </a>
             </li>

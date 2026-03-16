@@ -66,7 +66,7 @@ Sprint 3 focuses on implementing real-time order tracking, WebSocket integration
 - [ ] Route visualization (using logistics-service route data)
 - [ ] ETA calculation (from logistics-service)
 - [ ] Driver information display (query logistics-service API: `GET /v1/{tenant}/fleet-members/{id}`)
-- **Note**: All driver/rider data comes from logistics-service, not cafe-backend
+- **Note**: All driver/rider data comes from logistics-service, not ordering-backend
 
 ### US-F3.3: WebSocket Integration
 **As a** customer  
@@ -263,7 +263,7 @@ Sprint 3 focuses on implementing real-time order tracking, WebSocket integration
 - Backend order tracking API (Sprint 5)
 - Backend WebSocket support
 - Backend notification API (Sprint 6)
-- Logistics service for driver tracking (all driver/rider data from logistics-service, cafe-backend only provides order context)
+- Logistics service for driver tracking (all driver/rider data from logistics-service, ordering-backend only provides order context)
 
 ---
 

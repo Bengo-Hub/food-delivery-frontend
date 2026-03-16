@@ -33,6 +33,7 @@ export default async function FavoritesPage({ searchParams }: FavoritesPageProps
           initialCategory={params.category}
           initialSearch={params.search}
           initialAction="whitelist"
+          initialFavoriteOnly={true}
         />
       </div>
     </SiteShell>

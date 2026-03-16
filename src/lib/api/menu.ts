@@ -43,6 +43,7 @@ interface BackendMenuItem {
   leadTimeMinutes?: number;
   variants?: unknown[];
   dietaryTags?: unknown[];
+  isFavorite?: boolean;
 }
 
 function backendItemToMenuItem(
@@ -63,6 +64,7 @@ function backendItemToMenuItem(
     outletName,
     available: true,
     dietary: [],
+    isFavorite: !!b.isFavorite,
   };
 }
 
@@ -86,6 +88,7 @@ export async function fetchMenuItems(
   if (filters?.maxPrice !== undefined) params.set("maxPrice", String(filters.maxPrice));
   if (filters?.featured !== undefined) params.set("featured", String(filters.featured));
   if (filters?.outletId) params.set("cafe_id", filters.outletId);
+  if (filters?.favoriteOnly) params.set("favorite", "true");
 
   const res = await api.get<BackendListResponse<BackendMenuItem>>(
     `${tenantSlug}/menu/items?${params.toString()}`,
@@ -217,4 +220,15 @@ export async function fetchOutletMenu(
   limit = 50,
 ): Promise<PaginatedResponse<MenuItem>> {
   return fetchMenuItems(tenantSlug, { ...filters, outletId }, page, limit);
+}
+
+export async function toggleFavorite(
+  tenantSlug: string,
+  itemId: string,
+): Promise<{ isFavorite: boolean }> {
+  const response = await api.post<{ isFavorite: boolean }>(
+    `${tenantSlug}/menu/items/${itemId}/favorite`,
+    {},
+  );
+  return response.data;
 }

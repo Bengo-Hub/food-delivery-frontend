@@ -26,6 +26,7 @@ export interface MenuItem {
   calories?: number;
   allergens?: string[];
   customizations?: MenuItemCustomization[];
+  isFavorite?: boolean;
 }
 
 export interface MenuItemCustomization {
@@ -102,6 +103,7 @@ export interface MenuFilters {
   maxPrice?: number;
   featured?: boolean;
   outletId?: string;
+  favoriteOnly?: boolean;
 }
 
 export interface OutletFilters {

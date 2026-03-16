@@ -36,6 +36,16 @@ api.interceptors.request.use((config) => {
       config.headers["X-Tenant-Slug"] = tenantSlug;
     }
   }
+
+  // Debug: Log headers to verify sync (safe in development/local)
+  if (process.env.NODE_ENV === "development") {
+    console.debug(`[API] ${config.method?.toUpperCase()} ${config.url}`, {
+      auth: config.headers.Authorization ? "Bearer ***" : "none",
+      tenantId: config.headers["X-Tenant-ID"],
+      tenantSlug: config.headers["X-Tenant-Slug"],
+    });
+  }
+
   return config;
 });
 

@@ -14,7 +14,9 @@ import {
     fetchOutlet,
     fetchOutletMenu,
     fetchOutlets,
+    toggleFavorite,
 } from "@/lib/api/menu";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import type { MenuFilters, OutletFilters } from "@/types/menu";
 
 // =============================================================================
@@ -246,5 +248,20 @@ export function useInfiniteOutletMenu(
     enabled: !!tenantSlug && !!outletId,
     staleTime: CATALOG_STALE_MS,
     gcTime: CATALOG_GC_MS,
+  });
+}
+
+/**
+ * Hook to toggle favorite status
+ */
+export function useToggleFavorite(tenantSlug: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (itemId: string) => toggleFavorite(tenantSlug, itemId),
+    onSuccess: (_: { isFavorite: boolean }, itemId: string) => {
+      // Invalidate relevant queries to refresh data
+      queryClient.invalidateQueries({ queryKey: [tenantSlug, ...menuKeys.all] });
+    },
   });
 }

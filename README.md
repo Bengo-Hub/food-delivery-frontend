@@ -104,7 +104,7 @@ Extended documentation lives under `docs/` and is indexed in [`docs/documentatio
 
 ## Next Steps
 
-- Align contract-first APIs with `cafe-backend` and `treasury-api`
+- Align contract-first APIs with `ordering-backend` and `treasury-api`
 - Expand Storybook stories covering shared design tokens and primitives
 - Integrate internationalisation routing scaffolding and translation pipeline
 - Add E2E testing harness (Playwright) once core flows are ready

@@ -18,7 +18,7 @@ import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { useCategories, useMenuItems, useOutlets } from "@/hooks/use-menu";
+import { useCategories, useMenuItems, useOutlets, useToggleFavorite } from "@/hooks/use-menu";
 import { orgRoute } from "@/lib/routes";
 import { cn, getMediaUrl } from "@/lib/utils";
 import { useOrgSlug } from "@/providers/org-slug-provider";
@@ -38,7 +38,8 @@ type MenuItem = {
   image?: string;
   outletId?: string;
   outletName?: string;
-};
+  isFavorite?: boolean | undefined;
+} & Record<string, any>;
 
 function DiscoveryMenuItem({
   item,
@@ -51,12 +52,14 @@ function DiscoveryMenuItem({
 }) {
   const router = useRouter();
   const itemUrl = `/${orgSlug}/menu/${item.id}`;
-  const [isWhitelisted, setIsWhitelisted] = useState(false);
+  const { mutate: toggleFavorite } = useToggleFavorite(orgSlug);
+  const [isWhitelisted, setIsWhitelisted] = useState(item.isFavorite ?? false);
 
   const toggleWhitelist = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
     setIsWhitelisted(!isWhitelisted);
+    toggleFavorite(item.id);
   };
 
   return (
@@ -176,6 +179,7 @@ type MenuDiscoveryProps = {
   /** Optional deep-link action, e.g. /menu?item_id=...&action=add-to-cart|view|whitelist */
   initialItemId?: string | undefined;
   initialAction?: string | undefined;
+  initialFavoriteOnly?: boolean | undefined;
 };
 
 export function MenuDiscovery({
@@ -185,6 +189,7 @@ export function MenuDiscovery({
   initialDietary,
   initialItemId,
   initialAction,
+  initialFavoriteOnly,
 }: MenuDiscoveryProps = {}) {
   const orgSlug = useOrgSlug();
   const router = useRouter();
@@ -193,6 +198,7 @@ export function MenuDiscovery({
   const [activeCategoryId, setActiveCategoryId] = useState<string | "all">(initialCategory ?? "all");
   const [activeOutletId, setActiveOutletId] = useState<string>(initialOutlet ?? "");
   const [activeDietary, setActiveDietary] = useState<DietaryTag[]>((initialDietary as DietaryTag[]) ?? []);
+  const [favoriteOnly, setFavoriteOnly] = useState(initialFavoriteOnly ?? false);
   const [page, setPage] = useState(1);
   const addItem = useCartStore((state) => state.addItem);
 
@@ -231,6 +237,7 @@ export function MenuDiscovery({
         ...(m.image != null && m.image !== "" && { image: m.image }),
         outletId: m.outletId,
         outletName: m.outletName,
+        isFavorite: m.isFavorite,
         ...(m.featured && { feature: "recommended" as const }),
       })),
     [apiItems],
@@ -254,7 +261,8 @@ export function MenuDiscovery({
     if (initialOutlet != null) setActiveOutletId(initialOutlet);
     if (initialSearch != null) setSearch(initialSearch);
     if (initialDietary != null) setActiveDietary(initialDietary as DietaryTag[]);
-  }, [initialCategory, initialOutlet, initialSearch, initialDietary]);
+    if (initialFavoriteOnly != null) setFavoriteOnly(initialFavoriteOnly);
+  }, [initialCategory, initialOutlet, initialSearch, initialDietary, initialFavoriteOnly]);
 
   const handleAddToCart = (item: MenuItem) => {
     addItem({
@@ -351,13 +359,25 @@ export function MenuDiscovery({
                 updateUrl({ category: cat.id });
               }}
               className={cn(
-                "shrink-0",
+                "shrink-0 h-10 gap-2 px-4 rounded-xl",
                 activeCategoryId === cat.id
                   ? "bg-brand text-brand-contrast shadow-soft"
                   : "border-border text-muted-foreground hover:border-brand-emphasis hover:text-brand-emphasis",
               )}
             >
-              {cat.name}
+              {cat.image ? (
+                <div className="relative size-5 overflow-hidden rounded-full border border-current/10">
+                  <Image
+                    src={getMediaUrl(cat.image)}
+                    alt={cat.name}
+                    fill
+                    className="object-cover"
+                  />
+                </div>
+              ) : (
+                <ChefHatIcon className="size-4 opacity-40" />
+              )}
+              <span className="font-bold">{cat.name}</span>
             </Button>
           ))}
         </div>
