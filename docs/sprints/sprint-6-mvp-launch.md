@@ -1,6 +1,6 @@
-# Sprint 6 – MVP Launch (March 17, 2026)
+# Sprint 6 – MVP Launch (March 27, 2026)
 
-**Duration**: March 6 – March 17, 2026 (10 working days)  
+**Duration**: March 6 – March 27, 2026 (10 working days)
 **Status**: 🔴 In Progress  
 **Goal**: Ship a working customer ordering PWA for the Busia outlet at `ordersapp.codevertexitsolutions.com`.
 
@@ -252,7 +252,7 @@ Run through on a real Android phone on mobile data:
 - [ ] `pnpm run build` passes with 0 errors
 - [ ] Verify no `localhost` or mock URLs in production env
 
-### Launch Day (March 17)
+### Launch Day (March 27)
 
 - [ ] Deploy via ArgoCD
 - [ ] Verify `/healthz` returns 200
