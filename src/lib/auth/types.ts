@@ -72,6 +72,9 @@ export interface UserProfile {
   lastLoginAt?: string | null;
   createdAt: string;
   updatedAt: string;
+  tenant_id?: string;
+  tenant_slug?: string;
+  is_platform_owner?: boolean;
 }
 
 export interface AuthResponse {

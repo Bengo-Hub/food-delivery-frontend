@@ -2,6 +2,7 @@ import type { AxiosError } from "axios";
 import { create } from "zustand";
 
 import { attachAuthTokenGetter } from "@/lib/api/base";
+import { checkSubscription } from "@/lib/auth/subscription";
 import {
     buildAuthorizeUrl,
     buildLogoutUrl,
@@ -34,7 +35,7 @@ import type {
 } from "@/lib/auth/types";
 import { toast } from "@/lib/toast";
 
-type AuthStatus = "idle" | "loading" | "authenticated" | "syncing" | "error";
+type AuthStatus = "idle" | "loading" | "authenticated" | "syncing" | "error" | "subscription_required";
 
 interface AuthState {
   status: AuthStatus;
@@ -260,9 +261,17 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       while (syncAttempts < maxAttempts) {
         try {
           const response = await fetchProfile(tenantSlug ?? undefined);
+          const u = response.user;
+          if (u.tenant_slug !== 'codevertex' && u.tenant_id) {
+            const active = await checkSubscription(u.tenant_id, u.tenant_slug ?? '', session.accessToken);
+            if (!active) {
+              set({ status: 'subscription_required' });
+              return;
+            }
+          }
           applyAuthResponse(set, {
             session: { ...session, sessionId: response.session?.sessionId ?? "" },
-            user: response.user,
+            user: u,
           });
           await hydrateOrders(set);
           toast.success("Welcome back!");

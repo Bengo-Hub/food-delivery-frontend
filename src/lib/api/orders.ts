@@ -120,7 +120,7 @@ export async function applyPromoCode(
   code: string,
   subtotal: number,
 ): Promise<{ valid: boolean; discount: number; message: string }> {
-  const res = await api.post(`${tenantSlug}/orders/promo/validate`, { code, subtotal });
+  const res = await api.post(`${tenantSlug}/promo-codes/validate`, { code, subtotal });
   return res.data;
 }
 
