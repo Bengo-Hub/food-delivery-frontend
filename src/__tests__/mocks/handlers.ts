@@ -129,9 +129,8 @@ const tierBenefits = {
 // ─── All Handlers ───────────────────────────────────────────────────────
 
 export const handlers = [
-  // Menu
-  // Menu: backend returns { data, total, limit, page }
-  http.get("*/menu/items", () =>
+  // Catalog: backend returns { data, total, limit, page }
+  http.get("*/catalog/items", () =>
     HttpResponse.json({
       data: menuItems.data.map((i) => ({
         id: i.id,
@@ -148,7 +147,7 @@ export const handlers = [
       page: menuItems.meta.page,
     }),
   ),
-  http.get("*/menu/items/:id", ({ params }) => {
+  http.get("*/catalog/items/:id", ({ params }) => {
     const item = menuItems.data.find((i) => i.id === params.id) ?? menuItems.data[0];
     return HttpResponse.json({
       id: item.id,
@@ -161,23 +160,11 @@ export const handlers = [
       imageUrl: item.image,
     });
   }),
-  http.get("*/menu/categories", () => HttpResponse.json(categories)),
-  http.get("*/menu/categories/:id", ({ params }) =>
+  http.get("*/catalog/categories", () => HttpResponse.json(categories)),
+  http.get("*/catalog/categories/:id", ({ params }) =>
     HttpResponse.json(categories.find((c) => c.id === params.id) ?? categories[0]),
   ),
-  // Cafes (outlets): backend returns { data, total, limit, page }
-  http.get("*/cafes", () =>
-    HttpResponse.json({
-      data: outlets.data.map((o) => ({ id: o.id, name: o.name })),
-      total: outlets.data.length,
-      limit: 20,
-      page: 1,
-    }),
-  ),
-  http.get("*/cafes/:id", ({ params }) => {
-    const o = outlets.data.find((out) => out.id === params.id) ?? outlets.data[0];
-    return HttpResponse.json({ id: o.id, name: o.name });
-  }),
+  // Outlets: backend returns { data, total, limit, page }
   http.get("*/outlets", () => HttpResponse.json(outlets)),
   http.get("*/outlets/:id", () => HttpResponse.json(outlets.data[0])),
 

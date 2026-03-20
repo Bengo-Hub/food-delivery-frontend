@@ -11,7 +11,7 @@ export interface AdminOrder {
   customerName: string;
   customerPhone: string;
   customerEmail: string;
-  cafeId: string;
+  outletId: string;
   items: AdminOrderItem[];
   subtotal: number;
   deliveryFee: number;
@@ -28,7 +28,7 @@ export interface AdminOrder {
 }
 
 export interface AdminOrderItem {
-  menuItemId: string;
+  catalogItemId: string;
   name: string;
   quantity: number;
   unitPrice: number;
@@ -141,7 +141,7 @@ export async function listCategories(
   slug: string,
   params?: { isActive?: boolean; search?: string },
 ): Promise<Category[]> {
-  const res = await api.get(`${slug}/catalog/categories`, { params });
+  const res = await api.get(`${slug}/catalog/admin/categories`, { params });
   return res.data;
 }
 
@@ -167,7 +167,7 @@ export async function listMenuItems(
   slug: string,
   params?: { categoryId?: string; isAvailable?: boolean; search?: string },
 ): Promise<MenuItem[]> {
-  const res = await api.get(`${slug}/catalog/items`, { params });
+  const res = await api.get(`${slug}/catalog/admin/items`, { params });
   return res.data;
 }
 

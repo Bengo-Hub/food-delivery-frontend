@@ -12,7 +12,7 @@ import { useAuthStore } from "@/store/auth";
 
 const navItems = [
   { id: "home", label: "Home", icon: Home, href: "/" },
-  { id: "menu", label: "Menu", icon: Search, href: "/menu" },
+  { id: "menu", label: "Browse", icon: Search, href: "/menu" },
   { id: "cart", label: "Cart", icon: ShoppingCart, href: "/cart" },
   { id: "orders", label: "Orders", icon: ClipboardList, href: "/orders" },
   { id: "account", label: "Account", icon: User, href: "/profile" },

@@ -111,15 +111,15 @@ export default function HomePage() {
   const deliveryLocation = useDiningModeStore((state) => state.deliveryLocation);
   const addItem = useCartStore((state) => state.addItem);
 
-  // Fetch cafes first; use first cafe id for categories and featured items (backend requires cafe_id for categories)
+  // Fetch outlets first; use first outlet id for categories and featured items (backend requires outlet_id for categories)
   const { data: outletsData } = useOutlets(orgSlug, undefined, 1, 20);
-  const firstCafeId = outletsData?.data?.[0]?.id ?? "";
-  const firstCafeName = outletsData?.data?.[0]?.name ?? "";
+  const firstOutletId = outletsData?.data?.[0]?.id ?? "";
+  const firstOutletName = outletsData?.data?.[0]?.name ?? "";
 
-  const { data: categoriesData } = useCategories(orgSlug, firstCafeId || undefined);
+  const { data: categoriesData } = useCategories(orgSlug, firstOutletId || undefined);
   const { data: featuredData } = useFeaturedItems(
     orgSlug,
-    firstCafeId || undefined,
+    firstOutletId || undefined,
     10,
   );
 
@@ -163,8 +163,8 @@ export default function HomePage() {
           price: item.price,
           currency: item.currency ?? "KES",
           ...(item.image != null && item.image !== "" && { image: item.image }),
-          outletId: item.outletId || firstCafeId,
-          outletName: item.outletName || firstCafeName,
+          outletId: item.outletId || firstOutletId,
+          outletName: item.outletName || firstOutletName,
           category: item.category,
           href: orgRoute(
             orgSlug,

@@ -6,11 +6,20 @@ import { useDiningModeStore, type DiningMode } from "@/store/dining-mode";
 interface DiningModeToggleProps {
   className?: string;
   size?: "sm" | "md";
+  supportedModes?: DiningMode[];
 }
 
-export function DiningModeToggle({ className, size = "md" }: DiningModeToggleProps) {
+export function DiningModeToggle({ className, size = "md", supportedModes }: DiningModeToggleProps) {
   const mode = useDiningModeStore((state) => state.mode);
   const setMode = useDiningModeStore((state) => state.setMode);
+  const storeModes = useDiningModeStore((state) => state.supportedModes);
+
+  const modes = supportedModes ?? storeModes;
+
+  // If only one mode is supported, don't render the toggle
+  if (modes.length <= 1) {
+    return null;
+  }
 
   const handleModeChange = (newMode: DiningMode) => {
     setMode(newMode);
@@ -45,21 +54,23 @@ export function DiningModeToggle({ className, size = "md" }: DiningModeTogglePro
       >
         Delivery
       </button>
-      <button
-        role="tab"
-        aria-selected={mode === "pickup"}
-        aria-controls="pickup-content"
-        onClick={() => handleModeChange("pickup")}
-        className={cn(
-          "rounded-full font-medium transition-all duration-200",
-          sizeClasses[size],
-          mode === "pickup"
-            ? "bg-foreground text-background shadow-sm"
-            : "text-muted-foreground hover:text-foreground",
-        )}
-      >
-        Pickup
-      </button>
+      {modes.includes("pickup") && (
+        <button
+          role="tab"
+          aria-selected={mode === "pickup"}
+          aria-controls="pickup-content"
+          onClick={() => handleModeChange("pickup")}
+          className={cn(
+            "rounded-full font-medium transition-all duration-200",
+            sizeClasses[size],
+            mode === "pickup"
+              ? "bg-foreground text-background shadow-sm"
+              : "text-muted-foreground hover:text-foreground",
+          )}
+        >
+          Pickup
+        </button>
+      )}
     </div>
   );
 }

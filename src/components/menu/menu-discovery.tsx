@@ -204,8 +204,8 @@ export function MenuDiscovery({
 
   const { data: outletsData } = useOutlets(orgSlug, undefined, 1, 50);
   const outlets = outletsData?.data ?? [];
-  const firstCafeId = outlets[0]?.id ?? undefined;
-  const { data: categoriesData } = useCategories(orgSlug, firstCafeId);
+  const firstOutletId = outlets[0]?.id ?? undefined;
+  const { data: categoriesData } = useCategories(orgSlug, firstOutletId);
   const categoriesFromApi = useMemo(() => categoriesData ?? [], [categoriesData]);
 
   const filters = useMemo(
@@ -300,7 +300,7 @@ export function MenuDiscovery({
         <div className="flex flex-col gap-4 rounded-2xl border border-border bg-brand-surface/40 p-4 shadow-sm sm:gap-6 sm:rounded-3xl sm:p-6 md:flex-row md:items-center md:justify-between">
           <div className="flex-1 space-y-2">
             <h2 className="text-xl font-semibold text-foreground sm:text-2xl md:text-3xl">
-              Browse the {activeCategoryId === "all" ? "full menu" : (categoriesFromApi.find((c) => c.id === activeCategoryId)?.name ?? "menu").toLowerCase()}
+              Browse the {activeCategoryId === "all" ? "full catalog" : (categoriesFromApi.find((c) => c.id === activeCategoryId)?.name ?? "catalog").toLowerCase()}
             </h2>
             <p className="text-xs text-muted-foreground sm:text-sm">
               Filter by dietary preference, explore specials, and build your cart seamlessly.
@@ -308,7 +308,7 @@ export function MenuDiscovery({
           </div>
           <div className="w-full md:max-w-md">
             <label htmlFor="menu-search" className="sr-only">
-              Search menu items
+              Search catalog items
             </label>
             <div className="relative">
               <SearchIcon
@@ -317,7 +317,7 @@ export function MenuDiscovery({
               />
               <Input
                 id="menu-search"
-                placeholder="Search dishes, ingredients, or categories"
+                placeholder="Search items, products, or categories"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 onBlur={() => updateUrl({ search: search.trim() || undefined })}
@@ -453,12 +453,12 @@ export function MenuDiscovery({
         <div className="grid gap-4 sm:grid-cols-2 sm:gap-6 lg:grid-cols-3">
           {isPending && menuItems.length === 0 ? (
             <div className="col-span-full rounded-2xl border border-dashed border-border bg-card p-6 text-center sm:rounded-3xl sm:p-8">
-              <p className="text-sm text-muted-foreground">Loading menu…</p>
+              <p className="text-sm text-muted-foreground">Loading catalog…</p>
             </div>
           ) : menuItems.length === 0 ? (
             <div className="col-span-full rounded-2xl border border-dashed border-border bg-card p-6 text-center sm:rounded-3xl sm:p-8">
               <p className="text-xs text-muted-foreground sm:text-sm">
-                No menu items match the current filters. Try clearing a dietary preference or
+                No items match the current filters. Try clearing a filter or
                 adjusting your search.
               </p>
             </div>

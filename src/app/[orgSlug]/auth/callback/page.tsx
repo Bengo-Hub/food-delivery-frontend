@@ -53,9 +53,18 @@ function AuthCallbackContent() {
       }
 
       // Route based on role
-      if (userHasRole(user, ["staff", "admin", "superuser"])) {
-        const cafeUrl = process.env.NEXT_PUBLIC_CAFE_WEBSITE_URL ?? "https://theurbanloftcafe.com";
-        window.location.href = cafeUrl;
+      if (userHasRole(user, ["superuser"])) {
+        // Platform owner (superuser on the codevertex org) → platform dashboard
+        if (orgSlug === "codevertex") {
+          router.replace(orgRoute(orgSlug, "/platform"));
+        } else {
+          router.replace(orgRoute(orgSlug, "/dashboard/staff"));
+        }
+        return;
+      }
+
+      if (userHasRole(user, ["staff", "admin"])) {
+        router.replace(orgRoute(orgSlug, "/dashboard/staff"));
         return;
       }
 
@@ -65,14 +74,10 @@ function AuthCallbackContent() {
         return;
       }
 
-      // Prefer dashboard over landing so navbar shows authenticated state
+      // Customer (default) → home page with catalog items
       let returnTo = typeof window !== "undefined"
-        ? sessionStorage.getItem("sso_return_to") ?? orgRoute(orgSlug, "/dashboard/customer")
-        : orgRoute(orgSlug, "/dashboard/customer");
-      const landingPath = orgRoute(orgSlug, "/");
-      if (returnTo === landingPath || returnTo === `/${orgSlug}` || returnTo === `/${orgSlug}/`) {
-        returnTo = orgRoute(orgSlug, "/dashboard/customer");
-      }
+        ? sessionStorage.getItem("sso_return_to") ?? orgRoute(orgSlug, "/")
+        : orgRoute(orgSlug, "/");
       sessionStorage.removeItem("sso_return_to");
       router.replace(returnTo);
     }, 1500);

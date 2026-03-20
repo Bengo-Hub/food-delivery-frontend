@@ -1,5 +1,5 @@
 /**
- * TanStack Query Hooks for Menu/Catalog
+ * TanStack Query Hooks for Catalog
  * These hooks provide data fetching with caching, loading states, and error handling
  */
 
@@ -24,7 +24,7 @@ import type { MenuFilters, OutletFilters } from "@/types/menu";
 // =============================================================================
 
 export const menuKeys = {
-  all: ["menu"] as const,
+  all: ["catalog"] as const,
   items: () => [...menuKeys.all, "items"] as const,
   itemList: (filters?: MenuFilters) => [...menuKeys.items(), filters] as const,
   item: (id: string) => [...menuKeys.items(), id] as const,
@@ -126,12 +126,12 @@ export function useFeaturedItems(
 // =============================================================================
 
 /**
- * Hook to fetch all menu categories (cafeId required by backend for public list).
+ * Hook to fetch all catalog categories (outletId optional for filtering by outlet).
  */
-export function useCategories(tenantSlug: string, cafeId?: string) {
+export function useCategories(tenantSlug: string, outletId?: string) {
   return useQuery({
-    queryKey: [tenantSlug, ...menuKeys.categoryList(cafeId)],
-    queryFn: () => fetchCategories(tenantSlug, cafeId),
+    queryKey: [tenantSlug, ...menuKeys.categoryList(outletId)],
+    queryFn: () => fetchCategories(tenantSlug, outletId),
     enabled: !!tenantSlug,
     staleTime: CATALOG_STALE_MS,
     gcTime: CATALOG_GC_MS,
@@ -152,11 +152,11 @@ export function useCategory(tenantSlug: string, id: string) {
 }
 
 // =============================================================================
-// OUTLETS / CAFES HOOKS
+// OUTLETS HOOKS
 // =============================================================================
 
 /**
- * Hook to fetch paginated cafes/outlets for tenant
+ * Hook to fetch paginated outlets for tenant
  */
 export function useOutlets(
   tenantSlug: string,
@@ -195,7 +195,7 @@ export function useInfiniteOutlets(
 }
 
 /**
- * Hook to fetch a single outlet/cafe by ID
+ * Hook to fetch a single outlet by ID
  */
 export function useOutlet(tenantSlug: string, id: string) {
   return useQuery({

@@ -210,7 +210,7 @@ export function CategoryCarousel({
  * Default categories for multi-business ordering platform.
  * These are fallback categories when API is unavailable.
  * The platform supports various business types: food, grocery, retail, pharmacy, flowers, etc.
- * Actual categories should be loaded from the backend API: GET /api/v1/menu/categories
+ * Actual categories should be loaded from the backend API: GET /api/v1/catalog/categories
  */
 export const defaultCategories: Category[] = [
   // Food & Restaurants

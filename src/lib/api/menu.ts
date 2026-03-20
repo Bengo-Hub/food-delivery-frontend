@@ -1,6 +1,6 @@
 /**
- * Menu API Client
- * Functions for fetching menu items, categories, and outlets from the backend
+ * Catalog API Client
+ * Functions for fetching catalog items, categories, and outlets from the backend
  */
 
 import { getMediaUrl } from "@/lib/utils";
@@ -30,7 +30,7 @@ function toPaginated<T>(r: BackendListResponse<T>): PaginatedResponse<T> {
   };
 }
 
-/** Backend public menu item shape (basePrice, imageUrl, categoryId, categoryName). */
+/** Backend public catalog item shape (basePrice, imageUrl, categoryId, categoryName). */
 interface BackendMenuItem {
   id: string;
   name: string;
@@ -69,7 +69,7 @@ function backendItemToMenuItem(
 }
 
 // =============================================================================
-// MENU ITEMS API (tenant-scoped: path = {tenantSlug}/menu/...)
+// CATALOG ITEMS API (tenant-scoped: path = {tenantSlug}/catalog/...)
 // =============================================================================
 
 export async function fetchMenuItems(
@@ -87,14 +87,14 @@ export async function fetchMenuItems(
   if (filters?.minPrice !== undefined) params.set("minPrice", String(filters.minPrice));
   if (filters?.maxPrice !== undefined) params.set("maxPrice", String(filters.maxPrice));
   if (filters?.featured !== undefined) params.set("featured", String(filters.featured));
-  if (filters?.outletId) params.set("cafe_id", filters.outletId);
+  if (filters?.outletId) params.set("outlet_id", filters.outletId);
   if (filters?.favoriteOnly) params.set("favorite", "true");
 
   const res = await api.get<BackendListResponse<BackendMenuItem>>(
-    `${tenantSlug}/menu/items?${params.toString()}`,
+    `${tenantSlug}/catalog/items?${params.toString()}`,
   );
   const outletId = filters?.outletId ?? "";
-  const outletName = ""; // Can be filled from cafes list when needed
+  const outletName = "";
   const data: MenuItem[] = res.data.data.map((b: BackendMenuItem) =>
     backendItemToMenuItem(b, outletId, outletName),
   );
@@ -107,7 +107,7 @@ export async function fetchMenuItem(
   outletId = "",
   outletName = "",
 ): Promise<MenuItem> {
-  const response = await api.get<BackendMenuItem>(`${tenantSlug}/menu/items/${id}`);
+  const response = await api.get<BackendMenuItem>(`${tenantSlug}/catalog/items/${id}`);
   return backendItemToMenuItem(response.data, outletId, outletName);
 }
 
@@ -125,7 +125,7 @@ export async function fetchFeaturedItems(
   return pag.data;
 }
 
-/** Backend menu category shape (imageUrl). */
+/** Backend catalog category shape (imageUrl). */
 interface BackendMenuCategory {
   id: string;
   name: string;
@@ -136,10 +136,10 @@ interface BackendMenuCategory {
 
 export async function fetchCategories(
   tenantSlug: string,
-  cafeId?: string,
+  outletId?: string,
 ): Promise<MenuCategory[]> {
-  const params = cafeId ? `?cafe_id=${cafeId}` : "";
-  const response = await api.get<BackendMenuCategory[]>(`${tenantSlug}/menu/categories${params}`);
+  const params = outletId ? `?outlet_id=${outletId}` : "";
+  const response = await api.get<BackendMenuCategory[]>(`${tenantSlug}/catalog/categories${params}`);
   return response.data.map((cat) => ({
     id: cat.id,
     name: cat.name,
@@ -151,7 +151,7 @@ export async function fetchCategories(
 }
 
 export async function fetchCategory(tenantSlug: string, id: string): Promise<MenuCategory> {
-  const response = await api.get<BackendMenuCategory>(`${tenantSlug}/menu/categories/${id}`);
+  const response = await api.get<BackendMenuCategory>(`${tenantSlug}/catalog/categories/${id}`);
   const cat = response.data;
   return {
     id: cat.id,
@@ -164,30 +164,46 @@ export async function fetchCategory(tenantSlug: string, id: string): Promise<Men
 }
 
 // =============================================================================
-// CAFES / OUTLETS API (GET /cafes returns list for tenant; backend returns id+name, we map to Outlet)
+// OUTLETS API (GET /outlets returns list for tenant)
 // =============================================================================
 
-interface CafeSummaryResponse {
+/** Backend outlet response — now returns full outlet data. */
+interface BackendOutlet {
   id: string;
   name: string;
+  slug?: string;
+  description?: string;
+  address?: string;
+  phone?: string;
+  email?: string;
+  location?: string;
+  latitude?: number;
+  longitude?: number;
+  openingHours?: Record<string, unknown>;
   imageUrl?: string;
+  status?: string;
+  useCase?: string;
 }
 
-function cafeSummaryToOutlet(c: CafeSummaryResponse): Outlet {
+function backendOutletToOutlet(o: BackendOutlet): Outlet {
   return {
-    id: c.id,
-    name: c.name,
-    address: "",
-    latitude: 0,
-    longitude: 0,
-    rating: 4.8,
-    reviewCount: 124,
-    deliveryTime: "25-35 min",
-    deliveryFee: "Free",
-    cuisines: ["Cafe", "Coffee", "Pastries"],
-    image: getMediaUrl(c.imageUrl),
-    isOpen: true,
-    businessType: "food",
+    id: o.id,
+    name: o.name,
+    description: o.description ?? "",
+    address: o.address ?? "",
+    latitude: o.latitude ?? 0,
+    longitude: o.longitude ?? 0,
+    phone: o.phone ?? "",
+    email: o.email ?? "",
+    image: getMediaUrl(o.imageUrl),
+    isOpen: o.status === "active",
+    businessType: (o.useCase as Outlet["businessType"]) ?? "food",
+    // These fields may be populated by future enhancements
+    rating: 0,
+    reviewCount: 0,
+    deliveryTime: "",
+    deliveryFee: "",
+    cuisines: [],
   };
 }
 
@@ -200,16 +216,16 @@ export async function fetchOutlets(
   const params = new URLSearchParams();
   params.set("page", String(page));
   params.set("limit", String(limit));
-  const response = await api.get<BackendListResponse<CafeSummaryResponse>>(
-    `${tenantSlug}/cafes?${params.toString()}`,
+  const response = await api.get<BackendListResponse<BackendOutlet>>(
+    `${tenantSlug}/outlets?${params.toString()}`,
   );
-  const asOutlets: Outlet[] = (response.data.data ?? []).map(cafeSummaryToOutlet);
+  const asOutlets: Outlet[] = (response.data.data ?? []).map(backendOutletToOutlet);
   return toPaginated({ ...response.data, data: asOutlets });
 }
 
 export async function fetchOutlet(tenantSlug: string, id: string): Promise<Outlet> {
-  const response = await api.get<CafeSummaryResponse>(`${tenantSlug}/cafes/${id}`);
-  return cafeSummaryToOutlet(response.data);
+  const response = await api.get<BackendOutlet>(`${tenantSlug}/outlets/${id}`);
+  return backendOutletToOutlet(response.data);
 }
 
 export async function fetchOutletMenu(
@@ -227,7 +243,7 @@ export async function toggleFavorite(
   itemId: string,
 ): Promise<{ isFavorite: boolean }> {
   const response = await api.post<{ isFavorite: boolean }>(
-    `${tenantSlug}/menu/items/${itemId}/favorite`,
+    `${tenantSlug}/catalog/items/${itemId}/favorite`,
     {},
   );
   return response.data;

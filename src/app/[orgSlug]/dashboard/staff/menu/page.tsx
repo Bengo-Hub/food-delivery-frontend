@@ -75,11 +75,11 @@ export default function MenuManagementPage() {
           <header className="mb-6 flex flex-wrap items-start justify-between gap-4">
             <div>
               <p className="text-sm font-semibold uppercase tracking-wide text-primary">
-                Menu Management
+                Catalog Management
               </p>
               <h1 className="text-2xl font-bold">Categories & Items</h1>
               <p className="text-sm text-muted-foreground">
-                Manage your menu categories and items
+                Manage your catalog categories and items
               </p>
             </div>
             <div className="flex gap-2">
@@ -156,7 +156,7 @@ export default function MenuManagementPage() {
             <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
             <Input
               className="pl-10"
-              placeholder="Search menu items..."
+              placeholder="Search catalog items..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
@@ -171,7 +171,7 @@ export default function MenuManagementPage() {
             <Card>
               <CardContent className="flex flex-col items-center gap-2 py-12 text-center">
                 <UtensilsCrossed className="size-10 text-muted-foreground" />
-                <p className="font-medium">No menu items found</p>
+                <p className="font-medium">No catalog items found</p>
                 <p className="text-sm text-muted-foreground">
                   Add items using the button above.
                 </p>
@@ -336,10 +336,10 @@ function AddItemForm({
       };
       if (description.trim()) itemPayload.description = description.trim();
       await createItem.mutateAsync(itemPayload);
-      toast.success("Menu item created");
+      toast.success("Catalog item created");
       onClose();
     } catch {
-      toast.error("Failed to create menu item");
+      toast.error("Failed to create catalog item");
     }
   };
 
@@ -451,10 +451,10 @@ function EditItemForm({
           imageUrl: imageUrl || undefined,
         },
       });
-      toast.success("Menu item updated");
+      toast.success("Catalog item updated");
       onClose();
     } catch {
-      toast.error("Failed to update menu item");
+      toast.error("Failed to update catalog item");
     }
   };
 
