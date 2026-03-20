@@ -214,8 +214,9 @@ export function MenuDiscovery({
       ...(activeOutletId && { outletId: activeOutletId }),
       ...(search.trim() && { search: search.trim() }),
       ...(activeDietary.length > 0 && { dietary: activeDietary }),
+      ...(favoriteOnly && { favoriteOnly: true }),
     }),
-    [activeCategoryId, activeOutletId, search, activeDietary],
+    [activeCategoryId, activeOutletId, search, activeDietary, favoriteOnly],
   );
 
   const { data: menuData, isPending } = useMenuItems(orgSlug, filters, page, MENU_PAGE_SIZE);
