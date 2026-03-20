@@ -140,42 +140,32 @@ const { data: order } = useQuery({
 **Logistics UI URL**: `https://logistics.codevertexitsolutions.com`  
 **Config**: `NEXT_PUBLIC_LOGISTICS_UI_URL`
 
-### Order Tracking Data
+### Order Tracking (Centralized in Logistics Service)
 
-Order detail from backend includes delivery data:
+All live delivery tracking — rider location, ETA, status timeline, map display — is **owned and rendered by the logistics-service**.
+
+When a customer clicks "Track Order", the ordering-frontend redirects to:
+
+```
+https://logistics.codevertexitsolutions.com/track/{orderId}
+```
+
+The ordering-frontend does **not** render any tracking UI, maps, or rider location data. The order detail from backend includes only reference data:
 
 ```json
 {
   "id": "order-uuid",
   "status": "out_for_delivery",
   "logistics_task_id": "task-uuid",
-  "delivery": {
-    "rider_name": "John",
-    "eta_minutes": 15,
-    "rider_phone": "+254..."
-  }
+  "tracking_code": "CV-20260320-A3F8K2"
 }
 ```
 
-### Live Rider Location
-
-When `status` is `out_for_delivery` and `logistics_task_id` is present, the frontend connects to the logistics-service for live coordinates:
-
-```typescript
-// Polling fallback (MVP)
-const { data: tracking } = useQuery({
-  queryKey: ['tracking', orderId],
-  queryFn: () => baseapi.get(`/v1/${tenant}/orders/${orderId}/tracking`),
-  refetchInterval: 10000, // every 10 seconds
-  enabled: order?.status === 'out_for_delivery',
-});
-```
-
-WebSocket/SSE integration is post-MVP. For launch, poll the backend tracking endpoint.
+> **Note:** Delivery tracking data (`rider_name`, `rider_phone`, location, ETA) is fetched by the logistics-service from its own database at request time. The ordering-backend stores only `logistics_task_id` and `rider_id` references per [CROSS-SERVICE-DATA-OWNERSHIP.md](../../shared-docs/CROSS-SERVICE-DATA-OWNERSHIP.md).
 
 ### Rider Redirects
 
-Users with `rider` role are redirected to logistics-service after auth. No rider features exist in the ordering frontend.
+Users with `rider` role are redirected to the rider-app (`riderapp.codevertexitsolutions.com`) after auth. No rider features exist in the ordering frontend.
 
 ---
 
