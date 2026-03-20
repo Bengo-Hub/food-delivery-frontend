@@ -92,7 +92,7 @@
    - Shift sign-in: `POST /v1/{tenant}/fleet-members/{id}/shifts` (logistics-service)
    - Order queue: `GET /v1/{tenant}/tasks?fleet_member_id={id}&status=assigned` (logistics-service)
    - Task accept/decline: `POST /v1/{tenant}/tasks/{id}/accept` or `/decline` (logistics-service)
-   - Turn-by-turn navigation: Use Mapbox/Google SDK with route data from logistics-service
+   - Turn-by-turn navigation: Use @bengo-hub/maps (MapLibre GL JS) with Valhalla route data from logistics-service
    - Proof of delivery: `POST /v1/{tenant}/tasks/{id}/complete` with PoD artifacts (logistics-service)
    - Earnings dashboard: Query `GET /v1/{tenant}/fleet-members/{id}/earnings` (logistics-service) or consume treasury-api payout events
    - Daily summary, issue reporting: All via logistics-service APIs
@@ -139,7 +139,7 @@
 - **State & Data:** TanStack Query for server state, Zustand for lightweight client state, React Hook Form + Zod validation, Jotai for low-level atoms where needed.
 - **Networking:** Axios via shared `baseapi` wrapper, WebSocket/SSE client for live updates, service worker API for offline sync.
 - **UI System:** Tailwind CSS + Radix UI (web), NativeWind (mobile), Figma handoff tokens synced through Style Dictionary.
-- **Maps & Geo:** Leaflet (web) with reusable map component and geofence logic; Mapbox/React Native Mapbox GL on mobile; fallback to Google Maps if required.
+- **Maps & Geo:** `@bengo-hub/maps` (MapLibre GL JS wrapper) with self-hosted TileServer-GL tiles (`https://tiles.codevertexitsolutions.com`) and Valhalla routing via logistics-api (`/api/v1/{tenant}/routing/*`). Data sourced from OpenStreetMap Kenya (Geofabrik, weekly refresh).
 - **Internationalization:** next-intl (web) & react-native-localize + i18next (mobile), centralized copy JSON with translation pipeline.
 - **Testing & Quality:** Vitest + Testing Library, Detox/E2E for mobile, Playwright for PWA, Percy visual testing.
 - **Analytics:** Segment/Amplitude instrumentation, consent-aware tracking toggles.
