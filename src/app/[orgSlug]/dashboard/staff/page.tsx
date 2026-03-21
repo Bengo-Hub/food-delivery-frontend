@@ -19,6 +19,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Pagination } from "@/components/ui/pagination";
 import { useAdminOrders, useUpdateOrderStatus } from "@/hooks/use-admin";
 import { toast } from "@/lib/toast";
 import type { AdminOrder } from "@/lib/api/admin";
@@ -96,11 +97,14 @@ function statusIcon(status: string) {
 export default function StaffDashboardPage() {
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [search, setSearch] = useState("");
+  const [page, setPage] = useState(1);
 
+  const limit = 50;
   const filters = {
     ...(statusFilter !== "all" ? { status: statusFilter } : {}),
     ...(search.trim() ? { search: search.trim() } : {}),
-    limit: 50,
+    limit,
+    page,
   };
 
   const { data, isLoading } = useAdminOrders(filters);
@@ -108,6 +112,7 @@ export default function StaffDashboardPage() {
 
   const orders = data?.orders ?? [];
   const total = data?.total ?? 0;
+  const totalPages = Math.max(1, Math.ceil(total / limit));
 
   // Count by status for the summary cards
   const pendingCount = orders.filter((o) => o.status === "pending").length;
@@ -221,6 +226,13 @@ export default function StaffDashboardPage() {
               ))}
             </div>
           )}
+
+          <Pagination
+            page={page}
+            totalPages={totalPages}
+            onPageChange={setPage}
+            className="mt-6"
+          />
         </div>
       </SiteShell>
     </RequireAuth>
