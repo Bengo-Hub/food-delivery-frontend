@@ -163,6 +163,7 @@ export async function fetchProfileFromSSO(accessToken: string): Promise<AuthResp
       phone: (profile.phone as string) ?? null,
       roles: (raw.roles ?? []) as UserRole[],
       permissions: (raw.permissions ?? []) as Permission[],
+      isSuperUser: (raw.roles ?? []).includes("superuser"),
       avatarUrl: (profile.avatar_url as string) ?? null,
       loyaltyPoints: 0,
       availableCoupons: 0,
