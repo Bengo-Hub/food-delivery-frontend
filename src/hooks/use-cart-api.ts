@@ -1,8 +1,14 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 
-import { getFeeBreakdown, type FeeBreakdown } from "@/lib/api/cart-api";
+import {
+  checkout,
+  getFeeBreakdown,
+  type CheckoutRequest,
+  type CheckoutResponse,
+  type FeeBreakdown,
+} from "@/lib/api/cart-api";
 import { useOrgSlug } from "@/providers/org-slug-provider";
 
 // ─── Query Keys ──────────────────────────────────────────────────────
@@ -21,5 +27,14 @@ export function useFeeBreakdown(cartId: string | null) {
     queryFn: () => getFeeBreakdown(slug, cartId!),
     enabled: !!cartId,
     staleTime: 30_000,
+  });
+}
+
+// ─── Mutations ───────────────────────────────────────────────────────
+
+export function useCheckout() {
+  const slug = useOrgSlug();
+  return useMutation<CheckoutResponse, Error, CheckoutRequest>({
+    mutationFn: (data) => checkout(slug, data),
   });
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronDown, Star, Tag } from "lucide-react";
+import { Check, ChevronDown, Star, Tag } from "lucide-react";
 import { useState } from "react";
 
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -20,6 +20,10 @@ export interface ActiveFilters {
   highestRated: boolean;
   minRating: number | null;
   sortBy: string | null;
+  maxDistance: number | null;
+  categories: string[];
+  pickupOnly: boolean;
+  scheduledOnly: boolean;
 }
 
 interface FilterBarProps {
@@ -45,17 +49,28 @@ const ratingOptions: FilterOption[] = [
 ];
 
 const sortOptions: FilterOption[] = [
-  { id: "recommended", label: "Recommended", value: "recommended" },
-  { id: "rating", label: "Rating", value: "rating" },
-  { id: "delivery_time", label: "Delivery time", value: "delivery_time" },
-  { id: "distance", label: "Distance", value: "distance" },
+  { id: "recommended", label: "Most relevant", value: "recommended" },
+  { id: "distance", label: "Closest", value: "distance" },
+  { id: "cheapest_delivery", label: "Cheapest delivery", value: "cheapest_delivery" },
+  { id: "delivery_time", label: "Fastest delivery", value: "delivery_time" },
+  { id: "rating", label: "Best Rating", value: "rating" },
 ];
 
-const priceOptions: FilterOption[] = [
-  { id: "1", label: "$", value: 1 },
-  { id: "2", label: "$$", value: 2 },
-  { id: "3", label: "$$$", value: 3 },
-  { id: "4", label: "$$$$", value: 4 },
+const distanceOptions: FilterOption[] = [
+  { id: "1", label: "1 km or less", value: 1 },
+  { id: "2", label: "2 km or less", value: 2 },
+  { id: "3", label: "3 km or less", value: 3 },
+];
+
+const categoryOptions: { id: string; label: string; emoji: string }[] = [
+  { id: "pizza", label: "Pizza", emoji: "\uD83C\uDF55" },
+  { id: "chicken", label: "Chicken", emoji: "\uD83C\uDF57" },
+  { id: "burgers", label: "Burgers", emoji: "\uD83C\uDF54" },
+  { id: "fast-food", label: "Fast-food", emoji: "\uD83C\uDF1F" },
+  { id: "indian", label: "Indian", emoji: "\uD83C\uDF5B" },
+  { id: "dessert", label: "Dessert", emoji: "\uD83C\uDF70" },
+  { id: "african", label: "African", emoji: "\uD83C\uDF72" },
+  { id: "shawarma", label: "Shawarma", emoji: "\uD83C\uDF2F" },
 ];
 
 export function FilterBar({
@@ -64,42 +79,52 @@ export function FilterBar({
   className,
 }: FilterBarProps) {
   const isPickupMode = useIsPickupMode();
-  const [priceFilter, setPriceFilter] = useState<number | null>(null);
   const [internalFilters, setInternalFilters] = useState<ActiveFilters>(defaultFilters);
 
   // Use external state if provided, otherwise use internal state
   const filters = externalFilters ?? internalFilters;
-  const onFilterChange = externalOnChange ?? setInternalFilters;
+  const onChange = externalOnChange ?? setInternalFilters;
 
-  const toggleOffers = () => {
-    onFilterChange({ ...filters, offers: !filters.offers });
+  const update = (partial: Partial<ActiveFilters>) => {
+    onChange({ ...filters, ...partial });
   };
 
-  const toggleHighestRated = () => {
-    onFilterChange({ ...filters, highestRated: !filters.highestRated });
-  };
+  const toggleOffers = () => update({ offers: !filters.offers });
 
-  const toggleUnder30 = () => {
-    onFilterChange({
-      ...filters,
-      maxTime: filters.maxTime === 30 ? null : 30,
-    });
-  };
+  const toggleHighestRated = () => update({ highestRated: !filters.highestRated });
 
-  const setDeliveryFee = (value: string | null) => {
-    onFilterChange({ ...filters, deliveryFee: value });
-  };
+  const toggleUnder30 = () => update({ maxTime: filters.maxTime === 30 ? null : 30 });
 
-  const setRating = (value: number | null) => {
-    onFilterChange({ ...filters, minRating: value });
-  };
+  const togglePickupOnly = () => update({ pickupOnly: !filters.pickupOnly });
 
-  const setSort = (value: string | null) => {
-    onFilterChange({ ...filters, sortBy: value });
+  const toggleScheduledOnly = () => update({ scheduledOnly: !filters.scheduledOnly });
+
+  const setDeliveryFee = (value: string | null) => update({ deliveryFee: value });
+
+  const setRating = (value: number | null) => update({ minRating: value });
+
+  const setSort = (value: string | null) => update({ sortBy: value });
+
+  const setDistance = (value: number | null) => update({ maxDistance: value });
+
+  const toggleCategory = (catId: string) => {
+    const current = filters.categories;
+    const next = current.includes(catId)
+      ? current.filter((c) => c !== catId)
+      : [...current, catId];
+    update({ categories: next });
   };
 
   return (
     <div className={cn("scrollbar-hide flex items-center gap-2 overflow-x-auto pb-2", className)}>
+      {/* Sort */}
+      <FilterDropdown
+        label="Sort"
+        value={filters.sortBy}
+        options={sortOptions}
+        onChange={setSort}
+      />
+
       {/* Offers Filter */}
       <FilterChip
         active={filters.offers}
@@ -118,6 +143,14 @@ export function FilterBar({
           onChange={setDeliveryFee}
         />
       )}
+
+      {/* Distance */}
+      <FilterDropdown
+        label="Distance"
+        value={filters.maxDistance?.toString() ?? null}
+        options={distanceOptions}
+        onChange={(val) => setDistance(val ? parseInt(val) : null)}
+      />
 
       {/* Under 30 min */}
       <FilterChip active={filters.maxTime === 30} onClick={toggleUnder30}>
@@ -142,26 +175,28 @@ export function FilterBar({
         icon={<Star className="size-3.5 fill-current" />}
       />
 
-      {/* Price Filter - Only in pickup mode */}
-      {isPickupMode && (
-        <FilterDropdown
-          label="Price"
-          value={priceFilter?.toString() || null}
-          options={priceOptions}
-          onChange={(val) => setPriceFilter(val ? parseInt(val) : null)}
-        />
-      )}
-
-      {/* Sort Filter */}
-      <FilterDropdown
-        label="Sort"
-        value={filters.sortBy}
-        options={sortOptions}
-        onChange={setSort}
+      {/* Category multi-select */}
+      <CategoryMultiSelect
+        selected={filters.categories}
+        onToggle={toggleCategory}
       />
+
+      {/* Pickup toggle */}
+      <FilterChip active={filters.pickupOnly} onClick={togglePickupOnly}>
+        Pickup available
+      </FilterChip>
+
+      {/* Scheduled orders toggle */}
+      <FilterChip active={filters.scheduledOnly} onClick={toggleScheduledOnly}>
+        Scheduled orders
+      </FilterChip>
     </div>
   );
 }
+
+// =============================================================================
+// FilterChip
+// =============================================================================
 
 interface FilterChipProps {
   children: React.ReactNode;
@@ -188,6 +223,10 @@ function FilterChip({ children, active = false, onClick, icon, className }: Filt
     </button>
   );
 }
+
+// =============================================================================
+// FilterDropdown
+// =============================================================================
 
 interface FilterDropdownProps {
   label: string;
@@ -241,6 +280,60 @@ function FilterDropdown({ label, value, options, onChange, icon }: FilterDropdow
   );
 }
 
+// =============================================================================
+// CategoryMultiSelect
+// =============================================================================
+
+function CategoryMultiSelect({
+  selected,
+  onToggle,
+}: {
+  selected: string[];
+  onToggle: (id: string) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const count = selected.length;
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <button
+          className={cn(
+            "inline-flex min-h-[36px] shrink-0 items-center gap-1.5 rounded-full border px-3.5 py-2 text-xs font-medium transition-all active:scale-95",
+            count > 0
+              ? "border-foreground bg-foreground text-background"
+              : "border-border bg-background text-foreground hover:border-foreground/50",
+          )}
+        >
+          {count > 0 ? `Cuisine (${count})` : "Cuisine"}
+          <ChevronDown className="size-3" />
+        </button>
+      </PopoverTrigger>
+      <PopoverContent align="start" className="w-56 p-1">
+        <div className="space-y-0.5">
+          {categoryOptions.map((cat) => {
+            const isSelected = selected.includes(cat.id);
+            return (
+              <button
+                key={cat.id}
+                onClick={() => onToggle(cat.id)}
+                className={cn(
+                  "flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm transition-colors hover:bg-muted",
+                  isSelected && "bg-muted font-medium",
+                )}
+              >
+                <span className="text-base">{cat.emoji}</span>
+                <span className="flex-1 text-left">{cat.label}</span>
+                {isSelected && <Check className="size-4 text-primary" />}
+              </button>
+            );
+          })}
+        </div>
+      </PopoverContent>
+    </Popover>
+  );
+}
+
 // Default filter state
 export const defaultFilters: ActiveFilters = {
   offers: false,
@@ -249,4 +342,8 @@ export const defaultFilters: ActiveFilters = {
   highestRated: false,
   minRating: null,
   sortBy: null,
+  maxDistance: null,
+  categories: [],
+  pickupOnly: false,
+  scheduledOnly: false,
 };

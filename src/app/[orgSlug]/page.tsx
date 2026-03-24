@@ -3,14 +3,14 @@
 import { Clock, MapPin, Tag, Zap } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 
 import {
   CategoryCarousel,
   defaultCategories,
   type Category,
 } from "@/components/category/category-carousel";
-import { FilterBar } from "@/components/layout/filter-bar";
+import { FilterBar, defaultFilters, type ActiveFilters } from "@/components/layout/filter-bar";
 import { SiteShell } from "@/components/layout/site-shell";
 import {
   FeaturedItemCard,
@@ -26,6 +26,7 @@ import { toast } from "@/lib/toast";
 import { useOrgSlug } from "@/providers/org-slug-provider";
 import { useCartStore } from "@/store/cart";
 import { useDiningModeStore } from "@/store/dining-mode";
+import type { OutletFilters } from "@/types/menu";
 
 // =============================================================================
 // HELPER FUNCTIONS
@@ -61,6 +62,30 @@ function getBudgetDeliveryOutlets(outlets: OutletCardProps[], maxFee = 100): Out
 
 function getTodaysOffersOutlets(outlets: OutletCardProps[]): OutletCardProps[] {
   return outlets.filter((outlet) => outlet.offerBadge || outlet.discount);
+}
+
+/** Convert ActiveFilters from the filter bar into OutletFilters for the API */
+function toOutletFilters(f: ActiveFilters, location?: { latitude: number; longitude: number } | null): OutletFilters {
+  const out: OutletFilters = {};
+  if (f.sortBy) out.sort = f.sortBy;
+  if (f.minRating) out.minRating = f.minRating;
+  if (f.highestRated && !f.minRating) out.minRating = 4.0;
+  if (f.maxTime) out.maxDeliveryTime = f.maxTime;
+  if (f.offers) out.offers = true;
+  if (f.pickupOnly) out.pickup = true;
+  if (f.scheduledOnly) out.scheduled = true;
+  if (f.categories.length > 0) out.cuisines = f.categories;
+  if (f.maxDistance && location) {
+    out.maxDistance = f.maxDistance;
+    out.lat = location.latitude;
+    out.lng = location.longitude;
+  }
+  if (f.deliveryFee) {
+    if (f.deliveryFee === "free") out.maxDeliveryFee = 0;
+    else if (f.deliveryFee === "under-50") out.maxDeliveryFee = 50;
+    else if (f.deliveryFee === "under-100") out.maxDeliveryFee = 100;
+  }
+  return out;
 }
 
 // =============================================================================
@@ -107,12 +132,19 @@ export default function HomePage() {
   const router = useRouter();
   const [activeCategory, setActiveCategory] = useState("all");
   const [favorites, setFavorites] = useState<Set<string>>(new Set());
+  const [filters, setFilters] = useState<ActiveFilters>(defaultFilters);
 
   const deliveryLocation = useDiningModeStore((state) => state.deliveryLocation);
   const addItem = useCartStore((state) => state.addItem);
 
-  // Fetch outlets first; use first outlet id for categories and featured items (backend requires outlet_id for categories)
-  const { data: outletsData } = useOutlets(orgSlug, undefined, 1, 20);
+  // Convert UI filters to API filters
+  const outletFilters = useMemo(
+    () => toOutletFilters(filters, deliveryLocation),
+    [filters, deliveryLocation],
+  );
+
+  // Fetch outlets with filters
+  const { data: outletsData } = useOutlets(orgSlug, outletFilters, 1, 20);
   const firstOutletId = outletsData?.data?.[0]?.id ?? "";
   const firstOutletName = outletsData?.data?.[0]?.name ?? "";
 
@@ -147,6 +179,7 @@ export default function HomePage() {
         deliveryFee: o.deliveryFee,
         cuisines: o.cuisines,
         businessType: o.businessType,
+        isOpen: o.isOpen,
         href: orgRoute(orgSlug, `/outlet/${o.id}`),
         ...(o.promoted && { promoted: o.promoted }),
         ...(o.offerBadge && { offerBadge: o.offerBadge }),
@@ -227,10 +260,10 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Filter Bar */}
+      {/* Filter Bar — wired to outlet fetching */}
       <section className="border-b border-border bg-background py-2 sm:py-3">
         <div className="mx-auto w-full max-w-6xl px-3 sm:px-4 lg:px-8">
-          <FilterBar />
+          <FilterBar filters={filters} onFilterChange={setFilters} />
         </div>
       </section>
 

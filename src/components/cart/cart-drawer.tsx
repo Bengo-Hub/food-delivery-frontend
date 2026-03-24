@@ -1,6 +1,6 @@
 "use client";
 
-import { Minus, Plus, ShoppingBag, Trash2, X } from "lucide-react";
+import { Minus, Plus, ShoppingBag, Trash2, Users, X } from "lucide-react";
 import Link from "next/link";
 
 import { Button } from "@/components/ui/button";
@@ -12,6 +12,10 @@ import { useCartStore, type CartItem } from "@/store/cart";
 interface CartDrawerProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+}
+
+function formatCurrency(amount: number) {
+  return `KES ${amount.toLocaleString("en-KE", { minimumFractionDigits: 0 })}`;
 }
 
 function CartItemRow({ item }: { item: CartItem }) {
@@ -53,9 +57,30 @@ function CartItemRow({ item }: { item: CartItem }) {
           </button>
         </div>
 
+        {/* Modifier details */}
+        {item.modifiers && item.modifiers.length > 0 && (
+          <div className="space-y-0.5">
+            {item.modifiers.map((mod) => (
+              <p key={mod.groupId} className="text-xs text-muted-foreground">
+                {mod.options.map((opt) => {
+                  const label = opt.price > 0 ? `${opt.name} +${formatCurrency(opt.price)}` : opt.name;
+                  return label;
+                }).join(", ")}
+              </p>
+            ))}
+          </div>
+        )}
+
+        {/* Per-item notes */}
+        {item.notes && (
+          <p className="text-xs italic text-muted-foreground">
+            Note: {item.notes}
+          </p>
+        )}
+
         <div className="flex items-center justify-between">
           <span className="text-sm font-semibold text-foreground">
-            KES {item.total.toLocaleString()}
+            {formatCurrency(item.total)}
           </span>
 
           {/* Quantity controls */}
@@ -95,9 +120,10 @@ export function CartDrawer({ open, onOpenChange }: CartDrawerProps) {
   const itemCount = items.reduce((sum, item) => sum + item.quantity, 0);
   const cartSubtotal = subtotal();
 
-  // Delivery fee: can be from backend by outlet/distance when API is wired
+  // TODO: replace with useFeeBreakdown() once backend cart IDs are wired
   const deliveryFee = cartSubtotal > 0 ? (cartSubtotal > 2000 ? 0 : 150) : 0;
-  const total = cartSubtotal + deliveryFee;
+  const serviceFee = cartSubtotal > 0 ? Math.round(cartSubtotal * 0.05) : 0;
+  const total = cartSubtotal + deliveryFee + serviceFee;
 
   if (!open) return null;
 
@@ -135,6 +161,16 @@ export function CartDrawer({ open, onOpenChange }: CartDrawerProps) {
             <X className="size-5" />
           </button>
         </div>
+
+        {/* Group order chip */}
+        {items.length > 0 && (
+          <div className="border-b border-border px-4 py-2">
+            <button className="inline-flex items-center gap-1.5 rounded-full border border-border px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:border-foreground/50 hover:text-foreground">
+              <Users className="size-3.5" />
+              Start a group order
+            </button>
+          </div>
+        )}
 
         {/* Cart Content */}
         {items.length === 0 ? (
@@ -176,7 +212,7 @@ export function CartDrawer({ open, onOpenChange }: CartDrawerProps) {
               <div className="space-y-2">
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">Subtotal</span>
-                  <span className="font-medium">KES {cartSubtotal.toLocaleString()}</span>
+                  <span className="font-medium">{formatCurrency(cartSubtotal)}</span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">Delivery fee</span>
@@ -184,18 +220,22 @@ export function CartDrawer({ open, onOpenChange }: CartDrawerProps) {
                     {deliveryFee === 0 ? (
                       <span className="text-green-600">Free</span>
                     ) : (
-                      `KES ${deliveryFee.toLocaleString()}`
+                      formatCurrency(deliveryFee)
                     )}
                   </span>
                 </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Service fee</span>
+                  <span className="font-medium">{formatCurrency(serviceFee)}</span>
+                </div>
                 {deliveryFee > 0 && cartSubtotal < 2000 && (
                   <p className="text-xs text-muted-foreground">
-                    Add KES {(2000 - cartSubtotal).toLocaleString()} more for free delivery
+                    Add {formatCurrency(2000 - cartSubtotal)} more for free delivery
                   </p>
                 )}
                 <div className="flex justify-between border-t border-border pt-2 text-base font-semibold">
                   <span>Total</span>
-                  <span>KES {total.toLocaleString()}</span>
+                  <span>{formatCurrency(total)}</span>
                 </div>
               </div>
             </div>

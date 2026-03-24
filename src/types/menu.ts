@@ -114,4 +114,12 @@ export interface OutletFilters {
   maxDeliveryTime?: number;
   isOpen?: boolean;
   businessType?: string;
+  sort?: string;
+  offers?: boolean;
+  pickup?: boolean;
+  scheduled?: boolean;
+  category?: string;
+  lat?: number;
+  lng?: number;
+  maxDistance?: number;
 }

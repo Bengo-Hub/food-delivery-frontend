@@ -23,7 +23,10 @@ export type OutletCardProps = {
   promoted?: boolean;
   discount?: string;
   offerBadge?: string;
+  promoBadge?: string;
   isFavorite?: boolean;
+  isOpen?: boolean;
+  opensAt?: string;
   onFavoriteToggle?: (id: string, isFavorite: boolean) => void;
   href?: string;
   className?: string;
@@ -37,14 +40,17 @@ export function OutletCard({
   image,
   rating = 4.5,
   reviewCount = 0,
-  deliveryTime = "25-35",
-  deliveryFee = "Free",
+  deliveryTime,
+  deliveryFee,
   distance,
   cuisines = [],
   promoted = false,
   discount,
   offerBadge,
+  promoBadge,
   isFavorite: initialFavorite = false,
+  isOpen = true,
+  opensAt,
   onFavoriteToggle,
   href,
   className,
@@ -83,6 +89,7 @@ export function OutletCard({
       href={outletUrl as any}
       className={cn(
         "group block overflow-hidden rounded-xl bg-card transition-all hover:shadow-lg",
+        !isOpen && "opacity-70",
         className,
       )}
     >
@@ -93,27 +100,54 @@ export function OutletCard({
             src={getMediaUrl(image)}
             alt={name}
             fill
-            className="object-cover transition-transform duration-300 group-hover:scale-105"
+            className={cn(
+              "object-cover transition-transform duration-300 group-hover:scale-105",
+              !isOpen && "grayscale",
+            )}
             sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
           />
         ) : (
-          <div className="flex size-full items-center justify-center bg-gradient-to-br from-muted to-muted/50">
+          <div className={cn(
+            "flex size-full items-center justify-center bg-gradient-to-br from-muted to-muted/50",
+            !isOpen && "grayscale",
+          )}>
             <span className="text-4xl opacity-30">
               {businessType === "pharmacy"
-                ? "💊"
+                ? "\uD83D\uDC8A"
                 : businessType === "flowers"
-                  ? "💐"
+                  ? "\uD83D\uDC90"
                   : businessType === "retail"
-                    ? "🛍️"
+                    ? "\uD83D\uDECD\uFE0F"
                     : businessType === "grocery"
-                      ? "🛒"
-                      : "🍽️"}
+                      ? "\uD83D\uDED2"
+                      : "\uD83C\uDF7D\uFE0F"}
             </span>
           </div>
         )}
 
+        {/* Closed overlay */}
+        {!isOpen && (
+          <div className="absolute inset-0 flex items-center justify-center bg-black/40">
+            <div className="rounded-md bg-black/70 px-3 py-1.5 text-center">
+              <p className="text-xs font-semibold text-white">Closed</p>
+              {opensAt && (
+                <p className="text-[10px] text-white/80">Opens at {opensAt}</p>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Promo Badge - Top Left corner of image (red, e.g. -15%) */}
+        {promoBadge && (
+          <div className="absolute left-0 top-3">
+            <Badge className="rounded-l-none rounded-r-full bg-red-500 px-3 py-1 text-xs font-semibold text-white shadow-md">
+              {promoBadge}
+            </Badge>
+          </div>
+        )}
+
         {/* Offer Badge - Top Left (Uber Eats style) */}
-        {(offerBadge || discount) && (
+        {!promoBadge && (offerBadge || discount) && (
           <div className="absolute left-0 top-3">
             <Badge
               className={cn(
@@ -129,7 +163,7 @@ export function OutletCard({
         )}
 
         {/* Promoted Badge - Top Left under offer */}
-        {promoted && !offerBadge && !discount && (
+        {promoted && !offerBadge && !discount && !promoBadge && (
           <div className="absolute left-2 top-2">
             <Badge className="bg-black/70 text-xs font-medium text-white backdrop-blur-sm">
               Sponsored
@@ -166,9 +200,13 @@ export function OutletCard({
             ) : (
               <>
                 <span className="inline-flex size-4 items-center justify-center rounded-full bg-primary/10">
-                  <span className="text-[10px]">🛵</span>
+                  <span className="text-[10px]">{"\uD83D\uDEF5"}</span>
                 </span>
-                <span>{formatDeliveryFee(deliveryFee)}</span>
+                {deliveryFee ? (
+                  <span>{formatDeliveryFee(deliveryFee)}</span>
+                ) : (
+                  <span className="text-muted-foreground">--</span>
+                )}
               </>
             )}
           </div>
@@ -188,7 +226,7 @@ export function OutletCard({
           )}
 
           {/* Separator */}
-          {rating > 0 && deliveryTime && <span className="text-muted-foreground">•</span>}
+          {rating > 0 && deliveryTime && <span className="text-muted-foreground">&bull;</span>}
 
           {/* Time */}
           {deliveryTime && (
@@ -200,7 +238,7 @@ export function OutletCard({
           {/* Distance for delivery mode */}
           {!isPickupMode && distance && (
             <>
-              <span className="text-muted-foreground">•</span>
+              <span className="text-muted-foreground">&bull;</span>
               <span className="text-muted-foreground">{distance}</span>
             </>
           )}
@@ -209,7 +247,7 @@ export function OutletCard({
         {/* Cuisines/Categories - Only if provided */}
         {cuisines.length > 0 && (
           <p className="line-clamp-1 hidden text-xs text-muted-foreground sm:block">
-            {cuisines.slice(0, 3).join(" • ")}
+            {cuisines.slice(0, 3).join(" \u2022 ")}
           </p>
         )}
       </div>

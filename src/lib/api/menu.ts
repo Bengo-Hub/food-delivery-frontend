@@ -209,13 +209,31 @@ function backendOutletToOutlet(o: BackendOutlet): Outlet {
 
 export async function fetchOutlets(
   tenantSlug: string,
-  _filters?: OutletFilters,
+  filters?: OutletFilters,
   page = 1,
   limit = 20,
 ): Promise<PaginatedResponse<Outlet>> {
   const params = new URLSearchParams();
   params.set("page", String(page));
   params.set("limit", String(limit));
+
+  // Pass all supported filter params to the backend
+  if (filters?.search) params.set("q", filters.search);
+  if (filters?.minRating != null) params.set("min_rating", String(filters.minRating));
+  if (filters?.maxDeliveryFee != null) params.set("max_delivery_fee", String(filters.maxDeliveryFee));
+  if (filters?.maxDeliveryTime != null) params.set("max_delivery_time", String(filters.maxDeliveryTime));
+  if (filters?.sort) params.set("sort", filters.sort);
+  if (filters?.offers) params.set("offers", "true");
+  if (filters?.pickup) params.set("pickup", "true");
+  if (filters?.scheduled) params.set("scheduled", "true");
+  if (filters?.category) params.set("category", filters.category);
+  if (filters?.cuisines?.length) params.set("cuisines", filters.cuisines.join(","));
+  if (filters?.isOpen != null) params.set("is_open", String(filters.isOpen));
+  if (filters?.businessType) params.set("business_type", filters.businessType);
+  if (filters?.lat != null) params.set("lat", String(filters.lat));
+  if (filters?.lng != null) params.set("lng", String(filters.lng));
+  if (filters?.maxDistance != null) params.set("max_distance", String(filters.maxDistance));
+
   const response = await api.get<BackendListResponse<BackendOutlet>>(
     `${tenantSlug}/outlets?${params.toString()}`,
   );
