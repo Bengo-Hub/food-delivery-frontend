@@ -81,9 +81,10 @@ test.describe('Ordering: authenticated requests after login', () => {
     }
 
     // 3) SSO GET /api/v1/auth/me: if observed (e.g. fallback), assert 200 and roles/permissions
-    if (ssoMeResponse !== null) {
-      expect(ssoMeResponse.status, 'SSO GET /auth/me must return 200 when called').toBe(200);
-      const ssoBody = ssoMeResponse.body as { roles?: unknown; permissions?: unknown } | undefined;
+    const capturedSsoMe = ssoMeResponse as { status: number; body?: unknown } | null;
+    if (capturedSsoMe !== null) {
+      expect(capturedSsoMe.status, 'SSO GET /auth/me must return 200 when called').toBe(200);
+      const ssoBody = capturedSsoMe.body as { roles?: unknown; permissions?: unknown } | undefined;
       if (ssoBody) {
         expect(Array.isArray(ssoBody.roles) || typeof ssoBody.roles !== 'undefined', 'SSO /me should include roles').toBeTruthy();
         expect(Array.isArray(ssoBody.permissions) || typeof ssoBody.permissions !== 'undefined', 'SSO /me should include permissions').toBeTruthy();
