@@ -9,7 +9,7 @@ import {
 } from "lucide-react";
 
 import { SiteShell } from "@/components/layout/site-shell";
-import { CustomerLocationPicker } from "@/components/location/customer-location-picker";
+
 import { MenuDiscovery } from "@/components/menu/menu-discovery";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -65,10 +65,7 @@ export default async function MenuPage({ searchParams }: MenuPageProps) {
             ))}
           </div>
 
-          {/* Location picker - hidden on mobile (already in header), shown on desktop */}
-          <div className="hidden sm:block">
-            <CustomerLocationPicker />
-          </div>
+
         </div>
       </section>
       <div id="menu-browser">
