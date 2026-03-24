@@ -9,6 +9,7 @@ import type {
   MenuItem,
   MenuCategory,
   MenuFilters,
+  ModifierGroup,
   Outlet,
   OutletFilters,
   PaginatedResponse,
@@ -40,10 +41,24 @@ interface BackendMenuItem {
   categoryId: string;
   categoryName?: string;
   imageUrl?: string;
+  imageUrls?: string[];
   leadTimeMinutes?: number;
   variants?: unknown[];
   dietaryTags?: unknown[];
   isFavorite?: boolean;
+  modifierGroups?: {
+    id: string;
+    name: string;
+    is_required?: boolean;
+    min_selections?: number;
+    max_selections?: number;
+    options?: {
+      id: string;
+      name: string;
+      price_adjustment?: number;
+      is_default?: boolean;
+    }[];
+  }[];
 }
 
 function backendItemToMenuItem(
@@ -51,6 +66,9 @@ function backendItemToMenuItem(
   outletId = "",
   outletName = "",
 ): MenuItem {
+  const images = (b.imageUrls ?? [])
+    .map((url) => getMediaUrl(url))
+    .filter((url): url is string => !!url);
   return {
     id: b.id,
     name: b.name,
@@ -60,11 +78,25 @@ function backendItemToMenuItem(
     category: b.categoryName ?? "",
     categoryId: b.categoryId,
     image: getMediaUrl(b.imageUrl),
+    ...(images.length > 0 ? { images } : {}),
     outletId,
     outletName,
     available: true,
     dietary: [],
     isFavorite: !!b.isFavorite,
+    ...(b.modifierGroups ? { modifierGroups: b.modifierGroups.map((g) => ({
+      id: g.id,
+      name: g.name,
+      isRequired: g.is_required ?? false,
+      minSelections: g.min_selections ?? 0,
+      maxSelections: g.max_selections ?? 1,
+      options: (g.options ?? []).map((o) => ({
+        id: o.id,
+        name: o.name,
+        priceAdjustment: o.price_adjustment ?? 0,
+        isDefault: o.is_default ?? false,
+      })),
+    })) } : {}),
   };
 }
 

@@ -16,6 +16,7 @@ export interface MenuItem {
   categoryId: string;
   dietary: DietaryTag[];
   image?: string;
+  images?: string[];
   outletId: string;
   outletName: string;
   available: boolean;
@@ -26,7 +27,24 @@ export interface MenuItem {
   calories?: number;
   allergens?: string[];
   customizations?: MenuItemCustomization[];
+  modifierGroups?: ModifierGroup[];
   isFavorite?: boolean;
+}
+
+export interface ModifierGroup {
+  id: string;
+  name: string;
+  isRequired: boolean;
+  minSelections: number;
+  maxSelections: number;
+  options: ModifierOption[];
+}
+
+export interface ModifierOption {
+  id: string;
+  name: string;
+  priceAdjustment: number;
+  isDefault: boolean;
 }
 
 export interface MenuItemCustomization {
