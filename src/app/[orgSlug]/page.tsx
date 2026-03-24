@@ -184,6 +184,7 @@ export default function HomePage() {
         ...(o.promoted && { promoted: o.promoted }),
         ...(o.offerBadge && { offerBadge: o.offerBadge }),
         ...(o.image && { image: o.image }),
+        ...(o.discount && { promoBadge: `-${o.discount}%` }),
       }))
     : [];
 

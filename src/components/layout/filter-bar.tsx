@@ -67,10 +67,14 @@ const categoryOptions: { id: string; label: string; emoji: string }[] = [
   { id: "chicken", label: "Chicken", emoji: "\uD83C\uDF57" },
   { id: "burgers", label: "Burgers", emoji: "\uD83C\uDF54" },
   { id: "fast-food", label: "Fast-food", emoji: "\uD83C\uDF1F" },
-  { id: "indian", label: "Indian", emoji: "\uD83C\uDF5B" },
+  { id: "indian", label: "Indian", emoji: "\uD83C\uDDEE\uD83C\uDDF3" },
   { id: "dessert", label: "Dessert", emoji: "\uD83C\uDF70" },
-  { id: "african", label: "African", emoji: "\uD83C\uDF72" },
-  { id: "shawarma", label: "Shawarma", emoji: "\uD83C\uDF2F" },
+  { id: "african", label: "African", emoji: "\uD83C\uDF0D" },
+  { id: "shawarma", label: "Shawarma", emoji: "\uD83E\uDD59" },
+  { id: "breakfast", label: "Breakfast", emoji: "\uD83C\uDF73" },
+  { id: "sandwich", label: "Sandwich", emoji: "\uD83E\uDD6A" },
+  { id: "pasta", label: "Pasta", emoji: "\uD83C\uDF5D" },
+  { id: "stores", label: "Stores", emoji: "\uD83D\uDED2" },
 ];
 
 export function FilterBar({

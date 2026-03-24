@@ -4,6 +4,7 @@ import { Minus, Plus, ShoppingBag, Trash2, Users, X } from "lucide-react";
 import Link from "next/link";
 
 import { Button } from "@/components/ui/button";
+import { useFeeBreakdown } from "@/hooks/use-cart-api";
 import { orgRoute } from "@/lib/routes";
 import { cn } from "@/lib/utils";
 import { useOrgSlug } from "@/providers/org-slug-provider";
@@ -120,9 +121,13 @@ export function CartDrawer({ open, onOpenChange }: CartDrawerProps) {
   const itemCount = items.reduce((sum, item) => sum + item.quantity, 0);
   const cartSubtotal = subtotal();
 
-  // TODO: replace with useFeeBreakdown() once backend cart IDs are wired
-  const deliveryFee = cartSubtotal > 0 ? (cartSubtotal > 2000 ? 0 : 150) : 0;
-  const serviceFee = cartSubtotal > 0 ? Math.round(cartSubtotal * 0.05) : 0;
+  // Use backend fee breakdown when a server-side cart ID exists; fall back to
+  // client-side estimates until the checkout flow creates one.
+  const { data: feeData } = useFeeBreakdown(null);
+  const deliveryFee =
+    feeData?.delivery_fee ??
+    (cartSubtotal > 0 ? (cartSubtotal > 2000 ? 0 : 150) : 0);
+  const serviceFee = feeData?.service_fee ?? 0;
   const total = cartSubtotal + deliveryFee + serviceFee;
 
   if (!open) return null;

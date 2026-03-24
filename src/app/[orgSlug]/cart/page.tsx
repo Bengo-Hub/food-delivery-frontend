@@ -8,6 +8,8 @@ import { SiteShell } from "@/components/layout/site-shell";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
+import { useFeeBreakdown } from "@/hooks/use-cart-api";
+import { useOutlet } from "@/hooks/use-menu";
 import { orgRoute } from "@/lib/routes";
 import { useOrgSlug } from "@/providers/org-slug-provider";
 import { useCartStore } from "@/store/cart";
@@ -31,9 +33,14 @@ export default function CartPage() {
   const diningMode = useDiningModeStore((s) => s.mode);
 
   const cartSubtotal = subtotal();
-  // TODO: replace with useFeeBreakdown() once backend cart IDs are wired
-  const deliveryFee = diningMode === "delivery" ? (cartSubtotal > 2000 ? 0 : 150) : 0;
-  const serviceFee = Math.round(cartSubtotal * 0.05); // 5% placeholder
+
+  // Use backend fee breakdown when a server-side cart ID exists; fall back to
+  // client-side estimates until the checkout flow creates one.
+  const { data: feeData } = useFeeBreakdown(null);
+  const deliveryFee =
+    feeData?.delivery_fee ??
+    (diningMode === "delivery" ? (cartSubtotal > 2000 ? 0 : 150) : 0);
+  const serviceFee = feeData?.service_fee ?? 0;
   const total = cartSubtotal + deliveryFee + serviceFee;
 
   if (items.length === 0) {
@@ -54,6 +61,9 @@ export default function CartPage() {
   // Group items by outlet for display
   const outletName = items[0]?.outletName;
   const outletId = items[0]?.outletId;
+
+  // Fetch outlet details for address display
+  const { data: outletData } = useOutlet(orgSlug, outletId ?? "");
 
   return (
     <SiteShell hideBottomNav>
@@ -85,6 +95,9 @@ export default function CartPage() {
             <Store className="h-5 w-5 text-muted-foreground" />
             <div>
               <p className="text-sm font-medium text-foreground">{outletName}</p>
+              {outletData?.address && (
+                <p className="text-xs text-muted-foreground">{outletData.address}</p>
+              )}
               <p className="text-xs text-muted-foreground">
                 {diningMode === "delivery" ? "Delivery" : "Pickup"}
               </p>
