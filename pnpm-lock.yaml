@@ -11,6 +11,9 @@ importers:
       '@bengo-hub/maps':
         specifier: github:Bengo-Hub/maps#v0.1.0
         version: https://codeload.github.com/Bengo-Hub/maps/tar.gz/902bb9336621ea8dacf69cec0a61dcb68a70f11e(maplibre-gl@5.21.0)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
+      '@bengo-hub/shared-ui-lib':
+        specifier: github:Bengo-Hub/shared-ui-lib#v0.1.0
+        version: https://codeload.github.com/Bengo-Hub/shared-ui-lib/tar.gz/232dfe9970e9552832c76beb1f2761e03420c755(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
       '@hookform/resolvers':
         specifier: ^3.10.0
         version: 3.10.0(react-hook-form@7.71.1(react@19.0.0))
@@ -814,6 +817,13 @@ packages:
     version: 0.1.0
     peerDependencies:
       maplibre-gl: '>=4.0.0'
+      react: '>=18.0.0'
+      react-dom: '>=18.0.0'
+
+  '@bengo-hub/shared-ui-lib@https://codeload.github.com/Bengo-Hub/shared-ui-lib/tar.gz/232dfe9970e9552832c76beb1f2761e03420c755':
+    resolution: {tarball: https://codeload.github.com/Bengo-Hub/shared-ui-lib/tar.gz/232dfe9970e9552832c76beb1f2761e03420c755}
+    version: 0.1.0
+    peerDependencies:
       react: '>=18.0.0'
       react-dom: '>=18.0.0'
 
@@ -7060,6 +7070,11 @@ snapshots:
   '@bengo-hub/maps@https://codeload.github.com/Bengo-Hub/maps/tar.gz/902bb9336621ea8dacf69cec0a61dcb68a70f11e(maplibre-gl@5.21.0)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)':
     dependencies:
       maplibre-gl: 5.21.0
+      react: 19.0.0
+      react-dom: 19.0.0(react@19.0.0)
+
+  '@bengo-hub/shared-ui-lib@https://codeload.github.com/Bengo-Hub/shared-ui-lib/tar.gz/232dfe9970e9552832c76beb1f2761e03420c755(react-dom@19.0.0(react@19.0.0))(react@19.0.0)':
+    dependencies:
       react: 19.0.0
       react-dom: 19.0.0(react@19.0.0)
 

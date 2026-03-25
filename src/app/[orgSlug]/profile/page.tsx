@@ -4,7 +4,17 @@ import { useEffect, useMemo, useState } from "react";
 
 import { useTheme } from "next-themes";
 
-import { BellIcon, CrownIcon, KeyRoundIcon, Settings2Icon, TicketIcon, UserCircle2Icon } from "lucide-react";
+import {
+  BanknoteIcon,
+  ChevronRight,
+  CrownIcon,
+  KeyRoundIcon,
+  Loader2,
+  Settings2Icon,
+  TicketIcon,
+  UserCircle2Icon,
+  WalletIcon,
+} from "lucide-react";
 import Link from "next/link";
 
 import { AuthorizationGate } from "@/components/auth/authorization-gate";
@@ -13,6 +23,7 @@ import { SiteShell } from "@/components/layout/site-shell";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { useWalletBalance } from "@/hooks/use-wallet";
 import type { OrderSummary } from "@/lib/auth/types";
 import { orgRoute } from "@/lib/routes";
 import { useOrgSlug } from "@/providers/org-slug-provider";
@@ -60,6 +71,9 @@ export default function ProfilePage() {
               </Button>
             </AuthorizationGate>
           </div>
+
+          {/* Payment & Wallet section */}
+          <PaymentWalletCard />
 
           <div className="grid gap-6 md:grid-cols-2">
             <AuthorizationGate permissions={["profile:update"]}>
@@ -334,6 +348,55 @@ function LoyaltyCard({
         ) : (
           <p className="text-sm text-muted-foreground">Sign in to view your loyalty journey.</p>
         )}
+      </CardContent>
+    </Card>
+  );
+}
+
+function PaymentWalletCard() {
+  const orgSlug = useOrgSlug();
+  const { data: balanceData, isLoading } = useWalletBalance();
+  const balance = balanceData?.balance ?? 0;
+  const currency = balanceData?.currency ?? "KES";
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2 text-lg">
+          <BanknoteIcon className="size-5 text-brand-emphasis" aria-hidden />
+          Payment
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        {/* Cash payment method */}
+        <div className="flex items-center justify-between rounded-xl border border-border bg-muted/20 p-4">
+          <div>
+            <p className="font-medium text-foreground">Cash</p>
+            <p className="text-sm text-muted-foreground">Change on delivery</p>
+          </div>
+          <ChevronRight className="size-5 text-muted-foreground" />
+        </div>
+
+        {/* Wallet balance */}
+        <Link
+          href={orgRoute(orgSlug, "/profile/wallet")}
+          className="flex items-center justify-between rounded-xl border border-border bg-muted/20 p-4 transition-colors hover:bg-muted/40"
+        >
+          <div className="flex items-center gap-3">
+            <WalletIcon className="size-5 text-brand-emphasis" />
+            <div>
+              <p className="font-medium text-foreground">Wallet</p>
+              {isLoading ? (
+                <Loader2 className="mt-0.5 size-4 animate-spin text-muted-foreground" />
+              ) : (
+                <p className="text-sm text-muted-foreground">
+                  {currency} {balance.toLocaleString()} available
+                </p>
+              )}
+            </div>
+          </div>
+          <span className="text-sm font-medium text-brand-emphasis">View activity</span>
+        </Link>
       </CardContent>
     </Card>
   );

@@ -6,11 +6,13 @@ import {
   Loader2,
   Package,
   ReceiptText,
+  RefreshCw,
   Search,
   ShoppingBag,
   XCircle,
 } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 import { RequireAuth } from "@/components/auth/require-auth";
@@ -23,8 +25,10 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useOrders } from "@/hooks/use-orders";
 import { formatDateTime, formatRelativeTime } from "@/lib/datetime";
 import { orgRoute } from "@/lib/routes";
+import { toast } from "@/lib/toast";
 import { cn } from "@/lib/utils";
 import { useOrgSlug } from "@/providers/org-slug-provider";
+import { useCartStore } from "@/store/cart";
 
 const STATUS_TABS = [
   { key: "all", label: "All" },
@@ -63,8 +67,24 @@ function statusIcon(status: string) {
 
 export default function OrdersPage() {
   const orgSlug = useOrgSlug();
+  const router = useRouter();
+  const addItem = useCartStore((s) => s.addItem);
   const [tab, setTab] = useState("all");
   const [search, setSearch] = useState("");
+
+  const handleReorder = (order: (typeof allOrders)[number]) => {
+    if (!order.items || order.items.length === 0) return;
+    for (const item of order.items) {
+      addItem({
+        id: item.menuItemId,
+        name: item.name,
+        price: item.unitPrice,
+        quantity: item.quantity,
+      });
+    }
+    toast.success("Items added to cart");
+    router.push(orgRoute(orgSlug, "/cart"));
+  };
 
   const statusFilter =
     tab === "active"
@@ -185,63 +205,82 @@ export default function OrdersPage() {
                 </CardContent>
               </Card>
             ) : (
-              orders.map((order) => (
-                <Link
-                  key={order.id}
-                  href={orgRoute(orgSlug, `/orders/${order.id}`)}
-                  className="group block"
-                >
-                  <Card className="transition-colors hover:border-brand-emphasis/40 hover:bg-muted/30">
-                    <CardContent className="flex items-center gap-4 py-4">
-                      {/* Icon */}
-                      <div className="hidden shrink-0 sm:block">
-                        <div
-                          className={cn(
-                            "flex size-10 items-center justify-center rounded-full",
-                            ["delivered", "completed"].includes(order.status)
-                              ? "bg-green-100 text-green-700 dark:bg-green-950 dark:text-green-400"
-                              : ["cancelled", "failed"].includes(order.status)
-                                ? "bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-400"
-                                : "bg-brand-muted text-brand-emphasis",
-                          )}
+              orders.map((order) => {
+                const isCompleted = ["delivered", "completed"].includes(order.status);
+                return (
+                  <div key={order.id} className="group">
+                    <Link
+                      href={orgRoute(orgSlug, `/orders/${order.id}`)}
+                      className="block"
+                    >
+                      <Card className="transition-colors hover:border-brand-emphasis/40 hover:bg-muted/30">
+                        <CardContent className="flex items-center gap-4 py-4">
+                          {/* Icon */}
+                          <div className="hidden shrink-0 sm:block">
+                            <div
+                              className={cn(
+                                "flex size-10 items-center justify-center rounded-full",
+                                isCompleted
+                                  ? "bg-green-100 text-green-700 dark:bg-green-950 dark:text-green-400"
+                                  : ["cancelled", "failed"].includes(order.status)
+                                    ? "bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-400"
+                                    : "bg-brand-muted text-brand-emphasis",
+                              )}
+                            >
+                              <ReceiptText className="size-5" />
+                            </div>
+                          </div>
+
+                          {/* Details */}
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center gap-2">
+                              <p className="font-semibold text-foreground">
+                                #{order.orderNumber}
+                              </p>
+                              <Badge variant={statusVariant(order.status)} className="gap-1">
+                                {statusIcon(order.status)}
+                                {order.status.replace(/_/g, " ")}
+                              </Badge>
+                            </div>
+                            <p className="mt-0.5 text-sm text-muted-foreground">
+                              {order.items?.length ?? 0} item
+                              {(order.items?.length ?? 0) !== 1 ? "s" : ""} &middot; KES{" "}
+                              {order.grandTotal.toLocaleString()}
+                            </p>
+                            <p className="mt-0.5 text-xs text-muted-foreground">
+                              {formatRelativeTime(order.createdAt)} &middot;{" "}
+                              {formatDateTime(order.createdAt, {
+                                day: "2-digit",
+                                month: "short",
+                                hour: "2-digit",
+                                minute: "2-digit",
+                              })}
+                            </p>
+                          </div>
+
+                          {/* Arrow */}
+                          <ChevronRight className="size-5 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5" />
+                        </CardContent>
+                      </Card>
+                    </Link>
+
+                    {/* Reorder button for completed orders */}
+                    {isCompleted && (
+                      <div className="mt-1 flex justify-end">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="gap-1.5 text-xs"
+                          onClick={() => handleReorder(order)}
                         >
-                          <ReceiptText className="size-5" />
-                        </div>
+                          <RefreshCw className="size-3.5" />
+                          Reorder
+                        </Button>
                       </div>
-
-                      {/* Details */}
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-center gap-2">
-                          <p className="font-semibold text-foreground">
-                            #{order.orderNumber}
-                          </p>
-                          <Badge variant={statusVariant(order.status)} className="gap-1">
-                            {statusIcon(order.status)}
-                            {order.status.replace(/_/g, " ")}
-                          </Badge>
-                        </div>
-                        <p className="mt-0.5 text-sm text-muted-foreground">
-                          {order.items?.length ?? 0} item
-                          {(order.items?.length ?? 0) !== 1 ? "s" : ""} &middot; KES{" "}
-                          {order.grandTotal.toLocaleString()}
-                        </p>
-                        <p className="mt-0.5 text-xs text-muted-foreground">
-                          {formatRelativeTime(order.createdAt)} &middot;{" "}
-                          {formatDateTime(order.createdAt, {
-                            day: "2-digit",
-                            month: "short",
-                            hour: "2-digit",
-                            minute: "2-digit",
-                          })}
-                        </p>
-                      </div>
-
-                      {/* Arrow */}
-                      <ChevronRight className="size-5 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5" />
-                    </CardContent>
-                  </Card>
-                </Link>
-              ))
+                    )}
+                  </div>
+                );
+              })
             )}
           </div>
         </div>
