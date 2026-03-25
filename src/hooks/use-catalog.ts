@@ -15,7 +15,7 @@ import {
   fetchOutletMenu,
   fetchOutlets,
   toggleFavorite,
-} from "@/lib/api/menu";
+} from "@/lib/api/catalog";
 import type { MenuFilters, OutletFilters } from "@/types/catalog";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
