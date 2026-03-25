@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const DEFAULT_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000/api/v1/";
+const DEFAULT_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4005/api/v1/";
 const NORMALISED_BASE_URL = DEFAULT_BASE_URL.endsWith("/")
   ? DEFAULT_BASE_URL
   : `${DEFAULT_BASE_URL}/`;
