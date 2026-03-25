@@ -23,15 +23,15 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 // QUERY KEYS
 // =============================================================================
 
-export const menuKeys = {
+export const catalogKeys = {
   all: ["catalog"] as const,
-  items: () => [...menuKeys.all, "items"] as const,
-  itemList: (filters?: MenuFilters) => [...menuKeys.items(), filters] as const,
-  item: (id: string) => [...menuKeys.items(), id] as const,
-  featured: (outletId?: string) => [...menuKeys.items(), "featured", outletId] as const,
-  categories: () => [...menuKeys.all, "categories"] as const,
-  categoryList: (outletId?: string) => [...menuKeys.categories(), outletId] as const,
-  category: (id: string) => [...menuKeys.categories(), id] as const,
+  items: () => [...catalogKeys.all, "items"] as const,
+  itemList: (filters?: MenuFilters) => [...catalogKeys.items(), filters] as const,
+  item: (id: string) => [...catalogKeys.items(), id] as const,
+  featured: (outletId?: string) => [...catalogKeys.items(), "featured", outletId] as const,
+  categories: () => [...catalogKeys.all, "categories"] as const,
+  categoryList: (outletId?: string) => [...catalogKeys.categories(), outletId] as const,
+  category: (id: string) => [...catalogKeys.categories(), id] as const,
 };
 
 export const outletKeys = {
@@ -53,14 +53,14 @@ const CATALOG_GC_MS = CATALOG_STALE_MS * 2;
 /**
  * Hook to fetch paginated menu items with filters (requires tenant slug for API path).
  */
-export function useMenuItems(
+export function useCatalogItems(
   tenantSlug: string,
   filters?: MenuFilters,
   page = 1,
   limit = 20,
 ) {
   return useQuery({
-    queryKey: [tenantSlug, ...menuKeys.itemList(filters), page, limit],
+    queryKey: [tenantSlug, ...catalogKeys.itemList(filters), page, limit],
     queryFn: () => fetchMenuItems(tenantSlug, filters, page, limit),
     enabled: !!tenantSlug,
     placeholderData: keepPreviousData,
@@ -72,13 +72,13 @@ export function useMenuItems(
 /**
  * Hook to fetch menu items with infinite scroll
  */
-export function useInfiniteMenuItems(
+export function useInfiniteCatalogItems(
   tenantSlug: string,
   filters?: MenuFilters,
   limit = 20,
 ) {
   return useInfiniteQuery({
-    queryKey: [tenantSlug, ...menuKeys.itemList(filters), "infinite"],
+    queryKey: [tenantSlug, ...catalogKeys.itemList(filters), "infinite"],
     queryFn: ({ pageParam = 1 }) => fetchMenuItems(tenantSlug, filters, pageParam, limit),
     initialPageParam: 1,
     getNextPageParam: (lastPage) => {
@@ -94,9 +94,9 @@ export function useInfiniteMenuItems(
 /**
  * Hook to fetch a single menu item by ID
  */
-export function useMenuItem(tenantSlug: string, id: string) {
+export function useCatalogItem(tenantSlug: string, id: string) {
   return useQuery({
-    queryKey: [tenantSlug, ...menuKeys.item(id)],
+    queryKey: [tenantSlug, ...catalogKeys.item(id)],
     queryFn: () => fetchMenuItem(tenantSlug, id),
     enabled: !!tenantSlug && !!id,
     staleTime: CATALOG_STALE_MS,
@@ -113,7 +113,7 @@ export function useFeaturedItems(
   limit = 10,
 ) {
   return useQuery({
-    queryKey: [tenantSlug, ...menuKeys.featured(outletId)],
+    queryKey: [tenantSlug, ...catalogKeys.featured(outletId)],
     queryFn: () => fetchFeaturedItems(tenantSlug, outletId, limit),
     enabled: !!tenantSlug,
     staleTime: CATALOG_STALE_MS,
@@ -130,7 +130,7 @@ export function useFeaturedItems(
  */
 export function useCategories(tenantSlug: string, outletId?: string) {
   return useQuery({
-    queryKey: [tenantSlug, ...menuKeys.categoryList(outletId)],
+    queryKey: [tenantSlug, ...catalogKeys.categoryList(outletId)],
     queryFn: () => fetchCategories(tenantSlug, outletId),
     enabled: !!tenantSlug,
     staleTime: CATALOG_STALE_MS,
@@ -143,7 +143,7 @@ export function useCategories(tenantSlug: string, outletId?: string) {
  */
 export function useCategory(tenantSlug: string, id: string) {
   return useQuery({
-    queryKey: [tenantSlug, ...menuKeys.category(id)],
+    queryKey: [tenantSlug, ...catalogKeys.category(id)],
     queryFn: () => fetchCategory(tenantSlug, id),
     enabled: !!tenantSlug && !!id,
     staleTime: CATALOG_STALE_MS,
@@ -261,7 +261,7 @@ export function useToggleFavorite(tenantSlug: string) {
     mutationFn: (itemId: string) => toggleFavorite(tenantSlug, itemId),
     onSuccess: (_: { isFavorite: boolean }, itemId: string) => {
       // Invalidate relevant queries to refresh data
-      queryClient.invalidateQueries({ queryKey: [tenantSlug, ...menuKeys.all] });
+      queryClient.invalidateQueries({ queryKey: [tenantSlug, ...catalogKeys.all] });
     },
   });
 }

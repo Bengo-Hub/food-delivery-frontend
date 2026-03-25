@@ -15,7 +15,7 @@ import {
 } from "@/components/catalog/modifier-selector";
 import { SiteShell } from "@/components/layout/site-shell";
 import { Button } from "@/components/ui/button";
-import { useMenuItem } from "@/hooks/use-catalog";
+import { useCatalogItem } from "@/hooks/use-catalog";
 import { orgRoute } from "@/lib/routes";
 import { cn } from "@/lib/utils";
 import { useOrgSlug } from "@/providers/org-slug-provider";
@@ -46,7 +46,7 @@ export default function CatalogItemPage() {
   const orgSlug = useOrgSlug();
   const itemId = (params?.id as string) ?? "";
 
-  const { data: item, isLoading, error } = useMenuItem(orgSlug, itemId);
+  const { data: item, isLoading, error } = useCatalogItem(orgSlug, itemId);
 
   const [quantity, setQuantity] = useState(1);
   const [selectedOptions, setSelectedOptions] = useState<Record<string, string[]>>({});

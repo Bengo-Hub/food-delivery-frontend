@@ -1,7 +1,7 @@
 "use client";
 
-import { ArrowLeft, Clock, Edit2, MapPin, Search } from "lucide-react";
-import { useState } from "react";
+import { ArrowLeft, Clock, Edit2, MapPin, Search, Star } from "lucide-react";
+import { useMemo, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -15,6 +15,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { useAddresses } from "@/hooks/use-addresses";
+import type { Address } from "@/lib/api/addresses";
 import { cn } from "@/lib/utils";
 import { useDiningModeStore } from "@/store/dining-mode";
 
@@ -25,6 +27,7 @@ export interface SavedAddress {
   fullAddress: string;
   latitude?: number;
   longitude?: number;
+  isDefault?: boolean;
   buildingType?: string;
   additionalInfo?: string;
   aptSuiteFloor?: string;
@@ -38,8 +41,18 @@ interface LocationDialogProps {
   onOpenChange: (open: boolean) => void;
 }
 
-// Saved addresses: load from GET /addresses when API is wired (ordering-backend has ListAddresses)
-const savedAddresses: SavedAddress[] = [];
+/** Map API Address to our SavedAddress shape */
+function toSavedAddress(addr: Address): SavedAddress {
+  return {
+    id: addr.id,
+    label: addr.label,
+    address: addr.address,
+    fullAddress: addr.address,
+    latitude: addr.lat,
+    longitude: addr.lng,
+    isDefault: addr.isDefault,
+  };
+}
 
 type DialogView = "main" | "edit";
 
@@ -64,6 +77,21 @@ export function LocationDialog({ open, onOpenChange }: LocationDialogProps) {
   const isScheduled = useDiningModeStore((state) => state.isScheduled);
   const setIsScheduled = useDiningModeStore((state) => state.setIsScheduled);
 
+  // Load saved addresses from API
+  const { data: apiAddresses = [], isLoading: addressesLoading } = useAddresses();
+  const savedAddresses = useMemo(() => apiAddresses.map(toSavedAddress), [apiAddresses]);
+
+  // Filter addresses by search query
+  const filteredAddresses = useMemo(() => {
+    if (!searchQuery.trim()) return savedAddresses;
+    const q = searchQuery.toLowerCase();
+    return savedAddresses.filter(
+      (a) =>
+        a.label.toLowerCase().includes(q) ||
+        a.address.toLowerCase().includes(q),
+    );
+  }, [savedAddresses, searchQuery]);
+
   const handleSelectAddress = (address: SavedAddress) => {
     setSelectedAddress(address);
     setDeliveryLocation({
@@ -71,6 +99,7 @@ export function LocationDialog({ open, onOpenChange }: LocationDialogProps) {
       latitude: address.latitude || 0,
       longitude: address.longitude || 0,
     });
+    onOpenChange(false);
   };
 
   const handleEditAddress = (address: SavedAddress) => {
@@ -134,40 +163,79 @@ export function LocationDialog({ open, onOpenChange }: LocationDialogProps) {
               />
             </div>
 
+            {/* Deliver Now / Schedule Toggle */}
+            <div className="mt-4 flex gap-2">
+              <Button
+                variant={!isScheduled ? "default" : "outline"}
+                size="sm"
+                className="flex-1"
+                onClick={() => setIsScheduled(false)}
+              >
+                {diningMode === "pickup" ? "Pick up now" : "Deliver now"}
+              </Button>
+              <Button
+                variant={isScheduled ? "default" : "outline"}
+                size="sm"
+                className="flex-1"
+                onClick={() => setIsScheduled(true)}
+              >
+                <Clock className="mr-1.5 size-4" />
+                Schedule
+              </Button>
+            </div>
+
             {/* Saved Addresses */}
             <div className="mt-4">
               <h3 className="mb-3 text-sm font-semibold text-foreground">Saved addresses</h3>
-              <div className="space-y-1">
-                {savedAddresses.map((address) => (
-                  <div
-                    key={address.id}
-                    className={cn(
-                      "flex items-center justify-between rounded-lg p-3 transition-colors hover:bg-muted",
-                      deliveryLocation?.address === address.address && "bg-muted",
-                    )}
-                  >
-                    <button
-                      onClick={() => handleSelectAddress(address)}
-                      className="flex flex-1 items-center gap-3 text-left"
+              {addressesLoading ? (
+                <div className="py-6 text-center text-sm text-muted-foreground">
+                  Loading addresses...
+                </div>
+              ) : filteredAddresses.length === 0 ? (
+                <div className="py-6 text-center text-sm text-muted-foreground">
+                  {searchQuery ? "No matching addresses found." : "No saved addresses yet."}
+                </div>
+              ) : (
+                <div className="space-y-1">
+                  {filteredAddresses.map((address) => (
+                    <div
+                      key={address.id}
+                      className={cn(
+                        "flex items-center justify-between rounded-lg p-3 transition-colors hover:bg-muted",
+                        deliveryLocation?.address === address.address && "bg-muted",
+                      )}
                     >
-                      <div className="flex size-10 items-center justify-center rounded-full bg-foreground">
-                        <MapPin className="size-5 text-background" />
-                      </div>
-                      <div>
-                        <p className="font-medium text-foreground">{address.label}</p>
-                        <p className="text-sm text-muted-foreground">{address.address}</p>
-                      </div>
-                    </button>
-                    <button
-                      onClick={() => handleEditAddress(address)}
-                      className="p-2 text-muted-foreground hover:text-foreground"
-                      aria-label="Edit address"
-                    >
-                      <Edit2 className="size-4" />
-                    </button>
-                  </div>
-                ))}
-              </div>
+                      <button
+                        onClick={() => handleSelectAddress(address)}
+                        className="flex flex-1 items-center gap-3 text-left"
+                      >
+                        <div className="flex size-10 items-center justify-center rounded-full bg-foreground">
+                          <MapPin className="size-5 text-background" />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-2">
+                            <p className="font-medium text-foreground">{address.label}</p>
+                            {address.isDefault && (
+                              <span className="inline-flex items-center gap-0.5 rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-medium text-primary">
+                                <Star className="size-2.5" />
+                                Default
+                              </span>
+                            )}
+                          </div>
+                          <p className="truncate text-sm text-muted-foreground">{address.address}</p>
+                        </div>
+                      </button>
+                      <button
+                        onClick={() => handleEditAddress(address)}
+                        className="p-2 text-muted-foreground hover:text-foreground"
+                        aria-label="Edit address"
+                      >
+                        <Edit2 className="size-4" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
 
             {/* Time Preference */}
@@ -177,7 +245,11 @@ export function LocationDialog({ open, onOpenChange }: LocationDialogProps) {
                 <div className="flex items-center gap-3">
                   <Clock className="size-5 text-muted-foreground" />
                   <span className="font-medium">
-                    {diningMode === "pickup" ? "Pick up now" : "Deliver now"}
+                    {isScheduled
+                      ? "Scheduled"
+                      : diningMode === "pickup"
+                        ? "Pick up now"
+                        : "Deliver now"}
                   </span>
                 </div>
                 <Button
@@ -186,7 +258,7 @@ export function LocationDialog({ open, onOpenChange }: LocationDialogProps) {
                   onClick={handleSchedule}
                   className={cn(isScheduled && "bg-foreground text-background")}
                 >
-                  Schedule
+                  {isScheduled ? "Deliver now" : "Schedule"}
                 </Button>
               </div>
             </div>
@@ -277,7 +349,10 @@ export function LocationDialog({ open, onOpenChange }: LocationDialogProps) {
               <h3 className="mb-3 font-medium">Dropoff options</h3>
               <div className="flex items-center justify-between rounded-lg bg-muted/50 p-3">
                 <div className="flex items-center gap-3">
-                  <span className="text-2xl">🚪</span>
+                  <span className="text-2xl">
+                    {/* door emoji replaced with text for build safety */}
+                    <MapPin className="size-6" />
+                  </span>
                   <div>
                     <p className="font-medium">Meet at my door</p>
                     <button className="text-sm text-green-600 hover:underline">

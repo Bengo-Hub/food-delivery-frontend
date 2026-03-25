@@ -17,7 +17,7 @@ import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { useCategories, useMenuItems, useOutlets, useToggleFavorite } from "@/hooks/use-catalog";
+import { useCategories, useCatalogItems, useOutlets, useToggleFavorite } from "@/hooks/use-catalog";
 import { orgRoute } from "@/lib/routes";
 import { cn, getMediaUrl } from "@/lib/utils";
 import { useOrgSlug } from "@/providers/org-slug-provider";
@@ -218,7 +218,7 @@ export function MenuDiscovery({
     [activeCategoryId, activeOutletId, search, activeDietary, favoriteOnly],
   );
 
-  const { data: menuData, isPending } = useMenuItems(orgSlug, filters, page, MENU_PAGE_SIZE);
+  const { data: menuData, isPending } = useCatalogItems(orgSlug, filters, page, MENU_PAGE_SIZE);
   const apiItems = menuData?.data ?? [];
   const totalPages = menuData?.meta?.totalPages ?? 1;
   const total = menuData?.meta?.total ?? 0;

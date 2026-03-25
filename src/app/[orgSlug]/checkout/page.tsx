@@ -1,9 +1,9 @@
 "use client";
 
-import { ArrowLeft, CheckCircle2, Loader2, Tag } from "lucide-react";
+import { AlertTriangle, ArrowLeft, CheckCircle2, Loader2, Tag } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { AddressSelector } from "@/components/checkout/address-selector";
 import { FeeBreakdownCard } from "@/components/checkout/fee-breakdown";
@@ -21,6 +21,7 @@ import { Input } from "@/components/ui/input";
 import { useAddresses } from "@/hooks/use-addresses";
 import { useCheckout, useFeeBreakdown } from "@/hooks/use-cart-api";
 import { useApplyPromoCode } from "@/hooks/use-orders";
+import { useZoneCheck } from "@/hooks/use-zones";
 import { orgRoute } from "@/lib/routes";
 import { toast } from "@/lib/toast";
 import { useOrgSlug } from "@/providers/org-slug-provider";
@@ -75,6 +76,27 @@ export default function CheckoutPage() {
   const checkoutMutation = useCheckout();
   const applyPromo = useApplyPromoCode();
 
+  // Resolve the selected address object for zone checking
+  const selectedAddress = useMemo(
+    () => addresses.find((a) => a.id === selectedAddressId) ?? null,
+    [addresses, selectedAddressId],
+  );
+
+  // Zone check — runs whenever the selected delivery address changes
+  const zoneCheckLat = fulfillmentMode !== "pickup" ? (selectedAddress?.lat ?? null) : null;
+  const zoneCheckLng = fulfillmentMode !== "pickup" ? (selectedAddress?.lng ?? null) : null;
+  const {
+    data: zoneResult,
+    isLoading: zoneLoading,
+    isError: zoneError,
+  } = useZoneCheck(zoneCheckLat, zoneCheckLng);
+
+  const isOutsideDeliveryZone =
+    fulfillmentMode !== "pickup" &&
+    selectedAddress != null &&
+    !zoneLoading &&
+    (zoneError || !zoneResult);
+
   // Fee breakdown — we use a synthetic cartId derived from items hash to cache
   const cartId = items.length > 0
     ? items.map((i) => `${i.id}:${i.quantity}`).join(",")
@@ -83,6 +105,11 @@ export default function CheckoutPage() {
 
   const cartSubtotal = subtotal();
   const grandTotal = feeBreakdown?.grand_total ?? cartSubtotal - discount;
+
+  // Build estimated time string from zone data when available
+  const estimatedTime = zoneResult
+    ? `${zoneResult.estimated_time}-${zoneResult.estimated_time + 15} min`
+    : "35-50 min";
 
   // Auto-select default address
   useEffect(() => {
@@ -175,6 +202,12 @@ export default function CheckoutPage() {
     // Validate delivery address for delivery/schedule modes
     if (fulfillmentMode !== "pickup" && !selectedAddressId && addresses.length > 0) {
       toast.error("Please select a delivery address");
+      return;
+    }
+
+    // Block checkout if address is outside delivery zone
+    if (isOutsideDeliveryZone) {
+      toast.error("We don't deliver to the selected address. Please choose a different address.");
       return;
     }
 
@@ -279,10 +312,23 @@ export default function CheckoutPage() {
             <FulfillmentToggle
               mode={fulfillmentMode}
               onModeChange={handleFulfillmentChange}
-              deliveryTotal={feeBreakdown?.delivery_fee ?? 0}
+              deliveryTotal={zoneResult?.delivery_fee ?? feeBreakdown?.delivery_fee ?? 0}
               pickupTotal={0}
-              estimatedTime="35-50 min"
+              estimatedTime={estimatedTime}
             />
+
+            {/* Zone validation error */}
+            {isOutsideDeliveryZone && (
+              <div className="flex items-start gap-3 rounded-xl border border-destructive/50 bg-destructive/10 p-4 text-sm text-destructive">
+                <AlertTriangle className="mt-0.5 size-5 shrink-0" />
+                <div>
+                  <p className="font-medium">We don&apos;t deliver to this address</p>
+                  <p className="mt-1 text-muted-foreground">
+                    The selected address is outside our delivery area. Please choose a different address.
+                  </p>
+                </div>
+              </div>
+            )}
 
             {/* Schedule Picker */}
             {fulfillmentMode === "schedule" && (

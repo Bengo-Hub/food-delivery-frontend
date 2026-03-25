@@ -1,9 +1,9 @@
 "use client";
 
-import { Clock, MapPin, Tag, Zap } from "lucide-react";
+import { MapPin, Star, Tag, TrendingUp, Zap } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 
 import {
   FeaturedItemCard,
@@ -17,10 +17,12 @@ import {
 } from "@/components/category/category-carousel";
 import { FilterBar, defaultFilters, type ActiveFilters } from "@/components/layout/filter-bar";
 import { SiteShell } from "@/components/layout/site-shell";
-import { OutletCard, OutletGrid, type OutletCardProps } from "@/components/outlet/outlet-card";
+import { OutletCard, type OutletCardProps } from "@/components/outlet/outlet-card";
+import { OutletSection } from "@/components/outlet/outlet-section";
 import { PromoBannerCarousel } from "@/components/promo/promo-banner-carousel";
 import { Button } from "@/components/ui/button";
-import { useCategories, useFeaturedItems, useOutlets } from "@/hooks/use-catalog";
+import { useCategories, useFeaturedItems, useInfiniteOutlets } from "@/hooks/use-catalog";
+import { useOutletSections } from "@/hooks/use-outlet-sections";
 import { orgRoute } from "@/lib/routes";
 import { toast } from "@/lib/toast";
 import { useOrgSlug } from "@/providers/org-slug-provider";
@@ -32,40 +34,11 @@ import type { OutletFilters } from "@/types/catalog";
 // HELPER FUNCTIONS
 // =============================================================================
 
-function filterOutletsByCategory(
-  outlets: OutletCardProps[],
-  categoryId: string,
-): OutletCardProps[] {
-  if (categoryId === "all" || categoryId === "restaurants") return outlets;
-  return outlets.filter(
-    (outlet) =>
-      outlet.businessType === categoryId ||
-      outlet.cuisines?.some((c) => c.toLowerCase().includes(categoryId.toLowerCase())),
-  );
-}
-
-function getSpeedyDeliveryOutlets(outlets: OutletCardProps[]): OutletCardProps[] {
-  return outlets.filter((outlet) => {
-    const time = outlet.deliveryTime?.split("-")[0];
-    return time && parseInt(time) <= 25;
-  });
-}
-
-function getBudgetDeliveryOutlets(outlets: OutletCardProps[], maxFee = 100): OutletCardProps[] {
-  return outlets.filter((outlet) => {
-    if (!outlet.deliveryFee) return false;
-    if (outlet.deliveryFee.toLowerCase() === "free") return true;
-    const feeMatch = outlet.deliveryFee.match(/\d+/);
-    return feeMatch ? parseInt(feeMatch[0]) <= maxFee : false;
-  });
-}
-
-function getTodaysOffersOutlets(outlets: OutletCardProps[]): OutletCardProps[] {
-  return outlets.filter((outlet) => outlet.offerBadge || outlet.discount);
-}
-
 /** Convert ActiveFilters from the filter bar into OutletFilters for the API */
-function toOutletFilters(f: ActiveFilters, location?: { latitude: number; longitude: number } | null): OutletFilters {
+function toOutletFilters(
+  f: ActiveFilters,
+  location?: { latitude: number; longitude: number } | null,
+): OutletFilters {
   const out: OutletFilters = {};
   if (f.sortBy) out.sort = f.sortBy;
   if (f.minRating) out.minRating = f.minRating;
@@ -88,39 +61,41 @@ function toOutletFilters(f: ActiveFilters, location?: { latitude: number; longit
   return out;
 }
 
-// =============================================================================
-// SECTION HEADER
-// =============================================================================
-
-function SectionHeader({
-  title,
-  subtitle,
-  icon,
-  seeAllHref,
-}: {
-  title: string;
-  subtitle?: string;
-  icon?: React.ReactNode;
-  seeAllHref?: string;
-}) {
-  return (
-    <div className="mb-3 flex items-center justify-between sm:mb-4">
-      <div className="flex items-center gap-2">
-        {icon && <span className="text-primary">{icon}</span>}
-        <div>
-          <h2 className="text-base font-bold text-foreground sm:text-xl">{title}</h2>
-          {subtitle && (
-            <p className="text-xs text-muted-foreground sm:text-sm">{subtitle}</p>
-          )}
-        </div>
-      </div>
-      {seeAllHref && (
-        <Button variant="ghost" size="sm" className="h-9 text-primary" asChild>
-          <Link href={seeAllHref as string}>See all</Link>
-        </Button>
-      )}
-    </div>
-  );
+/** Map API outlet to OutletCardProps */
+function toCardProps(
+  o: {
+    id: string;
+    name: string;
+    rating: number;
+    reviewCount: number;
+    deliveryTime: string;
+    deliveryFee: string;
+    cuisines: string[];
+    businessType: string;
+    isOpen: boolean;
+    promoted?: boolean;
+    offerBadge?: string;
+    image?: string;
+    discount?: number;
+  },
+  orgSlug: string,
+): OutletCardProps {
+  return {
+    id: o.id,
+    name: o.name,
+    rating: o.rating,
+    reviewCount: o.reviewCount,
+    deliveryTime: o.deliveryTime,
+    deliveryFee: o.deliveryFee,
+    cuisines: o.cuisines,
+    businessType: o.businessType,
+    isOpen: o.isOpen,
+    href: orgRoute(orgSlug, `/outlet/${o.id}`),
+    ...(o.promoted && { promoted: o.promoted }),
+    ...(o.offerBadge && { offerBadge: o.offerBadge }),
+    ...(o.image && { image: o.image }),
+    ...(o.discount && { promoBadge: `-${o.discount}%` }),
+  };
 }
 
 // =============================================================================
@@ -137,109 +112,123 @@ export default function HomePage() {
   const deliveryLocation = useDiningModeStore((state) => state.deliveryLocation);
   const addItem = useCartStore((state) => state.addItem);
 
+  // Location for distance-based queries
+  const location = useMemo(
+    () =>
+      deliveryLocation
+        ? { lat: deliveryLocation.latitude, lng: deliveryLocation.longitude }
+        : null,
+    [deliveryLocation],
+  );
+
   // Convert UI filters to API filters
   const outletFilters = useMemo(
     () => toOutletFilters(filters, deliveryLocation),
     [filters, deliveryLocation],
   );
 
-  // Fetch outlets with filters
-  const { data: outletsData } = useOutlets(orgSlug, outletFilters, 1, 20);
-  const firstOutletId = outletsData?.data?.[0]?.id ?? "";
-  const firstOutletName = outletsData?.data?.[0]?.name ?? "";
+  // ------- Section queries (parallel) -------
+  const { featured, mostReviewed, nearYou, popular, todaysOffers, allStores } =
+    useOutletSections(location);
 
+  // ------- All Stores infinite scroll -------
+  const allStoresInfinite = useInfiniteOutlets(orgSlug, { sort: "relevance", ...( location ? { lat: location.lat, lng: location.lng } : {}) }, 20);
+
+  // ------- Featured items (menu items, not outlets) -------
+  const firstOutletId = allStores.data?.data?.[0]?.id ?? "";
+  const firstOutletName = allStores.data?.data?.[0]?.name ?? "";
   const { data: categoriesData } = useCategories(orgSlug, firstOutletId || undefined);
-  const { data: featuredData } = useFeaturedItems(
-    orgSlug,
-    firstOutletId || undefined,
-    10,
+  const { data: featuredData } = useFeaturedItems(orgSlug, firstOutletId || undefined, 10);
+
+  // ------- Derived data -------
+  const categories: Category[] =
+    categoriesData?.length
+      ? categoriesData.map((c) => {
+          const match = defaultCategories.find((dc) => dc.id === c.id);
+          return {
+            id: c.id,
+            name: c.name,
+            ...(match?.emoji ? { emoji: match.emoji } : {}),
+            ...(c.image ? { imageUrl: c.image } : {}),
+          };
+        })
+      : defaultCategories;
+
+  const mapOutlets = useCallback(
+    (data: typeof featured.data) =>
+      data?.data?.map((o) => toCardProps(o, orgSlug)) ?? [],
+    [orgSlug],
   );
 
-  const categories: Category[] =
-    categoriesData?.length ?
-      categoriesData.map((c) => {
-        const match = defaultCategories.find((dc) => dc.id === c.id);
-        return {
-          id: c.id,
-          name: c.name,
-          ...(match?.emoji ? { emoji: match.emoji } : {}),
-          ...(c.image ? { imageUrl: c.image } : {}),
-        };
-      })
-    : defaultCategories;
+  const featuredOutlets = useMemo(() => mapOutlets(featured.data), [featured.data, mapOutlets]);
+  const mostReviewedOutlets = useMemo(() => mapOutlets(mostReviewed.data), [mostReviewed.data, mapOutlets]);
+  const nearYouOutlets = useMemo(() => mapOutlets(nearYou.data), [nearYou.data, mapOutlets]);
+  const popularOutlets = useMemo(() => mapOutlets(popular.data), [popular.data, mapOutlets]);
+  const todaysOffersOutlets = useMemo(() => mapOutlets(todaysOffers.data), [todaysOffers.data, mapOutlets]);
 
-  const outlets: OutletCardProps[] =
-    outletsData?.data?.length ?
-      outletsData.data.map((o) => ({
-        id: o.id,
-        name: o.name,
-        rating: o.rating,
-        reviewCount: o.reviewCount,
-        deliveryTime: o.deliveryTime,
-        deliveryFee: o.deliveryFee,
-        cuisines: o.cuisines,
-        businessType: o.businessType,
-        isOpen: o.isOpen,
-        href: orgRoute(orgSlug, `/outlet/${o.id}`),
-        ...(o.promoted && { promoted: o.promoted }),
-        ...(o.offerBadge && { offerBadge: o.offerBadge }),
-        ...(o.image && { image: o.image }),
-        ...(o.discount && { promoBadge: `-${o.discount}%` }),
-      }))
-    : [];
+  // All stores: combine infinite pages or fall back to section query
+  const allStoresOutlets = useMemo(() => {
+    if (allStoresInfinite.data?.pages) {
+      return allStoresInfinite.data.pages.flatMap((page) =>
+        page.data.map((o) => toCardProps(o, orgSlug)),
+      );
+    }
+    return mapOutlets(allStores.data);
+  }, [allStoresInfinite.data, allStores.data, mapOutlets, orgSlug]);
 
-  const featuredItems: FeaturedItemProps[] =
-    featuredData?.length
-      ? featuredData.map((item) => ({
-          id: item.id,
-          name: item.name,
-          description: item.description,
-          price: item.price,
-          currency: item.currency ?? "KES",
-          ...(item.image != null && item.image !== "" && { image: item.image }),
-          outletId: item.outletId || firstOutletId,
-          outletName: item.outletName || firstOutletName,
-          category: item.category,
-          href: orgRoute(
-            orgSlug,
-            `/catalog/${item.id}`,
-          ),
-          ...(item.discountPercent != null && {
-            discountPercent: item.discountPercent,
-          }),
-          ...(item.originalPrice != null && {
-            originalPrice: item.originalPrice,
-          }),
-        }))
-      : [];
+  const featuredItems: FeaturedItemProps[] = useMemo(
+    () =>
+      featuredData?.length
+        ? featuredData.map((item) => ({
+            id: item.id,
+            name: item.name,
+            description: item.description,
+            price: item.price,
+            currency: item.currency ?? "KES",
+            ...(item.image != null && item.image !== "" && { image: item.image }),
+            outletId: item.outletId || firstOutletId,
+            outletName: item.outletName || firstOutletName,
+            category: item.category,
+            href: orgRoute(orgSlug, `/catalog/${item.id}`),
+            ...(item.discountPercent != null && { discountPercent: item.discountPercent }),
+            ...(item.originalPrice != null && { originalPrice: item.originalPrice }),
+          }))
+        : [],
+    [featuredData, firstOutletId, firstOutletName, orgSlug],
+  );
 
-  const handleFavoriteToggle = (id: string, isFavorite: boolean) => {
+  // ------- Handlers -------
+  const handleFavoriteToggle = useCallback((id: string, isFavorite: boolean) => {
     setFavorites((prev) => {
       const next = new Set(prev);
       if (isFavorite) next.add(id);
       else next.delete(id);
       return next;
     });
-  };
+  }, []);
 
-  const handleAddToCart = (itemId: string) => {
-    const item = featuredItems.find((i) => i.id === itemId);
-    if (item) {
-      addItem({
-        id: item.id,
-        name: item.name,
-        price: item.price,
-        outletId: item.outletId,
-        outletName: item.outletName,
-      });
-      toast.success(`Added ${item.name} to cart`);
+  const handleAddToCart = useCallback(
+    (itemId: string) => {
+      const item = featuredItems.find((i) => i.id === itemId);
+      if (item) {
+        addItem({
+          id: item.id,
+          name: item.name,
+          price: item.price,
+          outletId: item.outletId,
+          outletName: item.outletName,
+        });
+        toast.success(`Added ${item.name} to cart`);
+      }
+    },
+    [featuredItems, addItem],
+  );
+
+  const handleLoadMore = useCallback(() => {
+    if (allStoresInfinite.hasNextPage && !allStoresInfinite.isFetchingNextPage) {
+      allStoresInfinite.fetchNextPage();
     }
-  };
-
-  const filteredOutlets = filterOutletsByCategory(outlets, activeCategory);
-  const speedyOutlets = getSpeedyDeliveryOutlets(outlets);
-  const budgetDeliveryOutlets = getBudgetDeliveryOutlets(outlets, 100);
-  const todaysOffersOutlets = getTodaysOffersOutlets(outlets);
+  }, [allStoresInfinite]);
 
   return (
     <SiteShell>
@@ -261,133 +250,184 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Filter Bar — wired to outlet fetching */}
+      {/* Filter Bar */}
       <section className="border-b border-border bg-background py-2 sm:py-3">
         <div className="mx-auto w-full max-w-6xl px-3 sm:px-4 lg:px-8">
           <FilterBar filters={filters} onFilterChange={setFilters} />
         </div>
       </section>
 
-      {/* Promo Banners - from backend when available */}
+      {/* Promo Banners */}
       <section className="bg-background py-4 sm:py-6">
         <div className="mx-auto w-full max-w-6xl px-3 sm:px-4 lg:px-8">
           <PromoBannerCarousel banners={[]} />
         </div>
       </section>
 
-      {/* Featured Items */}
+      {/* Featured Items (menu items carousel) */}
+      {featuredItems.length > 0 && (
+        <section className="py-4 sm:py-6">
+          <div className="mx-auto w-full max-w-6xl px-3 sm:px-4 lg:px-8">
+            <div className="mb-3 flex items-center justify-between sm:mb-4">
+              <div>
+                <h2 className="text-base font-bold text-foreground sm:text-xl">
+                  Featured Items
+                </h2>
+                <p className="text-xs text-muted-foreground sm:text-sm">
+                  Popular picks from our menu
+                </p>
+              </div>
+              <Button variant="ghost" size="sm" className="h-9 text-primary" asChild>
+                <Link href={orgRoute(orgSlug, "/catalog?featured=true")}>See all</Link>
+              </Button>
+            </div>
+            <FeaturedItemsCarousel>
+              {featuredItems.map((item) => (
+                <FeaturedItemCard key={item.id} {...item} onAddToCart={handleAddToCart} />
+              ))}
+            </FeaturedItemsCarousel>
+          </div>
+        </section>
+      )}
+
+      {/* Featured on [Brand] */}
+      <OutletSection
+        title="Featured"
+        subtitle="Promoted stores and top picks"
+        icon={<Zap className="size-5" />}
+        seeAllHref={orgRoute(orgSlug, "/catalog?filter=featured")}
+        outlets={featuredOutlets}
+        isLoading={featured.isLoading}
+        variant="scroll"
+        favorites={favorites}
+        onFavoriteToggle={handleFavoriteToggle}
+      />
+
+      {/* Most reviewed */}
+      <OutletSection
+        title="Most reviewed"
+        subtitle="Loved by the community"
+        icon={<Star className="size-5" />}
+        seeAllHref={orgRoute(orgSlug, "/catalog?sort=rating")}
+        outlets={mostReviewedOutlets}
+        isLoading={mostReviewed.isLoading}
+        variant="scroll"
+        favorites={favorites}
+        onFavoriteToggle={handleFavoriteToggle}
+        className="bg-muted/30"
+      />
+
+      {/* Stores near you */}
+      <OutletSection
+        title="Stores near you"
+        subtitle={
+          deliveryLocation?.address
+            ? `Near ${deliveryLocation.address}`
+            : "Based on your location"
+        }
+        icon={<MapPin className="size-5" />}
+        seeAllHref={orgRoute(orgSlug, "/catalog?sort=distance")}
+        outlets={nearYouOutlets}
+        isLoading={nearYou.isLoading}
+        variant="logos"
+        favorites={favorites}
+        onFavoriteToggle={handleFavoriteToggle}
+      />
+
+      {/* Popular in your area */}
+      <OutletSection
+        title="Popular in your area"
+        subtitle="Highest-rated stores nearby"
+        icon={<TrendingUp className="size-5" />}
+        seeAllHref={orgRoute(orgSlug, "/catalog?sort=rating&min_rating=4")}
+        outlets={popularOutlets}
+        isLoading={popular.isLoading}
+        variant="scroll"
+        favorites={favorites}
+        onFavoriteToggle={handleFavoriteToggle}
+        className="bg-muted/30"
+      />
+
+      {/* Today's offers */}
+      <OutletSection
+        title="Today's offers"
+        subtitle="Special deals just for today"
+        icon={<Tag className="size-5" />}
+        seeAllHref={orgRoute(orgSlug, "/catalog?filter=offers")}
+        outlets={todaysOffersOutlets}
+        isLoading={todaysOffers.isLoading}
+        variant="scroll"
+        favorites={favorites}
+        onFavoriteToggle={handleFavoriteToggle}
+      />
+
+      {/* Top 10 local spots */}
+      <OutletSection
+        title="Top 10 local spots"
+        subtitle="Neighbourhood favourites"
+        seeAllHref={orgRoute(orgSlug, "/catalog?sort=rating")}
+        outlets={mostReviewedOutlets.slice(0, 10)}
+        isLoading={mostReviewed.isLoading}
+        variant="numbered"
+        favorites={favorites}
+        onFavoriteToggle={handleFavoriteToggle}
+        className="bg-muted/30"
+      />
+
+      {/* All stores */}
       <section className="py-4 sm:py-6">
         <div className="mx-auto w-full max-w-6xl px-3 sm:px-4 lg:px-8">
-          <SectionHeader
-            title="Featured Items"
-            subtitle="Popular picks from our menu"
-            seeAllHref={orgRoute(orgSlug, "/catalog?featured=true")}
-          />
-          <FeaturedItemsCarousel>
-            {featuredItems.map((item) => (
-              <FeaturedItemCard key={item.id} {...item} onAddToCart={handleAddToCart} />
-            ))}
-          </FeaturedItemsCarousel>
+          <div className="mb-3 flex items-center justify-between sm:mb-4">
+            <div>
+              <h2 className="text-base font-bold text-foreground sm:text-xl">All stores</h2>
+              <p className="text-xs text-muted-foreground sm:text-sm">
+                Browse everything available
+              </p>
+            </div>
+          </div>
+
+          {allStores.isLoading ? (
+            <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 xl:grid-cols-4">
+              {Array.from({ length: 8 }).map((_, i) => (
+                <div key={i} className="overflow-hidden rounded-xl">
+                  <div className="aspect-[16/10] w-full animate-pulse rounded-t-xl bg-muted" />
+                  <div className="space-y-2 p-2 sm:p-3">
+                    <div className="h-4 w-3/4 animate-pulse rounded bg-muted" />
+                    <div className="h-3 w-1/2 animate-pulse rounded bg-muted" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : allStoresOutlets.length > 0 ? (
+            <>
+              <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 xl:grid-cols-4">
+                {allStoresOutlets.map((o) => (
+                  <div key={o.id}>
+                    <AllStoresCard
+                      outlet={o}
+                      isFavorite={favorites.has(o.id)}
+                      onFavoriteToggle={handleFavoriteToggle}
+                    />
+                  </div>
+                ))}
+              </div>
+              {allStoresInfinite.hasNextPage && (
+                <div className="mt-6 flex justify-center">
+                  <Button
+                    variant="outline"
+                    size="lg"
+                    className="min-h-[48px] px-8"
+                    onClick={handleLoadMore}
+                    disabled={allStoresInfinite.isFetchingNextPage}
+                  >
+                    {allStoresInfinite.isFetchingNextPage ? "Loading..." : "Show more stores"}
+                  </Button>
+                </div>
+              )}
+            </>
+          ) : null}
         </div>
       </section>
-
-      {/* Outlets Near You */}
-      <section className="bg-muted/30 py-4 sm:py-6">
-        <div className="mx-auto w-full max-w-6xl px-3 sm:px-4 lg:px-8">
-          <SectionHeader
-            title="Outlets Near You"
-            subtitle={
-              deliveryLocation?.address
-                ? `Near ${deliveryLocation.address}`
-                : "Based on your location"
-            }
-            icon={<MapPin className="size-5" />}
-            seeAllHref={orgRoute(orgSlug, "/catalog")}
-          />
-          <OutletGrid>
-            {filteredOutlets.map((outlet) => (
-              <OutletCard
-                key={outlet.id}
-                {...outlet}
-                isFavorite={favorites.has(outlet.id)}
-                onFavoriteToggle={handleFavoriteToggle}
-              />
-            ))}
-          </OutletGrid>
-        </div>
-      </section>
-
-      {/* Speedy Deliveries */}
-      {speedyOutlets.length > 0 && (
-        <section className="py-4 sm:py-6">
-          <div className="mx-auto w-full max-w-6xl px-3 sm:px-4 lg:px-8">
-            <SectionHeader
-              title="Speedy Deliveries"
-              subtitle="Get it fast - under 30 minutes"
-              icon={<Zap className="size-5" />}
-              seeAllHref={orgRoute(orgSlug, "/catalog?filter=speedy")}
-            />
-            <OutletGrid>
-              {speedyOutlets.map((outlet) => (
-                <OutletCard
-                  key={outlet.id}
-                  {...outlet}
-                  isFavorite={favorites.has(outlet.id)}
-                  onFavoriteToggle={handleFavoriteToggle}
-                />
-              ))}
-            </OutletGrid>
-          </div>
-        </section>
-      )}
-
-      {/* Budget Delivery */}
-      {budgetDeliveryOutlets.length > 0 && (
-        <section className="bg-muted/30 py-4 sm:py-6">
-          <div className="mx-auto w-full max-w-6xl px-3 sm:px-4 lg:px-8">
-            <SectionHeader
-              title="Under 100 KES Delivery"
-              subtitle="Budget-friendly delivery options"
-              icon={<Clock className="size-5" />}
-              seeAllHref={orgRoute(orgSlug, "/catalog?filter=budget-delivery")}
-            />
-            <OutletGrid>
-              {budgetDeliveryOutlets.map((outlet) => (
-                <OutletCard
-                  key={outlet.id}
-                  {...outlet}
-                  isFavorite={favorites.has(outlet.id)}
-                  onFavoriteToggle={handleFavoriteToggle}
-                />
-              ))}
-            </OutletGrid>
-          </div>
-        </section>
-      )}
-
-      {/* Today's Offers */}
-      {todaysOffersOutlets.length > 0 && (
-        <section className="py-4 sm:py-6">
-          <div className="mx-auto w-full max-w-6xl px-3 sm:px-4 lg:px-8">
-            <SectionHeader
-              title="Today's Offers"
-              subtitle="Special deals just for today"
-              icon={<Tag className="size-5" />}
-              seeAllHref={orgRoute(orgSlug, "/catalog?filter=offers")}
-            />
-            <OutletGrid>
-              {todaysOffersOutlets.map((outlet) => (
-                <OutletCard
-                  key={outlet.id}
-                  {...outlet}
-                  isFavorite={favorites.has(outlet.id)}
-                  onFavoriteToggle={handleFavoriteToggle}
-                />
-              ))}
-            </OutletGrid>
-          </div>
-        </section>
-      )}
 
       {/* CTA Section */}
       <section className="border-t border-border bg-muted/50 py-8 sm:py-12">
@@ -409,5 +449,23 @@ export default function HomePage() {
         </div>
       </section>
     </SiteShell>
+  );
+}
+
+function AllStoresCard({
+  outlet,
+  isFavorite,
+  onFavoriteToggle,
+}: {
+  outlet: OutletCardProps;
+  isFavorite: boolean;
+  onFavoriteToggle: (id: string, isFav: boolean) => void;
+}) {
+  return (
+    <OutletCard
+      {...outlet}
+      isFavorite={isFavorite}
+      onFavoriteToggle={onFavoriteToggle}
+    />
   );
 }

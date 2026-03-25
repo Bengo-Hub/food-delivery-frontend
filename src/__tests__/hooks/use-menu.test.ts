@@ -1,15 +1,15 @@
 import { describe, it, expect } from "vitest";
 import { renderHook, waitFor } from "@testing-library/react";
 
-import { useMenuItems, useMenuItem, useFeaturedItems, useCategories, useOutlets, menuKeys, outletKeys } from "@/hooks/use-catalog";
+import { useCatalogItems, useCatalogItem, useFeaturedItems, useCategories, useOutlets, catalogKeys, outletKeys } from "@/hooks/use-catalog";
 import { TestWrapper } from "../utils/test-wrapper";
 import { mockData } from "../mocks/handlers";
 
 const tenantSlug = "urban-loft";
 
-describe("useMenuItems", () => {
+describe("useCatalogItems", () => {
   it("returns paginated menu items", async () => {
-    const { result } = renderHook(() => useMenuItems(tenantSlug), { wrapper: TestWrapper });
+    const { result } = renderHook(() => useCatalogItems(tenantSlug), { wrapper: TestWrapper });
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
 
@@ -20,7 +20,7 @@ describe("useMenuItems", () => {
 
   it("keeps previous data on refetch (placeholderData)", async () => {
     const { result, rerender } = renderHook(
-      ({ filters }) => useMenuItems(tenantSlug, filters),
+      ({ filters }) => useCatalogItems(tenantSlug, filters),
       { wrapper: TestWrapper, initialProps: { filters: undefined as undefined } },
     );
 
@@ -32,9 +32,9 @@ describe("useMenuItems", () => {
   });
 });
 
-describe("useMenuItem", () => {
+describe("useCatalogItem", () => {
   it("fetches single item by id", async () => {
-    const { result } = renderHook(() => useMenuItem(tenantSlug, "item-1"), { wrapper: TestWrapper });
+    const { result } = renderHook(() => useCatalogItem(tenantSlug, "item-1"), { wrapper: TestWrapper });
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
 
@@ -43,7 +43,7 @@ describe("useMenuItem", () => {
   });
 
   it("is disabled when id is empty", () => {
-    const { result } = renderHook(() => useMenuItem(tenantSlug, ""), { wrapper: TestWrapper });
+    const { result } = renderHook(() => useCatalogItem(tenantSlug, ""), { wrapper: TestWrapper });
 
     expect(result.current.fetchStatus).toBe("idle");
   });
@@ -83,17 +83,17 @@ describe("useOutlets", () => {
 });
 
 describe("query key factories", () => {
-  it("menuKeys.all is ['menu']", () => {
-    expect(menuKeys.all).toEqual(["menu"]);
+  it("catalogKeys.all is ['catalog']", () => {
+    expect(catalogKeys.all).toEqual(["catalog"]);
   });
 
-  it("menuKeys.items() extends all", () => {
-    expect(menuKeys.items()).toEqual(["menu", "items"]);
+  it("catalogKeys.items() extends all", () => {
+    expect(catalogKeys.items()).toEqual(["catalog", "items"]);
   });
 
-  it("menuKeys.itemList with filters includes filter object", () => {
+  it("catalogKeys.itemList with filters includes filter object", () => {
     const filters = { category: "hot-beverages" };
-    expect(menuKeys.itemList(filters)).toEqual(["menu", "items", filters]);
+    expect(catalogKeys.itemList(filters)).toEqual(["catalog", "items", filters]);
   });
 
   it("outletKeys.list with filters includes filter object", () => {
