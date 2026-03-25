@@ -4,14 +4,15 @@ import {
   ChevronDown,
   ChevronUp,
   Clock,
-  ExternalLink,
   Loader2,
+  Map,
   MapPin,
   Package,
 } from "lucide-react";
-import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
+
+import { TrackingIframeModal } from "@bengo-hub/shared-ui-lib";
 
 import { SiteShell } from "@/components/layout/site-shell";
 import { RiderCard } from "@/components/tracking/rider-card";
@@ -80,6 +81,9 @@ export default function TrackOrderPage() {
     () => sse.events.map((e) => ({ status: e.type, timestamp: e.timestamp })),
     [sse.events],
   );
+
+  // Tracking modal
+  const [trackingOpen, setTrackingOpen] = useState(false);
 
   // Collapsible order details
   const [detailsOpen, setDetailsOpen] = useState(false);
@@ -252,17 +256,22 @@ export default function TrackOrderPage() {
           )}
         </Card>
 
-        {/* Track on map link (external logistics-ui) */}
-        <Button variant="outline" className="w-full gap-2" asChild>
-          <Link
-            href={`${logisticsUrl}/track/${orderId}`}
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <ExternalLink className="size-4" />
-            Track on map
-          </Link>
+        {/* Track on map */}
+        <Button
+          variant="outline"
+          className="w-full gap-2"
+          onClick={() => setTrackingOpen(true)}
+        >
+          <Map className="size-4" />
+          Track on map
         </Button>
+
+        <TrackingIframeModal
+          open={trackingOpen}
+          onOpenChange={setTrackingOpen}
+          trackingCode={orderId}
+          logisticsUiUrl={logisticsUrl}
+        />
       </div>
     </SiteShell>
   );
