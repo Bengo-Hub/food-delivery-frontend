@@ -142,7 +142,7 @@ export default function StaffDashboardPage() {
             </p>
             <h1 className="text-2xl font-bold">Order Queue</h1>
             <p className="text-sm text-muted-foreground">
-              Manage incoming orders and kitchen workflow
+              Manage incoming orders and fulfillment workflow
             </p>
           </header>
 

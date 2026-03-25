@@ -16,6 +16,7 @@ export interface TenantResponse {
   name: string;
   slug: string;
   status?: string;
+  use_case?: string;
   metadata?: Record<string, unknown>;
 }
 
@@ -27,6 +28,7 @@ export interface TenantBrand {
   primaryColor: string | null;
   secondaryColor: string | null;
   orgName: string;
+  useCase: string;
 }
 
 export function parseBrandFromTenant(t: TenantResponse): TenantBrand {
@@ -44,6 +46,7 @@ export function parseBrandFromTenant(t: TenantResponse): TenantBrand {
     primaryColor: typeof primaryColor === 'string' ? primaryColor : null,
     secondaryColor: typeof secondaryColor === 'string' ? secondaryColor : null,
     orgName: typeof orgName === 'string' ? orgName : (t.name ?? ''),
+    useCase: t.use_case ?? 'other',
   };
 }
 

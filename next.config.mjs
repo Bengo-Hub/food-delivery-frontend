@@ -33,8 +33,14 @@ const nextConfig = {
   turbopack: {},
   async redirects() {
     return [
-      { source: "/menu", destination: `/${DEFAULT_SLUG}/menu`, permanent: false },
-      { source: "/menu/:id", destination: `/${DEFAULT_SLUG}/menu/:id`, permanent: false },
+      // Catalog (new canonical route)
+      { source: "/catalog", destination: `/${DEFAULT_SLUG}/catalog`, permanent: false },
+      { source: "/catalog/:id", destination: `/${DEFAULT_SLUG}/catalog/:id`, permanent: false },
+      // Legacy /menu → /catalog redirects
+      { source: "/menu", destination: `/${DEFAULT_SLUG}/catalog`, permanent: true },
+      { source: "/menu/:id", destination: `/${DEFAULT_SLUG}/catalog/:id`, permanent: true },
+      { source: "/:orgSlug/menu", destination: `/:orgSlug/catalog`, permanent: true },
+      { source: "/:orgSlug/menu/:id", destination: `/:orgSlug/catalog/:id`, permanent: true },
       { source: "/checkout", destination: `/${DEFAULT_SLUG}/checkout`, permanent: false },
       { source: "/auth", destination: `/${DEFAULT_SLUG}/auth`, permanent: false },
       { source: "/auth/callback", destination: `/${DEFAULT_SLUG}/auth/callback`, permanent: false },

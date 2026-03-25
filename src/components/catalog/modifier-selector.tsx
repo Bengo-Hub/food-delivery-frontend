@@ -1,7 +1,7 @@
 "use client";
 
 import { cn } from "@/lib/utils";
-import type { ModifierGroup } from "@/types/menu";
+import type { ModifierGroup } from "@/types/catalog";
 
 interface ModifierSelectorProps {
   groups: ModifierGroup[];

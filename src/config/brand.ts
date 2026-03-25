@@ -82,8 +82,8 @@ export const brand = {
     dark: hexToRgbTriplet(brandPalette.dark),
   },
   metadata: {
-    defaultTitle: `${brandShortName} Food Delivery`,
-    template: "%s | " + `${brandShortName} Food Delivery`,
+    defaultTitle: `${brandShortName} ${process.env.NEXT_PUBLIC_BRAND_SUFFIX ?? "Marketplace"}`,
+    template: "%s | " + `${brandShortName} ${process.env.NEXT_PUBLIC_BRAND_SUFFIX ?? "Marketplace"}`,
     applicationName: `${brandShortName} Platform`,
   },
   assets: {

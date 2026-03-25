@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { useFeeBreakdown } from "@/hooks/use-cart-api";
-import { useOutlet } from "@/hooks/use-menu";
+import { useOutlet } from "@/hooks/use-catalog";
 import { orgRoute } from "@/lib/routes";
 import { useOrgSlug } from "@/providers/org-slug-provider";
 import { useCartStore } from "@/store/cart";
@@ -51,7 +51,7 @@ export default function CartPage() {
           <h1 className="text-2xl font-bold">Your cart is empty</h1>
           <p className="text-muted-foreground">Add items from the menu to get started.</p>
           <Button asChild>
-            <Link href={orgRoute(orgSlug, "/menu")}>Browse Menu</Link>
+            <Link href={orgRoute(orgSlug, "/catalog")}>Browse Catalog</Link>
           </Button>
         </div>
       </SiteShell>
@@ -268,7 +268,7 @@ export default function CartPage() {
               Proceed to Checkout
             </Button>
             <Button variant="outline" className="w-full" asChild>
-              <Link href={orgRoute(orgSlug, "/menu")}>Add more items</Link>
+              <Link href={orgRoute(orgSlug, "/catalog")}>Add more items</Link>
             </Button>
           </CardFooter>
         </Card>

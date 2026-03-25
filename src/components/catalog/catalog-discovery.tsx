@@ -3,14 +3,13 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import {
-    ChefHatIcon,
-    FilterIcon,
-    Heart,
-    Plus,
-    SearchIcon,
-    ShoppingCart as ShoppingCartIcon,
-    SproutIcon,
-    WheatIcon,
+  ChefHatIcon,
+  FilterIcon,
+  Heart,
+  SearchIcon,
+  ShoppingCart as ShoppingCartIcon,
+  SproutIcon,
+  WheatIcon
 } from "lucide-react";
 import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -18,12 +17,12 @@ import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { useCategories, useMenuItems, useOutlets, useToggleFavorite } from "@/hooks/use-menu";
+import { useCategories, useMenuItems, useOutlets, useToggleFavorite } from "@/hooks/use-catalog";
 import { orgRoute } from "@/lib/routes";
 import { cn, getMediaUrl } from "@/lib/utils";
 import { useOrgSlug } from "@/providers/org-slug-provider";
 import { useCartStore } from "@/store/cart";
-import type { DietaryTag } from "@/types/menu";
+import type { DietaryTag } from "@/types/catalog";
 
 type MenuItem = {
   id: string;
@@ -51,7 +50,7 @@ function DiscoveryMenuItem({
   onAddToCart: (item: MenuItem) => void;
 }) {
   const router = useRouter();
-  const itemUrl = `/${orgSlug}/menu/${item.id}`;
+  const itemUrl = `/${orgSlug}/catalog/${item.id}`;
   const { mutate: toggleFavorite } = useToggleFavorite(orgSlug);
   const [isWhitelisted, setIsWhitelisted] = useState(item.isFavorite ?? false);
 

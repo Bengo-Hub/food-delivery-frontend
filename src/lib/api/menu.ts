@@ -4,16 +4,15 @@
  */
 
 import { getMediaUrl } from "@/lib/utils";
-import { api } from "./base";
 import type {
-  MenuItem,
   MenuCategory,
   MenuFilters,
-  ModifierGroup,
+  MenuItem,
   Outlet,
   OutletFilters,
-  PaginatedResponse,
-} from "@/types/menu";
+  PaginatedResponse
+} from "@/types/catalog";
+import { api } from "./base";
 
 /** Backend list response (data, total, limit, page). */
 interface BackendListResponse<T> {

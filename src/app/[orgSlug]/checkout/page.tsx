@@ -147,7 +147,7 @@ export default function CheckoutPage() {
           <h1 className="text-2xl font-bold">Your cart is empty</h1>
           <p className="text-muted-foreground">Add some items before checking out.</p>
           <Button asChild>
-            <Link href={orgRoute(orgSlug, "/menu")}>Browse Menu</Link>
+            <Link href={orgRoute(orgSlug, "/catalog")}>Browse Catalog</Link>
           </Button>
         </div>
       </SiteShell>
@@ -441,7 +441,7 @@ function SuccessView({ orderId }: { orderId: string }) {
           </a>
         </Button>
         <Button variant="outline" asChild className="w-full">
-          <Link href={orgRoute(orgSlug, "/menu")}>Continue Browsing</Link>
+          <Link href={orgRoute(orgSlug, "/catalog")}>Continue Browsing</Link>
         </Button>
       </div>
     </div>

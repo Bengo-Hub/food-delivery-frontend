@@ -4,6 +4,7 @@ import { Check, ChevronDown, Star, Tag } from "lucide-react";
 import { useState } from "react";
 
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { useTenantConfig } from "@/hooks/use-tenant-config";
 import { cn } from "@/lib/utils";
 import { useIsPickupMode } from "@/store/dining-mode";
 
@@ -83,6 +84,7 @@ export function FilterBar({
   className,
 }: FilterBarProps) {
   const isPickupMode = useIsPickupMode();
+  const { copy } = useTenantConfig();
   const [internalFilters, setInternalFilters] = useState<ActiveFilters>(defaultFilters);
 
   // Use external state if provided, otherwise use internal state
@@ -183,6 +185,7 @@ export function FilterBar({
       <CategoryMultiSelect
         selected={filters.categories}
         onToggle={toggleCategory}
+        categoryLabel={copy.categoryLabel}
       />
 
       {/* Pickup toggle */}
@@ -291,9 +294,11 @@ function FilterDropdown({ label, value, options, onChange, icon }: FilterDropdow
 function CategoryMultiSelect({
   selected,
   onToggle,
+  categoryLabel,
 }: {
   selected: string[];
   onToggle: (id: string) => void;
+  categoryLabel: string;
 }) {
   const [open, setOpen] = useState(false);
   const count = selected.length;
@@ -309,7 +314,7 @@ function CategoryMultiSelect({
               : "border-border bg-background text-foreground hover:border-foreground/50",
           )}
         >
-          {count > 0 ? `Cuisine (${count})` : "Cuisine"}
+          {count > 0 ? `${categoryLabel} (${count})` : categoryLabel}
           <ChevronDown className="size-3" />
         </button>
       </PopoverTrigger>

@@ -17,7 +17,7 @@ export default function UnauthorizedPage() {
           <Link href={orgRoute(orgSlug, "/")}>Go home</Link>
         </Button>
         <Button asChild variant="outline">
-          <Link href={orgRoute(orgSlug, "/menu")}>Menu</Link>
+          <Link href={orgRoute(orgSlug, "/catalog")}>Catalog</Link>
         </Button>
       </div>
     </div>

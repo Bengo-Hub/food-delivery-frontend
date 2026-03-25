@@ -1,7 +1,7 @@
 import { Heart } from "lucide-react";
 
 import { SiteShell } from "@/components/layout/site-shell";
-import { MenuDiscovery } from "@/components/menu/menu-discovery";
+import { MenuDiscovery } from "@/components/catalog/catalog-discovery";
 
 type FavoritesPageProps = {
   searchParams: Promise<{ category?: string; search?: string }>;

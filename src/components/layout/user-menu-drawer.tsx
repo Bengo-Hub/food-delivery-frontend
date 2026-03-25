@@ -23,6 +23,7 @@ import { usePathname } from "next/navigation";
 
 import { Button } from "@/components/ui/button";
 import { brand } from "@/config/brand";
+import { useTenantConfig } from "@/hooks/use-tenant-config";
 import { orgRoute } from "@/lib/routes";
 import { cn } from "@/lib/utils";
 import { useTenantBranding } from "@/providers/branding-provider";
@@ -40,6 +41,7 @@ export function UserMenuDrawer({ open, onOpenChange }: UserMenuDrawerProps) {
   const user = useAuthStore((state) => state.user);
   const logout = useAuthStore((state) => state.logout);
   const { tenant } = useTenantBranding();
+  const { copy } = useTenantConfig();
 
   const handleLogout = () => {
     logout();
@@ -129,37 +131,37 @@ export function UserMenuDrawer({ open, onOpenChange }: UserMenuDrawerProps) {
     {
       icon: ShoppingCart,
       label: "Grocery",
-      href: "/menu?category=grocery",
+      href: "/catalog?category=grocery",
     },
     {
       icon: Package,
       label: "Convenience",
-      href: "/menu?category=convenience",
+      href: "/catalog?category=convenience",
     },
     {
       icon: Wine,
       label: "Alcohol",
-      href: "/menu?category=alcohol",
+      href: "/catalog?category=alcohol",
     },
     {
       icon: Pill,
       label: "Health",
-      href: "/menu?category=health",
+      href: "/catalog?category=health",
     },
     {
       icon: Package,
       label: "Retail",
-      href: "/menu?category=retail",
+      href: "/catalog?category=retail",
     },
     {
       icon: Flower,
       label: "Flowers",
-      href: "/menu?category=flowers",
+      href: "/catalog?category=flowers",
     },
     {
       icon: Zap,
       label: "Offers",
-      href: "/menu?filter=offers",
+      href: "/catalog?filter=offers",
     },
   ];
 
@@ -297,8 +299,8 @@ export function UserMenuDrawer({ open, onOpenChange }: UserMenuDrawerProps) {
               </Link>
             </li>
             <li>
-              <Link href={orgRoute(orgSlug, "/add-restaurant")} onClick={handleClose} className="block px-5 py-2 text-sm font-medium text-foreground hover:underline">
-                Add your restaurant
+              <Link href={orgRoute(orgSlug, "/add-outlet")} onClick={handleClose} className="block px-5 py-2 text-sm font-medium text-foreground hover:underline">
+                {copy.addOutletCTA}
               </Link>
             </li>
             <li>

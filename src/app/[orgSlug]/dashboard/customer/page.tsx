@@ -91,7 +91,7 @@ export default function CustomerDashboardPage() {
                     Latest deliveries
                   </CardTitle>
                   <Button variant="ghost" size="sm" asChild>
-                    <Link href={orgRoute(orgSlug, "/menu")}>Order Now</Link>
+                    <Link href={orgRoute(orgSlug, "/catalog")}>Order Now</Link>
                   </Button>
                 </div>
               </CardHeader>
@@ -106,7 +106,7 @@ export default function CustomerDashboardPage() {
                       Place your first order to see real-time delivery updates!
                     </p>
                     <Button asChild size="sm">
-                      <Link href={orgRoute(orgSlug, "/menu")}>Browse Menu</Link>
+                      <Link href={orgRoute(orgSlug, "/catalog")}>Browse Catalog</Link>
                     </Button>
                   </div>
                 ) : (

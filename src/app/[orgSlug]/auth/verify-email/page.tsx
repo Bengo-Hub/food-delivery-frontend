@@ -88,7 +88,7 @@ export default function VerifyEmailPage() {
       setVerified(true);
       toast.success("Email verified successfully!");
       setTimeout(() => {
-        router.push(orgRoute(orgSlug, "/menu"));
+        router.push(orgRoute(orgSlug, "/catalog"));
       }, 1500);
     } catch {
       toast.error("Invalid code. Please try again.");

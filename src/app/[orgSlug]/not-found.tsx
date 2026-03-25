@@ -27,7 +27,7 @@ export default function OrgNotFound() {
           <Link href={orgRoute(orgSlug, "/")}>Home</Link>
         </Button>
         <Button asChild variant="outline">
-          <Link href={orgRoute(orgSlug, "/menu")}>Menu</Link>
+          <Link href={orgRoute(orgSlug, "/catalog")}>Catalog</Link>
         </Button>
       </div>
     </div>

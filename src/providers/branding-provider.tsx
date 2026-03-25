@@ -23,6 +23,7 @@ const DEFAULT_BRAND: TenantBrand = {
   primaryColor: '#5B1C4D',
   secondaryColor: '#ea8022',
   orgName: 'Urban-Loft',
+  useCase: 'hospitality',
 };
 
 export function TenantBrandingProvider({ children }: { children: ReactNode }) {

@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { renderHook, waitFor } from "@testing-library/react";
 
-import { useMenuItems, useMenuItem, useFeaturedItems, useCategories, useOutlets, menuKeys, outletKeys } from "@/hooks/use-menu";
+import { useMenuItems, useMenuItem, useFeaturedItems, useCategories, useOutlets, menuKeys, outletKeys } from "@/hooks/use-catalog";
 import { TestWrapper } from "../utils/test-wrapper";
 import { mockData } from "../mocks/handlers";
 

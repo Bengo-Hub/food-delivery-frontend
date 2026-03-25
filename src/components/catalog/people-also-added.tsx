@@ -3,7 +3,7 @@
 import { Plus } from "lucide-react";
 import Image from "next/image";
 
-import type { MenuItem } from "@/types/menu";
+import type { MenuItem } from "@/types/catalog";
 
 interface PeopleAlsoAddedProps {
   items: MenuItem[];

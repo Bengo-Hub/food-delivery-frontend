@@ -129,7 +129,7 @@ export type Permission =
   | "payments:manage"
   | "logistics:view"
   | "logistics:dispatch"
-  | "operations:kitchen"
+  | "operations:processing"
   | "operations:inventory"
   | "profile:update"
   | "preferences:update"

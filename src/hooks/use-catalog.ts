@@ -6,18 +6,18 @@
 import { keepPreviousData, useInfiniteQuery, useQuery } from "@tanstack/react-query";
 
 import {
-    fetchCategories,
-    fetchCategory,
-    fetchFeaturedItems,
-    fetchMenuItem,
-    fetchMenuItems,
-    fetchOutlet,
-    fetchOutletMenu,
-    fetchOutlets,
-    toggleFavorite,
+  fetchCategories,
+  fetchCategory,
+  fetchFeaturedItems,
+  fetchMenuItem,
+  fetchMenuItems,
+  fetchOutlet,
+  fetchOutletMenu,
+  fetchOutlets,
+  toggleFavorite,
 } from "@/lib/api/menu";
+import type { MenuFilters, OutletFilters } from "@/types/catalog";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import type { MenuFilters, OutletFilters } from "@/types/menu";
 
 // =============================================================================
 // QUERY KEYS

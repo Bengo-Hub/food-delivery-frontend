@@ -6,27 +6,27 @@ import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 
 import {
+  FeaturedItemCard,
+  FeaturedItemsCarousel,
+  type FeaturedItemProps,
+} from "@/components/catalog/featured-item-card";
+import {
   CategoryCarousel,
   defaultCategories,
   type Category,
 } from "@/components/category/category-carousel";
 import { FilterBar, defaultFilters, type ActiveFilters } from "@/components/layout/filter-bar";
 import { SiteShell } from "@/components/layout/site-shell";
-import {
-  FeaturedItemCard,
-  FeaturedItemsCarousel,
-  type FeaturedItemProps,
-} from "@/components/menu/featured-item-card";
 import { OutletCard, OutletGrid, type OutletCardProps } from "@/components/outlet/outlet-card";
 import { PromoBannerCarousel } from "@/components/promo/promo-banner-carousel";
 import { Button } from "@/components/ui/button";
-import { useCategories, useFeaturedItems, useOutlets } from "@/hooks/use-menu";
+import { useCategories, useFeaturedItems, useOutlets } from "@/hooks/use-catalog";
 import { orgRoute } from "@/lib/routes";
 import { toast } from "@/lib/toast";
 import { useOrgSlug } from "@/providers/org-slug-provider";
 import { useCartStore } from "@/store/cart";
 import { useDiningModeStore } from "@/store/dining-mode";
-import type { OutletFilters } from "@/types/menu";
+import type { OutletFilters } from "@/types/catalog";
 
 // =============================================================================
 // HELPER FUNCTIONS
@@ -202,7 +202,7 @@ export default function HomePage() {
           category: item.category,
           href: orgRoute(
             orgSlug,
-            `/menu/${item.id}`,
+            `/catalog/${item.id}`,
           ),
           ...(item.discountPercent != null && {
             discountPercent: item.discountPercent,
@@ -251,9 +251,9 @@ export default function HomePage() {
             activeCategory={activeCategory}
             onCategoryChange={(id) => {
               if (id === "all") {
-                router.push(orgRoute(orgSlug, "/menu"));
+                router.push(orgRoute(orgSlug, "/catalog"));
               } else {
-                router.push(orgRoute(orgSlug, `/menu?category=${id}`));
+                router.push(orgRoute(orgSlug, `/catalog?category=${id}`));
               }
             }}
             variant="icons"
@@ -281,7 +281,7 @@ export default function HomePage() {
           <SectionHeader
             title="Featured Items"
             subtitle="Popular picks from our menu"
-            seeAllHref={orgRoute(orgSlug, "/menu?featured=true")}
+            seeAllHref={orgRoute(orgSlug, "/catalog?featured=true")}
           />
           <FeaturedItemsCarousel>
             {featuredItems.map((item) => (
@@ -302,7 +302,7 @@ export default function HomePage() {
                 : "Based on your location"
             }
             icon={<MapPin className="size-5" />}
-            seeAllHref={orgRoute(orgSlug, "/menu")}
+            seeAllHref={orgRoute(orgSlug, "/catalog")}
           />
           <OutletGrid>
             {filteredOutlets.map((outlet) => (
@@ -325,7 +325,7 @@ export default function HomePage() {
               title="Speedy Deliveries"
               subtitle="Get it fast - under 30 minutes"
               icon={<Zap className="size-5" />}
-              seeAllHref={orgRoute(orgSlug, "/menu?filter=speedy")}
+              seeAllHref={orgRoute(orgSlug, "/catalog?filter=speedy")}
             />
             <OutletGrid>
               {speedyOutlets.map((outlet) => (
@@ -349,7 +349,7 @@ export default function HomePage() {
               title="Under 100 KES Delivery"
               subtitle="Budget-friendly delivery options"
               icon={<Clock className="size-5" />}
-              seeAllHref={orgRoute(orgSlug, "/menu?filter=budget-delivery")}
+              seeAllHref={orgRoute(orgSlug, "/catalog?filter=budget-delivery")}
             />
             <OutletGrid>
               {budgetDeliveryOutlets.map((outlet) => (
@@ -373,7 +373,7 @@ export default function HomePage() {
               title="Today's Offers"
               subtitle="Special deals just for today"
               icon={<Tag className="size-5" />}
-              seeAllHref={orgRoute(orgSlug, "/menu?filter=offers")}
+              seeAllHref={orgRoute(orgSlug, "/catalog?filter=offers")}
             />
             <OutletGrid>
               {todaysOffersOutlets.map((outlet) => (
@@ -400,7 +400,7 @@ export default function HomePage() {
           </p>
           <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:justify-center">
             <Button asChild size="lg" className="min-h-[48px] sm:px-8">
-              <Link href={orgRoute(orgSlug, "/menu")}>Browse Menu</Link>
+              <Link href={orgRoute(orgSlug, "/catalog")}>Browse Catalog</Link>
             </Button>
             <Button variant="outline" size="lg" asChild className="min-h-[48px] sm:px-8">
               <Link href={orgRoute(orgSlug, "/auth")}>Sign in</Link>

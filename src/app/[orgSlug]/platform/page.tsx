@@ -63,7 +63,7 @@ export default function PlatformDashboardPage({
             icon={<Loader2 className="size-4 text-amber-500" />}
           />
           <MetricCard
-            title="Processing (Kitchen)"
+            title="Processing"
             value={processingCount}
             icon={<Package className="size-4 text-blue-500" />}
           />
