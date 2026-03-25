@@ -50,7 +50,7 @@ function DiscoveryMenuItem({
   onAddToCart: (item: MenuItem) => void;
 }) {
   const router = useRouter();
-  const itemUrl = `/${orgSlug}/catalog/${item.id}`;
+  const itemUrl = item.id ? `/${orgSlug}/catalog/${item.id}` : "#";
   const { mutate: toggleFavorite } = useToggleFavorite(orgSlug);
   const [isWhitelisted, setIsWhitelisted] = useState(item.isFavorite ?? false);
 

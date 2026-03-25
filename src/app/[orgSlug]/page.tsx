@@ -179,7 +179,9 @@ export default function HomePage() {
   const featuredItems: FeaturedItemProps[] = useMemo(
     () =>
       featuredData?.length
-        ? featuredData.map((item) => ({
+        ? featuredData
+            .filter((item) => !!item.id)
+            .map((item) => ({
             id: item.id,
             name: item.name,
             description: item.description,
