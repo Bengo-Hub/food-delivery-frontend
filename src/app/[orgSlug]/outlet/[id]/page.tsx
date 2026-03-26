@@ -121,9 +121,9 @@ export default function OutletPage() {
 
   const addItem = useCartStore((state) => state.addItem);
 
-  // Get unique categories
+  // Get unique categories (filter out empty/falsy names)
   const categories = useMemo(() => {
-    const unique = new Set(menuItems.map((item) => item.category));
+    const unique = new Set(menuItems.map((item) => item.category).filter(Boolean));
     return ["All", ...Array.from(unique)];
   }, [menuItems]);
 

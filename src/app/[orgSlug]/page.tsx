@@ -15,6 +15,7 @@ import {
   defaultCategories,
   type Category,
 } from "@/components/category/category-carousel";
+import { PickupLayout } from "@/components/pickup/pickup-layout";
 import { FilterBar, defaultFilters, type ActiveFilters } from "@/components/layout/filter-bar";
 import { SiteShell } from "@/components/layout/site-shell";
 import { OutletCard, type OutletCardProps } from "@/components/outlet/outlet-card";
@@ -109,6 +110,7 @@ export default function HomePage() {
   const [favorites, setFavorites] = useState<Set<string>>(new Set());
   const [filters, setFilters] = useState<ActiveFilters>(defaultFilters);
 
+  const diningMode = useDiningModeStore((s) => s.mode);
   const deliveryLocation = useDiningModeStore((state) => state.deliveryLocation);
   const addItem = useCartStore((state) => state.addItem);
 
@@ -231,6 +233,14 @@ export default function HomePage() {
       allStoresInfinite.fetchNextPage();
     }
   }, [allStoresInfinite]);
+
+  if (diningMode === "pickup") {
+    return (
+      <SiteShell>
+        <PickupLayout />
+      </SiteShell>
+    );
+  }
 
   return (
     <SiteShell>

@@ -7,47 +7,40 @@ import { FilterBar, type ActiveFilters, defaultFilters } from "@/components/layo
 import { OutletCard } from "@/components/outlet/outlet-card";
 import { PickupMapView } from "@/components/pickup/pickup-map-view";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useOutlets } from "@/hooks/use-catalog";
 import { useCategories } from "@/hooks/use-categories";
 import { useTenantConfig } from "@/hooks/use-tenant-config";
 import { cn } from "@/lib/utils";
+import { useOrgSlug } from "@/providers/org-slug-provider";
 import { useDiningModeStore } from "@/store/dining-mode";
-import type { Outlet } from "@/types/catalog";
 
-interface PickupLayoutProps {
-  outlets: Outlet[];
-  isLoading: boolean;
-  onFiltersChange?: (filters: ActiveFilters) => void;
-  onCategoryChange?: (category: string) => void;
-  activeCategory?: string;
-  orgSlug: string;
-}
-
-export function PickupLayout({
-  outlets,
-  isLoading,
-  onFiltersChange,
-  onCategoryChange,
-  activeCategory,
-  orgSlug,
-}: PickupLayoutProps) {
+export function PickupLayout() {
+  const orgSlug = useOrgSlug();
   const [selectedOutletId, setSelectedOutletId] = useState<string | null>(null);
   const [filters, setFilters] = useState<ActiveFilters>(defaultFilters);
+  const [activeCategory, setActiveCategory] = useState("all");
   const deliveryLocation = useDiningModeStore((s) => s.deliveryLocation);
   const { copy } = useTenantConfig();
   const { data: apiCategories } = useCategories();
   const categories = apiCategories?.length ? apiCategories : defaultCategories;
 
+  // Fetch outlets with pickup filter
+  const { data: outletsData, isLoading } = useOutlets(orgSlug, {
+    pickup: true,
+    ...(activeCategory !== "all" ? { category: activeCategory } : {}),
+    ...(deliveryLocation
+      ? { lat: deliveryLocation.latitude, lng: deliveryLocation.longitude }
+      : {}),
+  });
+  const outlets = outletsData?.data ?? [];
+
   const userLocation = deliveryLocation
     ? { lat: deliveryLocation.latitude, lng: deliveryLocation.longitude }
     : undefined;
 
-  const handleFilterChange = useCallback(
-    (f: ActiveFilters) => {
-      setFilters(f);
-      onFiltersChange?.(f);
-    },
-    [onFiltersChange],
-  );
+  const handleFilterChange = useCallback((f: ActiveFilters) => {
+    setFilters(f);
+  }, []);
 
   const handleOutletSelect = useCallback((outletId: string) => {
     setSelectedOutletId(outletId);
@@ -74,8 +67,8 @@ export function PickupLayout({
           {/* Categories */}
           <CategoryCarousel
             categories={categories}
-            {...(activeCategory != null ? { activeCategory } : {})}
-            {...(onCategoryChange != null ? { onCategoryChange } : {})}
+            activeCategory={activeCategory}
+            onCategoryChange={setActiveCategory}
             variant="icons"
           />
         </div>
