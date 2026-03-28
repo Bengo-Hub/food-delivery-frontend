@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 
 import { api } from "@/lib/api/base";
 import { getMediaUrl } from "@/lib/utils";
+import { useOrgSlug } from "@/providers/org-slug-provider";
 import type { Category } from "@/components/category/category-carousel";
 
 interface BackendCategory {
@@ -32,9 +33,9 @@ function mapCategory(c: BackendCategory): Category {
  * Fetches categories from the ordering-backend catalog API.
  * Falls back to empty array on error — the component should use defaultCategories as fallback.
  */
-async function fetchCategories(): Promise<Category[]> {
+async function fetchCategories(tenantSlug: string): Promise<Category[]> {
   try {
-    const res = await api.get("/catalog/categories");
+    const res = await api.get(`${tenantSlug}/catalog/categories`);
     const body = res.data;
     const items: BackendCategory[] = Array.isArray(body) ? body : (body?.data ?? []);
     return items.filter((c) => c.is_active !== false).map(mapCategory);
@@ -48,9 +49,10 @@ async function fetchCategories(): Promise<Category[]> {
  * Returns categories with icon URLs from inventory-api.
  */
 export function useCategories() {
+  const slug = useOrgSlug();
   return useQuery({
-    queryKey: ["catalog-categories"],
-    queryFn: fetchCategories,
+    queryKey: ["catalog-categories", slug],
+    queryFn: () => fetchCategories(slug),
     staleTime: 10 * 60 * 1000, // 10 minutes
     retry: 1,
   });

@@ -1,7 +1,7 @@
 "use client";
 
 import type { LatLngTuple } from "leaflet";
-import { ArrowLeft, Clock, Edit2, MapPin, Search, Star } from "lucide-react";
+import { ArrowLeft, Clock, Edit2, MapPin, Star } from "lucide-react";
 import { useMemo, useState } from "react";
 
 import { LocationSearchInput } from "@/components/location/location-search-input";
@@ -194,8 +194,18 @@ export function LocationDialog({ open, onOpenChange }: LocationDialogProps) {
                 onUseCurrent={handleUseCurrent}
                 placeholder="Search for an address or business"
                 label=""
-                countryCodes="ke,ug,tz"
+                countryCodes="ke,ug"
                 orgSlug={orgSlug || undefined}
+                searchBounds={
+                  deliveryLocation
+                    ? {
+                        minLng: deliveryLocation.longitude - 0.5,
+                        maxLng: deliveryLocation.longitude + 0.5,
+                        minLat: deliveryLocation.latitude - 0.5,
+                        maxLat: deliveryLocation.latitude + 0.5,
+                      }
+                    : null
+                }
                 autoFocus
               />
             </div>

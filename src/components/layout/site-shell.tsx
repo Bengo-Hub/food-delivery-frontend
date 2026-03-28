@@ -17,6 +17,8 @@ type SiteShellProps = {
   hideBottomNav?: boolean;
   /** Hide the desktop sidebar (e.g., on checkout or auth pages) */
   hideSidebar?: boolean;
+  /** Hide the footer (e.g., on full-screen map pages) */
+  hideFooter?: boolean;
 };
 
 export function SiteShell({
@@ -24,6 +26,7 @@ export function SiteShell({
   className,
   mainClassName,
   hideBottomNav,
+  hideFooter,
   hideSidebar: _hideSidebar,
 }: SiteShellProps) {
   const [userMenuOpen, setUserMenuOpen] = useState(false);
@@ -50,7 +53,7 @@ export function SiteShell({
       </div>
       {/* User Menu Drawer - Overlay */}
       <UserMenuDrawer open={userMenuOpen} onOpenChange={setUserMenuOpen} />
-      <SiteFooter />
+      {!hideFooter && <SiteFooter />}
       {/* Mobile bottom navigation */}
       {!hideBottomNav && <MobileBottomNav />}
       {/* PWA install prompt */}

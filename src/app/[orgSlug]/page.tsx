@@ -236,7 +236,7 @@ export default function HomePage() {
 
   if (diningMode === "pickup") {
     return (
-      <SiteShell>
+      <SiteShell hideFooter hideBottomNav mainClassName="!pb-0">
         <PickupLayout />
       </SiteShell>
     );
