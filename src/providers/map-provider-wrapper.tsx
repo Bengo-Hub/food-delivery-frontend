@@ -7,6 +7,11 @@ import { useAuthStore } from "@/store/auth";
 
 const TILE_SERVER_URL =
   process.env.NEXT_PUBLIC_TILE_SERVER_URL || "https://tiles.codevertexitsolutions.com";
+const MAPTILER_KEY =
+  process.env.NEXT_PUBLIC_MAPTILER_API_KEY || "";
+const MAPTILER_STYLE_URL = MAPTILER_KEY
+  ? `https://api.maptiler.com/maps/streets-v2/style.json?key=${MAPTILER_KEY}`
+  : undefined;
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_URL || "https://orderingapi.codevertexitsolutions.com/api/v1/";
 const LOGISTICS_API_URL =
@@ -24,6 +29,7 @@ export function MapProviderWrapper({ children }: { children: ReactNode }) {
   return (
     <MapProvider
       tileServerUrl={TILE_SERVER_URL}
+      {...(MAPTILER_STYLE_URL ? { styleUrl: MAPTILER_STYLE_URL } : {})}
       apiBaseUrl={API_BASE_URL.replace(/\/$/, "")}
       routingApiUrl={LOGISTICS_API_URL.replace(/\/$/, "")}
       authToken={token ?? ""}

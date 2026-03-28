@@ -4,8 +4,9 @@ FROM node:20-alpine AS deps
 WORKDIR /app
 RUN apk add --no-cache libc6-compat git
 RUN npm install -g pnpm
-COPY package.json pnpm-lock.yaml* ./
-RUN pnpm install --frozen-lockfile
+ARG NPM_TOKEN
+COPY package.json pnpm-lock.yaml* .npmrc* ./
+RUN NPM_TOKEN=${NPM_TOKEN} pnpm install --frozen-lockfile
 
 FROM node:20-alpine AS builder
 WORKDIR /app
