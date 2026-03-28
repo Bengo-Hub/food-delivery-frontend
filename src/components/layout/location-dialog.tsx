@@ -1,8 +1,10 @@
 "use client";
 
+import type { LatLngTuple } from "leaflet";
 import { ArrowLeft, Clock, Edit2, MapPin, Search, Star } from "lucide-react";
 import { useMemo, useState } from "react";
 
+import { LocationSearchInput } from "@/components/location/location-search-input";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -76,6 +78,7 @@ export function LocationDialog({ open, onOpenChange }: LocationDialogProps) {
   const setDeliveryLocation = useDiningModeStore((state) => state.setDeliveryLocation);
   const isScheduled = useDiningModeStore((state) => state.isScheduled);
   const setIsScheduled = useDiningModeStore((state) => state.setIsScheduled);
+  const [locationStatus, setLocationStatus] = useState<"idle" | "loading" | "resolved" | "error">("idle");
 
   // Load saved addresses from API
   const { data: apiAddresses = [], isLoading: addressesLoading } = useAddresses();
@@ -134,6 +137,34 @@ export function LocationDialog({ open, onOpenChange }: LocationDialogProps) {
     setIsScheduled(!isScheduled);
   };
 
+  const handleGeocodedSelect = (coords: LatLngTuple, label: string) => {
+    setDeliveryLocation({
+      address: label,
+      latitude: coords[0],
+      longitude: coords[1],
+    });
+    setLocationStatus("resolved");
+    onOpenChange(false);
+  };
+
+  const handleUseCurrent = () => {
+    if (!navigator.geolocation) return;
+    setLocationStatus("loading");
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setDeliveryLocation({
+          address: "Current location",
+          latitude: pos.coords.latitude,
+          longitude: pos.coords.longitude,
+        });
+        setLocationStatus("resolved");
+        onOpenChange(false);
+      },
+      () => setLocationStatus("error"),
+      { enableHighAccuracy: true, timeout: 10000 },
+    );
+  };
+
   // Reset view when dialog closes
   const handleOpenChange = (newOpen: boolean) => {
     if (!newOpen) {
@@ -152,14 +183,17 @@ export function LocationDialog({ open, onOpenChange }: LocationDialogProps) {
               <DialogTitle className="text-xl font-bold">Addresses</DialogTitle>
             </DialogHeader>
 
-            {/* Search Input */}
-            <div className="relative mt-2">
-              <Search className="absolute left-3 top-1/2 size-5 -translate-y-1/2 text-muted-foreground" />
-              <Input
+            {/* Search Input — Nominatim geocoding */}
+            <div className="mt-2">
+              <LocationSearchInput
+                value={deliveryLocation?.address ?? null}
+                status={locationStatus}
+                onSelect={handleGeocodedSelect}
+                onUseCurrent={handleUseCurrent}
                 placeholder="Search for an address"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="h-12 pl-10 text-base"
+                label=""
+                countryCodes="ke,ug,tz"
+                autoFocus
               />
             </div>
 
@@ -191,13 +225,13 @@ export function LocationDialog({ open, onOpenChange }: LocationDialogProps) {
                 <div className="py-6 text-center text-sm text-muted-foreground">
                   Loading addresses...
                 </div>
-              ) : filteredAddresses.length === 0 ? (
+              ) : savedAddresses.length === 0 ? (
                 <div className="py-6 text-center text-sm text-muted-foreground">
-                  {searchQuery ? "No matching addresses found." : "No saved addresses yet."}
+                  No saved addresses yet.
                 </div>
               ) : (
                 <div className="space-y-1">
-                  {filteredAddresses.map((address) => (
+                  {savedAddresses.map((address) => (
                     <div
                       key={address.id}
                       className={cn(

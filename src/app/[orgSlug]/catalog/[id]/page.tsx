@@ -1,6 +1,18 @@
 "use client";
 
-import { ArrowLeft, Clock, Heart, Minus, Plus, ShoppingCart, Star } from "lucide-react";
+import {
+  ArrowLeft,
+  Check,
+  ChevronRight,
+  Clock,
+  Heart,
+  Info,
+  Minus,
+  Plus,
+  ShoppingCart,
+  Star,
+  Store,
+} from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
@@ -14,8 +26,10 @@ import {
   validateModifierSelections,
 } from "@/components/catalog/modifier-selector";
 import { SiteShell } from "@/components/layout/site-shell";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { useCatalogItem } from "@/hooks/use-catalog";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useCatalogItem, useCatalogItems } from "@/hooks/use-catalog";
 import { orgRoute } from "@/lib/routes";
 import { cn } from "@/lib/utils";
 import { useOrgSlug } from "@/providers/org-slug-provider";
@@ -31,13 +45,13 @@ const dietaryLabels: Record<DietaryTag, string> = {
   halal: "Halal",
 };
 
-const dietaryIcons: Record<DietaryTag, string> = {
-  vegan: "\u{1F331}",
-  vegetarian: "\u{1F966}",
-  glutenFree: "\u{1F33E}",
-  spicy: "\u{1F336}\u{FE0F}",
-  chefSpecial: "\u{1F468}\u{200D}\u{1F373}",
-  halal: "\u{2705}",
+const dietaryColors: Record<DietaryTag, string> = {
+  vegan: "bg-green-100 text-green-800 border-green-200",
+  vegetarian: "bg-emerald-100 text-emerald-800 border-emerald-200",
+  glutenFree: "bg-amber-100 text-amber-800 border-amber-200",
+  spicy: "bg-red-100 text-red-800 border-red-200",
+  chefSpecial: "bg-purple-100 text-purple-800 border-purple-200",
+  halal: "bg-blue-100 text-blue-800 border-blue-200",
 };
 
 export default function CatalogItemPage() {
@@ -55,6 +69,18 @@ export default function CatalogItemPage() {
 
   const addItem = useCartStore((state) => state.addItem);
 
+  // Fetch related items from same category for "You might also like"
+  const { data: relatedData } = useCatalogItems(
+    orgSlug,
+    item?.categoryId ? { category: item.categoryId } : undefined,
+    1,
+    6,
+  );
+  const relatedItems = useMemo(
+    () => (relatedData?.data ?? []).filter((r) => r.id !== item?.id).slice(0, 4),
+    [relatedData, item?.id],
+  );
+
   // Initialize default modifier selections when item loads
   useEffect(() => {
     if (!item?.modifierGroups) return;
@@ -68,13 +94,11 @@ export default function CatalogItemPage() {
     setModifierSelections(defaults);
   }, [item?.modifierGroups]);
 
-  // Compute modifier price adjustment
   const modifierAdjustment = useMemo(() => {
     if (!item?.modifierGroups?.length) return 0;
     return calculateModifierAdjustment(item.modifierGroups, modifierSelections);
   }, [item?.modifierGroups, modifierSelections]);
 
-  // Existing customization price calculation
   const customizationAdjustment = useMemo(() => {
     if (!item?.customizations) return 0;
     let adj = 0;
@@ -100,29 +124,14 @@ export default function CatalogItemPage() {
     setSelectedOptions((prev) => {
       const current = prev[customizationId] || [];
       const isSelected = current.includes(optionId);
-
       if (isSelected) {
-        return {
-          ...prev,
-          [customizationId]: current.filter((id) => id !== optionId),
-        };
+        return { ...prev, [customizationId]: current.filter((id) => id !== optionId) };
       }
-
       if (maxSelections === 1) {
-        return {
-          ...prev,
-          [customizationId]: [optionId],
-        };
+        return { ...prev, [customizationId]: [optionId] };
       }
-
-      if (current.length >= maxSelections) {
-        return prev;
-      }
-
-      return {
-        ...prev,
-        [customizationId]: [...current, optionId],
-      };
+      if (current.length >= maxSelections) return prev;
+      return { ...prev, [customizationId]: [...current, optionId] };
     });
   };
 
@@ -133,14 +142,12 @@ export default function CatalogItemPage() {
       return;
     }
 
-    // Build modifiers array for cart from both modifierGroups and legacy customizations
     const cartModifiers: {
       groupId: string;
       groupName: string;
       options: { id: string; name: string; price: number }[];
     }[] = [];
 
-    // Modifier groups (new)
     if (item.modifierGroups) {
       for (const group of item.modifierGroups) {
         const selectedIds = modifierSelections[group.id] ?? [];
@@ -158,7 +165,6 @@ export default function CatalogItemPage() {
       }
     }
 
-    // Legacy customizations
     if (item.customizations) {
       for (const customization of item.customizations) {
         const selectedIds = selectedOptions[customization.id] ?? [];
@@ -190,23 +196,43 @@ export default function CatalogItemPage() {
     router.back();
   };
 
+  // --------------- Loading state ---------------
   if (isLoading) {
     return (
       <SiteShell>
-        <div className="mx-auto flex max-w-4xl items-center justify-center px-4 py-16 text-muted-foreground">
-          Loading catalog item...
+        <div className="mx-auto max-w-5xl px-4 py-6">
+          <Skeleton className="mb-4 h-8 w-24" />
+          <div className="grid gap-8 lg:grid-cols-5">
+            <div className="lg:col-span-3">
+              <Skeleton className="aspect-[4/3] w-full rounded-2xl" />
+            </div>
+            <div className="space-y-4 lg:col-span-2">
+              <Skeleton className="h-6 w-40" />
+              <Skeleton className="h-10 w-3/4" />
+              <Skeleton className="h-20 w-full" />
+              <Skeleton className="h-8 w-32" />
+            </div>
+          </div>
         </div>
       </SiteShell>
     );
   }
+
   if (error || !item) {
     return (
       <SiteShell>
-        <div className="mx-auto flex max-w-4xl flex-col items-center justify-center gap-4 px-4 py-16">
-          <p className="text-muted-foreground">
-            {error ? "Failed to load catalog item." : "Catalog item not found."}
+        <div className="mx-auto flex max-w-5xl flex-col items-center justify-center gap-4 px-4 py-24">
+          <div className="flex size-16 items-center justify-center rounded-full bg-muted">
+            <Info className="size-8 text-muted-foreground" />
+          </div>
+          <h2 className="text-lg font-semibold">
+            {error ? "Failed to load item" : "Item not found"}
+          </h2>
+          <p className="text-sm text-muted-foreground">
+            {error ? "Something went wrong. Please try again." : "This item may have been removed."}
           </p>
           <Button variant="outline" onClick={() => router.back()}>
+            <ArrowLeft className="mr-2 size-4" />
             Go back
           </Button>
         </div>
@@ -214,21 +240,24 @@ export default function CatalogItemPage() {
     );
   }
 
-  // Build image list for gallery: prefer images array, fall back to single image
   const galleryImages: string[] = item.images?.length
     ? item.images
     : item.image
       ? [item.image]
       : [];
 
+  const hasExtras =
+    (item.modifierGroups && item.modifierGroups.length > 0) ||
+    (item.customizations && item.customizations.length > 0);
+
   return (
     <SiteShell>
-      {/* Back Button */}
-      <div className="sticky top-16 z-10 border-b border-border bg-background/95 backdrop-blur-sm">
-        <div className="mx-auto flex h-14 w-full max-w-4xl items-center justify-between px-4">
+      {/* Floating back / favorite bar */}
+      <div className="sticky top-16 z-20 border-b border-border bg-background/95 backdrop-blur-sm">
+        <div className="mx-auto flex h-12 max-w-5xl items-center justify-between px-4">
           <button
             onClick={() => router.back()}
-            className="flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground"
+            className="flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium text-muted-foreground transition hover:bg-muted hover:text-foreground"
           >
             <ArrowLeft className="size-4" />
             Back
@@ -246,255 +275,308 @@ export default function CatalogItemPage() {
         </div>
       </div>
 
-      <div className="mx-auto w-full max-w-4xl px-4 py-6">
-        <div className="grid gap-8 lg:grid-cols-2">
-          {/* Image Section -- gallery or single */}
-          <div className="relative">
-            {galleryImages.length > 1 ? (
-              <ItemImageGallery images={galleryImages} alt={item.name} />
-            ) : galleryImages.length === 1 ? (
-              <div className="relative aspect-square overflow-hidden rounded-2xl bg-muted">
-                <Image
-                  src={galleryImages[0]}
-                  alt={item.name}
-                  fill
-                  className="object-cover"
-                  sizes="(max-width: 1024px) 100vw, 50vw"
-                  priority
-                />
-              </div>
-            ) : (
-              <div className="relative aspect-square overflow-hidden rounded-2xl bg-muted">
-                <div className="flex size-full items-center justify-center">
-                  <span className="text-6xl opacity-30">🍽️</span>
+      <div className="mx-auto max-w-5xl px-4 pb-32 pt-6">
+        {/* Main content: Image + Info */}
+        <div className="grid gap-8 lg:grid-cols-5">
+          {/* ---------- Image column ---------- */}
+          <div className="lg:col-span-3">
+            <div className="relative overflow-hidden rounded-2xl bg-muted">
+              {galleryImages.length > 1 ? (
+                <ItemImageGallery images={galleryImages} alt={item.name} />
+              ) : galleryImages.length === 1 ? (
+                <div className="relative aspect-[4/3]">
+                  <Image
+                    src={galleryImages[0]}
+                    alt={item.name}
+                    fill
+                    className="object-cover"
+                    sizes="(max-width: 1024px) 100vw, 60vw"
+                    priority
+                  />
                 </div>
-              </div>
-            )}
-            {item.featured && (
-              <div className="absolute left-4 top-4 z-[1]">
-                <span className="flex items-center gap-1 rounded-full bg-yellow-500 px-3 py-1 text-xs font-semibold text-white">
-                  <Star className="size-3 fill-current" />
-                  Featured
-                </span>
-              </div>
-            )}
-          </div>
-
-          {/* Details Section */}
-          <div className="flex flex-col">
-            {/* Header */}
-            <div className="space-y-3">
-              <Link
-                href={orgRoute(orgSlug, `/outlet/${item.outletId}`)}
-                className="text-sm font-medium text-primary hover:underline"
-              >
-                {item.outletName}
-              </Link>
-              <h1 className="text-2xl font-bold text-foreground sm:text-3xl">{item.name}</h1>
-              <p className="text-muted-foreground">{item.description}</p>
-
-              {/* Meta Info */}
-              <div className="flex flex-wrap items-center gap-3 pt-2">
-                {item.preparationTime && (
-                  <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                    <Clock className="size-4" />
-                    <span>{item.preparationTime} min</span>
-                  </div>
-                )}
-                {item.calories && (
-                  <span className="text-sm text-muted-foreground">{item.calories} cal</span>
-                )}
-              </div>
-
-              {/* Dietary Tags with icons */}
-              {(item.dietary ?? []).length > 0 && (
-                <div className="flex flex-wrap gap-2 pt-1">
-                  {(item.dietary ?? []).map((tag) => (
-                    <span
-                      key={tag}
-                      className="flex items-center gap-1 rounded-full bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary"
-                    >
-                      <span>{dietaryIcons[tag]}</span>
-                      {dietaryLabels[tag]}
-                    </span>
-                  ))}
+              ) : (
+                <div className="flex aspect-[4/3] items-center justify-center">
+                  <ShoppingCart className="size-16 text-muted-foreground/30" />
                 </div>
               )}
 
-              {/* Allergens */}
-              {item.allergens && item.allergens.length > 0 && (
-                <p className="text-xs text-muted-foreground">
-                  <span className="font-medium">Allergens:</span> {item.allergens.join(", ")}
-                </p>
-              )}
-
-              {/* Price */}
-              <div className="pt-2">
-                <span className="text-2xl font-bold text-foreground">
-                  {item.currency} {item.price.toLocaleString()}
-                </span>
+              {/* Badges overlay */}
+              <div className="absolute left-3 top-3 flex flex-wrap gap-2">
+                {item.featured && (
+                  <Badge className="bg-yellow-500 text-white shadow-md hover:bg-yellow-500">
+                    <Star className="mr-1 size-3 fill-current" /> Featured
+                  </Badge>
+                )}
+                {!item.available && (
+                  <Badge className="bg-destructive text-destructive-foreground shadow-md hover:bg-destructive">
+                    Unavailable
+                  </Badge>
+                )}
               </div>
             </div>
+          </div>
 
-            {/* Modifier Groups (new inventory-api modifiers) */}
-            {item.modifierGroups && item.modifierGroups.length > 0 && (
-              <div className="mt-6">
-                <ModifierSelector
-                  groups={item.modifierGroups}
-                  selections={modifierSelections}
-                  onSelectionsChange={setModifierSelections}
-                  currency={item.currency}
-                />
-              </div>
+          {/* ---------- Info column ---------- */}
+          <div className="flex flex-col lg:col-span-2">
+            {/* Outlet link */}
+            {item.outletName && (
+              <Link
+                href={orgRoute(orgSlug, `/outlet/${item.outletId}`)}
+                className="mb-2 inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:underline"
+              >
+                <Store className="size-3.5" />
+                {item.outletName}
+                <ChevronRight className="size-3" />
+              </Link>
             )}
 
-            {/* Legacy Customizations */}
-            {item.customizations && item.customizations.length > 0 && (
-              <div className="mt-6 space-y-6">
-                {item.customizations.map((customization) => (
-                  <div key={customization.id} className="space-y-3">
-                    <div className="flex items-center justify-between">
-                      <h3 className="font-semibold text-foreground">
-                        {customization.name}
-                        {customization.required && (
-                          <span className="ml-1 text-xs text-destructive">*Required</span>
-                        )}
-                      </h3>
-                      {customization.maxSelections > 1 && (
-                        <span className="text-xs text-muted-foreground">
-                          Select up to {customization.maxSelections}
-                        </span>
-                      )}
-                    </div>
-                    <div className="grid gap-2 sm:grid-cols-2">
-                      {customization.options.map((option) => {
-                        const isSelected = selectedOptions[customization.id]?.includes(option.id);
-                        return (
-                          <button
-                            key={option.id}
-                            onClick={() =>
-                              handleOptionToggle(
-                                customization.id,
-                                option.id,
-                                customization.maxSelections,
-                              )
-                            }
-                            disabled={!option.available}
-                            className={cn(
-                              "flex items-center justify-between rounded-lg border p-3 text-left transition",
-                              isSelected
-                                ? "border-primary bg-primary/5"
-                                : "border-border hover:border-primary/50",
-                              !option.available && "cursor-not-allowed opacity-50",
-                            )}
-                          >
-                            <span className="text-sm font-medium">{option.name}</span>
-                            {option.price > 0 && (
-                              <span className="text-sm text-muted-foreground">
-                                +{item.currency} {option.price}
-                              </span>
-                            )}
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
+            {/* Title & price */}
+            <h1 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
+              {item.name}
+            </h1>
+
+            <div className="mt-2 flex items-baseline gap-2">
+              <span className="text-2xl font-bold text-primary">
+                {item.currency} {item.price.toLocaleString()}
+              </span>
+            </div>
+
+            {/* Description */}
+            {item.description && (
+              <p className="mt-3 leading-relaxed text-muted-foreground">{item.description}</p>
+            )}
+
+            {/* Meta chips row */}
+            <div className="mt-4 flex flex-wrap items-center gap-2">
+              {item.preparationTime && (
+                <div className="inline-flex items-center gap-1 rounded-full border border-border bg-muted/50 px-3 py-1 text-xs font-medium text-muted-foreground">
+                  <Clock className="size-3" />
+                  {item.preparationTime} min
+                </div>
+              )}
+              {item.calories && (
+                <div className="inline-flex items-center gap-1 rounded-full border border-border bg-muted/50 px-3 py-1 text-xs font-medium text-muted-foreground">
+                  {item.calories} cal
+                </div>
+              )}
+              {item.category && (
+                <div className="inline-flex items-center gap-1 rounded-full border border-border bg-muted/50 px-3 py-1 text-xs font-medium text-muted-foreground">
+                  {item.category}
+                </div>
+              )}
+            </div>
+
+            {/* Dietary tags */}
+            {(item.dietary ?? []).length > 0 && (
+              <div className="mt-3 flex flex-wrap gap-1.5">
+                {(item.dietary ?? []).map((tag) => (
+                  <span
+                    key={tag}
+                    className={cn(
+                      "inline-flex items-center rounded-full border px-2.5 py-0.5 text-[11px] font-semibold",
+                      dietaryColors[tag],
+                    )}
+                  >
+                    {dietaryLabels[tag]}
+                  </span>
                 ))}
               </div>
             )}
 
-            {/* Quantity and Add to Cart */}
-            <div className="mt-auto space-y-4 pt-6">
-              {/* Running total breakdown */}
-              {(modifierAdjustment > 0 || customizationAdjustment > 0) && (
-                <div className="space-y-1 rounded-lg bg-muted/50 p-3 text-sm">
-                  <div className="flex justify-between text-muted-foreground">
-                    <span>Base price</span>
-                    <span>
-                      {item.currency} {item.price.toLocaleString()}
-                    </span>
-                  </div>
-                  {customizationAdjustment > 0 && (
-                    <div className="flex justify-between text-muted-foreground">
-                      <span>Customizations</span>
-                      <span>
-                        +{item.currency} {customizationAdjustment.toLocaleString()}
-                      </span>
-                    </div>
-                  )}
-                  {modifierAdjustment > 0 && (
-                    <div className="flex justify-between text-muted-foreground">
-                      <span>Modifiers</span>
-                      <span>
-                        +{item.currency} {modifierAdjustment.toLocaleString()}
-                      </span>
-                    </div>
-                  )}
-                  {quantity > 1 && (
-                    <div className="flex justify-between text-muted-foreground">
-                      <span>
-                        {item.currency} {unitPrice.toLocaleString()} x {quantity}
-                      </span>
-                      <span>
-                        {item.currency} {totalPrice.toLocaleString()}
-                      </span>
-                    </div>
-                  )}
-                  <div className="flex justify-between border-t border-border pt-1 font-semibold text-foreground">
-                    <span>Total</span>
-                    <span>
-                      {item.currency} {totalPrice.toLocaleString()}
-                    </span>
-                  </div>
-                </div>
-              )}
-
-              {/* Quantity Selector */}
-              <div className="flex items-center justify-between">
-                <span className="font-medium text-foreground">Quantity</span>
-                <div className="flex items-center gap-3">
-                  <button
-                    onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                    className="flex size-10 items-center justify-center rounded-full border border-border hover:bg-muted"
-                    aria-label="Decrease quantity"
-                  >
-                    <Minus className="size-4" />
-                  </button>
-                  <span className="w-8 text-center text-lg font-semibold">{quantity}</span>
-                  <button
-                    onClick={() => setQuantity(quantity + 1)}
-                    className="flex size-10 items-center justify-center rounded-full bg-primary text-primary-foreground hover:bg-primary/90"
-                    aria-label="Increase quantity"
-                  >
-                    <Plus className="size-4" />
-                  </button>
-                </div>
+            {/* Allergens */}
+            {item.allergens && item.allergens.length > 0 && (
+              <div className="mt-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
+                <span className="font-semibold">Allergens:</span> {item.allergens.join(", ")}
               </div>
+            )}
 
-              {/* Add to Cart Button */}
-              <Button
-                onClick={handleAddToCart}
-                disabled={!item.available || !modifiersValid}
-                className="w-full"
-                size="lg"
-              >
-                <ShoppingCart className="mr-2 size-5" />
-                Add to Cart - {item.currency} {totalPrice.toLocaleString()}
-              </Button>
+            <hr className="my-5 border-border" />
 
-              {!item.available && (
-                <p className="text-center text-sm text-destructive">
-                  This item is currently unavailable
-                </p>
-              )}
-              {!modifiersValid && item.available && (
-                <p className="text-center text-sm text-destructive">
-                  Please complete all required modifier selections
-                </p>
-              )}
-            </div>
+            {/* -------- Modifiers / Customizations -------- */}
+            {hasExtras && (
+              <div className="space-y-6">
+                {item.modifierGroups && item.modifierGroups.length > 0 && (
+                  <ModifierSelector
+                    groups={item.modifierGroups}
+                    selections={modifierSelections}
+                    onSelectionsChange={setModifierSelections}
+                    currency={item.currency}
+                  />
+                )}
+
+                {item.customizations && item.customizations.length > 0 && (
+                  <div className="space-y-5">
+                    {item.customizations.map((customization) => (
+                      <div key={customization.id}>
+                        <div className="mb-2 flex items-center justify-between">
+                          <h3 className="text-sm font-semibold text-foreground">
+                            {customization.name}
+                            {customization.required && (
+                              <span className="ml-1.5 text-[10px] font-bold uppercase text-destructive">
+                                Required
+                              </span>
+                            )}
+                          </h3>
+                          {customization.maxSelections > 1 && (
+                            <span className="text-[11px] text-muted-foreground">
+                              Select up to {customization.maxSelections}
+                            </span>
+                          )}
+                        </div>
+                        <div className="space-y-1.5">
+                          {customization.options.map((option) => {
+                            const isSelected = selectedOptions[customization.id]?.includes(
+                              option.id,
+                            );
+                            return (
+                              <button
+                                key={option.id}
+                                onClick={() =>
+                                  handleOptionToggle(
+                                    customization.id,
+                                    option.id,
+                                    customization.maxSelections,
+                                  )
+                                }
+                                disabled={!option.available}
+                                className={cn(
+                                  "flex w-full items-center justify-between rounded-xl border px-4 py-3 text-left transition",
+                                  isSelected
+                                    ? "border-primary bg-primary/5 ring-1 ring-primary/20"
+                                    : "border-border hover:border-primary/30 hover:bg-muted/50",
+                                  !option.available && "cursor-not-allowed opacity-40",
+                                )}
+                              >
+                                <div className="flex items-center gap-3">
+                                  <div
+                                    className={cn(
+                                      "flex size-5 items-center justify-center rounded-full border-2 transition",
+                                      isSelected
+                                        ? "border-primary bg-primary"
+                                        : "border-muted-foreground/30",
+                                    )}
+                                  >
+                                    {isSelected && <Check className="size-3 text-white" />}
+                                  </div>
+                                  <span className="text-sm font-medium">{option.name}</span>
+                                </div>
+                                {option.price > 0 && (
+                                  <span className="text-sm text-muted-foreground">
+                                    +{item.currency} {option.price.toLocaleString()}
+                                  </span>
+                                )}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </div>
+
+        {/* ---------- You might also like ---------- */}
+        {relatedItems.length > 0 && (
+          <div className="mt-12">
+            <hr className="mb-8 border-border" />
+            <h2 className="mb-4 text-lg font-bold text-foreground">You might also like</h2>
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
+              {relatedItems.map((related) => (
+                <Link
+                  key={related.id}
+                  href={`/${orgSlug}/catalog/${related.id}`}
+                  className="group overflow-hidden rounded-xl border border-border bg-card shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
+                >
+                  <div className="relative aspect-square bg-muted">
+                    {related.image ? (
+                      <Image
+                        src={related.image}
+                        alt={related.name}
+                        fill
+                        className="object-cover transition group-hover:scale-105"
+                        sizes="(max-width: 640px) 50vw, 25vw"
+                      />
+                    ) : (
+                      <div className="flex size-full items-center justify-center">
+                        <ShoppingCart className="size-8 text-muted-foreground/20" />
+                      </div>
+                    )}
+                  </div>
+                  <div className="p-2.5">
+                    <p className="truncate text-sm font-medium text-foreground">{related.name}</p>
+                    <p className="mt-0.5 text-sm font-semibold text-primary">
+                      {related.currency} {related.price.toLocaleString()}
+                    </p>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* ============ Sticky bottom bar ============ */}
+      <div className="fixed inset-x-0 bottom-0 z-30 border-t border-border bg-background/95 backdrop-blur-sm">
+        <div className="mx-auto flex max-w-5xl items-center gap-4 px-4 py-3">
+          {/* Price breakdown (compact) */}
+          <div className="hidden flex-1 sm:block">
+            {(modifierAdjustment > 0 || customizationAdjustment > 0 || quantity > 1) && (
+              <div className="text-xs text-muted-foreground">
+                {item.currency} {unitPrice.toLocaleString()} x {quantity}
+              </div>
+            )}
+            <div className="text-lg font-bold text-foreground">
+              {item.currency} {totalPrice.toLocaleString()}
+            </div>
+          </div>
+
+          {/* Quantity selector */}
+          <div className="flex items-center gap-1 rounded-full border border-border bg-muted/50 p-1">
+            <button
+              onClick={() => setQuantity(Math.max(1, quantity - 1))}
+              className="flex size-9 items-center justify-center rounded-full transition hover:bg-background"
+              aria-label="Decrease quantity"
+            >
+              <Minus className="size-4" />
+            </button>
+            <span className="w-8 text-center text-sm font-bold">{quantity}</span>
+            <button
+              onClick={() => setQuantity(quantity + 1)}
+              className="flex size-9 items-center justify-center rounded-full bg-primary text-primary-foreground transition hover:bg-primary/90"
+              aria-label="Increase quantity"
+            >
+              <Plus className="size-4" />
+            </button>
+          </div>
+
+          {/* Add to cart CTA */}
+          <Button
+            onClick={handleAddToCart}
+            disabled={!item.available || !modifiersValid}
+            size="lg"
+            className="min-w-[180px] gap-2 rounded-xl text-base font-semibold shadow-lg sm:min-w-[220px]"
+          >
+            <ShoppingCart className="size-5" />
+            <span className="sm:hidden">
+              {item.currency} {totalPrice.toLocaleString()}
+            </span>
+            <span className="hidden sm:inline">
+              Add to Cart &middot; {item.currency} {totalPrice.toLocaleString()}
+            </span>
+          </Button>
+        </div>
+
+        {/* Validation messages */}
+        {(!item.available || (!modifiersValid && item.available)) && (
+          <div className="border-t border-border bg-destructive/5 px-4 py-2 text-center text-xs font-medium text-destructive">
+            {!item.available
+              ? "This item is currently unavailable"
+              : "Please complete all required modifier selections"}
+          </div>
+        )}
       </div>
     </SiteShell>
   );
