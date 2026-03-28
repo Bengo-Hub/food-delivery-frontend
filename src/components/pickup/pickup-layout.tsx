@@ -1,11 +1,11 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { useCallback, useState } from "react";
 
 import { CategoryCarousel, defaultCategories } from "@/components/category/category-carousel";
 import { FilterBar, type ActiveFilters, defaultFilters } from "@/components/layout/filter-bar";
 import { OutletCard } from "@/components/outlet/outlet-card";
-import { PickupMapView } from "@/components/pickup/pickup-map-view";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useOutlets } from "@/hooks/use-catalog";
 import { useCategories } from "@/hooks/use-categories";
@@ -13,6 +13,14 @@ import { useTenantConfig } from "@/hooks/use-tenant-config";
 import { cn } from "@/lib/utils";
 import { useOrgSlug } from "@/providers/org-slug-provider";
 import { useDiningModeStore } from "@/store/dining-mode";
+
+const PickupMapView = dynamic(
+  () => import("@/components/pickup/pickup-map-view").then((m) => ({ default: m.PickupMapView })),
+  {
+    ssr: false,
+    loading: () => <Skeleton className="h-full w-full rounded-none" />,
+  },
+);
 
 export function PickupLayout() {
   const orgSlug = useOrgSlug();

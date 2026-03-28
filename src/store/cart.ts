@@ -1,6 +1,9 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
+/** Maximum cart age in milliseconds (24 hours). */
+const CART_MAX_AGE_MS = 24 * 60 * 60 * 1000;
+
 export type CartItem = {
   id: string;
   name: string;
@@ -21,6 +24,7 @@ export type CartItem = {
 
 interface CartState {
   items: CartItem[];
+  updatedAt: number;
   requestUtensils: boolean;
   orderNotes: string;
   addItem: (item: {
@@ -47,6 +51,7 @@ export const useCartStore = create<CartState>()(
   persist(
     (set, get) => ({
       items: [],
+      updatedAt: Date.now(),
       requestUtensils: false,
       orderNotes: "",
       addItem: ({ id, name, price, outletId, outletName, quantity = 1, modifiers, notes, image, inventorySku }) => {
@@ -59,6 +64,7 @@ export const useCartStore = create<CartState>()(
                 ? { ...i, quantity: i.quantity + quantity, total: (i.quantity + quantity) * i.price }
                 : i,
             ),
+            updatedAt: Date.now(),
           });
         } else {
           const newItem: CartItem = {
@@ -74,7 +80,7 @@ export const useCartStore = create<CartState>()(
             ...(image && { image }),
             ...(inventorySku && { inventorySku }),
           };
-          set({ items: [...items, newItem] });
+          set({ items: [...items, newItem], updatedAt: Date.now() });
         }
       },
       removeItem: (id) => set(({ items }) => ({ items: items.filter((i) => i.id !== id) })),
@@ -89,6 +95,17 @@ export const useCartStore = create<CartState>()(
     }),
     {
       name: "ordering-cart-storage",
+      version: 1,
+      onRehydrateStorage: () => (state) => {
+        if (!state) return;
+        // Clear cart items older than 24 hours to prevent stale items
+        if (state.updatedAt && Date.now() - state.updatedAt > CART_MAX_AGE_MS) {
+          state.items = [];
+          state.updatedAt = Date.now();
+          state.requestUtensils = false;
+          state.orderNotes = "";
+        }
+      },
     },
   ),
 );

@@ -32,7 +32,9 @@ function toPaginated<T>(r: BackendListResponse<T>): PaginatedResponse<T> {
 
 /** Backend public catalog item shape (basePrice, imageUrl, categoryId, categoryName). */
 interface BackendMenuItem {
-  id: string;
+  id?: string;
+  sku: string;
+  inventoryId?: string;
   name: string;
   description?: string;
   basePrice: number;
@@ -69,7 +71,7 @@ function backendItemToMenuItem(
     .map((url) => getMediaUrl(url))
     .filter((url): url is string => !!url);
   return {
-    id: b.id,
+    id: b.sku || b.id || b.inventoryId || "",
     name: b.name,
     description: b.description ?? "",
     price: b.basePrice,
@@ -215,6 +217,8 @@ interface BackendOutlet {
   imageUrl?: string;
   status?: string;
   useCase?: string;
+  isOpen?: boolean;
+  is_open?: boolean;
 }
 
 function backendOutletToOutlet(o: BackendOutlet): Outlet {
@@ -228,7 +232,7 @@ function backendOutletToOutlet(o: BackendOutlet): Outlet {
     phone: o.phone ?? "",
     email: o.email ?? "",
     image: getMediaUrl(o.imageUrl),
-    isOpen: o.status === "active",
+    isOpen: o.isOpen ?? o.is_open ?? o.status === "active",
     businessType: (o.useCase as Outlet["businessType"]) ?? "food",
     // These fields may be populated by future enhancements
     rating: 0,
