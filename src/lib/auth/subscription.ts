@@ -13,6 +13,9 @@ export async function checkSubscription(
         'https://pricingapi.codevertexitsolutions.com';
 
     try {
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 5000);
+
         const resp = await fetch(`${baseUrl}/api/v1/subscription`, {
             headers: {
                 Authorization: `Bearer ${accessToken}`,
@@ -20,7 +23,10 @@ export async function checkSubscription(
                 'X-Tenant-Slug': tenantSlug,
                 'Content-Type': 'application/json',
             },
+            signal: controller.signal,
         });
+
+        clearTimeout(timeout);
 
         if (resp.status === 404) return false; // no subscription record
         if (!resp.ok) return true; // fail open on unexpected errors
@@ -29,6 +35,7 @@ export async function checkSubscription(
         const s = (sub.status ?? '').toUpperCase();
         return s === 'ACTIVE' || s === 'TRIAL';
     } catch {
-        return true; // fail open on network errors
+        // Fail open on network/CORS/timeout errors — don't block login
+        return true;
     }
 }
