@@ -9,8 +9,8 @@ importers:
   .:
     dependencies:
       '@bengo-hub/maps':
-        specifier: file:..\..\shared\maps
-        version: file:../../shared/maps(maplibre-gl@5.21.0)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
+        specifier: ^0.2.3
+        version: 0.2.3(maplibre-gl@5.21.0)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
       '@bengo-hub/shared-ui-lib':
         specifier: github:Bengo-Hub/shared-ui-lib#v0.1.0
         version: https://codeload.github.com/Bengo-Hub/shared-ui-lib/tar.gz/232dfe9970e9552832c76beb1f2761e03420c755(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
@@ -812,8 +812,8 @@ packages:
     resolution: {integrity: sha512-LwdZHpScM4Qz8Xw2iKSzS+cfglZzJGvofQICy7W7v4caru4EaAmyUuO6BGrbyQ2mYV11W0U8j5mBhd14dd3B0A==}
     engines: {node: '>=6.9.0'}
 
-  '@bengo-hub/maps@file:../../shared/maps':
-    resolution: {directory: ../../shared/maps, type: directory}
+  '@bengo-hub/maps@0.2.3':
+    resolution: {integrity: sha512-MWBRDCCfYSG6/smUKZQeKl02942RIZh4fvRS3wyKswT1czpI7OO6hiPc43iwLRzwSENmuhjEVN39FZsoz/ECHg==, tarball: https://npm.pkg.github.com/download/@bengo-hub/maps/0.2.3/20ccc7169e4cddc5b452264633d88d32165934b0}
     peerDependencies:
       maplibre-gl: '>=4.0.0'
       react: '>=18.0.0'
@@ -7066,7 +7066,7 @@ snapshots:
       '@babel/helper-string-parser': 7.27.1
       '@babel/helper-validator-identifier': 7.28.5
 
-  '@bengo-hub/maps@file:../../shared/maps(maplibre-gl@5.21.0)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)':
+  '@bengo-hub/maps@0.2.3(maplibre-gl@5.21.0)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)':
     dependencies:
       maplibre-gl: 5.21.0
       react: 19.0.0
