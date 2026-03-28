@@ -96,6 +96,14 @@ export const useCartStore = create<CartState>()(
     {
       name: "ordering-cart-storage",
       version: 1,
+      migrate: (persisted: unknown, version: number) => {
+        const state = persisted as CartState;
+        if (version === 0) {
+          // v0 → v1: add updatedAt field, clear stale items
+          return { ...state, updatedAt: Date.now() };
+        }
+        return state as CartState;
+      },
       onRehydrateStorage: () => (state) => {
         if (!state) return;
         // Clear cart items older than 24 hours to prevent stale items
