@@ -49,6 +49,8 @@ interface AuthState {
   /** @param tenant Optional tenant slug (e.g. from path orgSlug); defaults to urban-loft for token/tenant sync. */
   redirectToSSO: (returnTo?: string, tenant?: string) => Promise<void>;
   handleSSOCallback: (code: string, callbackUrl: string, tenantSlug?: string) => Promise<void>;
+  /** Clear local session state without SSO redirect (used by 401 handler on public pages). */
+  clearLocalSession: () => void;
   logout: () => Promise<void>;
   updateProfile: (input: ProfileUpdateInput) => Promise<void>;
   updatePreferences: (input: PreferencesUpdateInput) => Promise<void>;
@@ -315,6 +317,10 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       set({ status: "error", error: message });
       toast.error("Sign-in failed. Please try again.");
     }
+  },
+
+  clearLocalSession: () => {
+    clearSession(set);
   },
 
   logout: async () => {

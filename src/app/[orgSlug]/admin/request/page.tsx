@@ -165,7 +165,7 @@ export default function AdminRequestPage() {
               intended for organization owners and operations leads.
             </p>
             <p>
-              After your trial, you can upgrade to continue access. Staff users (kitchen, riders,
+              After your trial, you can upgrade to continue access. Staff users (operations, riders,
               finance) are invited by admins from within the platform.
             </p>
           </aside>

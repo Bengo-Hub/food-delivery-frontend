@@ -6,15 +6,15 @@ import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 
 import {
-    ChevronDown,
-    LayoutDashboard,
-    LogIn,
-    LogOut,
-    MapPin,
-    MenuIcon,
-    Search,
-    ShoppingCart,
-    UserIcon,
+  ChevronDown,
+  LayoutDashboard,
+  LogIn,
+  LogOut,
+  MapPin,
+  MenuIcon,
+  Search,
+  ShoppingCart,
+  UserIcon,
 } from "lucide-react";
 
 import { CartDrawer } from "@/components/cart/cart-drawer";
@@ -26,8 +26,7 @@ import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { brand } from "@/config/brand";
-import { useBrandConfig } from "@/hooks/use-brand";
-import { useOutlets } from "@/hooks/use-menu";
+import { useOutlets } from "@/hooks/use-catalog";
 import { getShortLocationName } from "@/lib/geocoding";
 import { orgRoute } from "@/lib/routes";
 import { useOrgSlug } from "@/providers/org-slug-provider";
@@ -238,7 +237,7 @@ export function SiteHeader({ onMenuClick }: SiteHeaderProps) {
                       <button
                         key={category.id}
                         onClick={() => {
-                          router.push(orgRoute(orgSlug, `/menu?category=${category.id}`));
+                          router.push(orgRoute(orgSlug, `/catalog?category=${category.id}`));
                           setSearchOpen(false);
                         }}
                         className="flex w-full items-center gap-4 py-3 text-sm transition hover:bg-muted/50"
@@ -298,7 +297,7 @@ export function SiteHeader({ onMenuClick }: SiteHeaderProps) {
                         key={item.label}
                         onClick={() => {
                           router.push(
-                            orgRoute(orgSlug, `/menu?category=grocery&sub=${item.label.toLowerCase().replace(/ & /g, "-")}`),
+                            orgRoute(orgSlug, `/catalog?category=grocery&sub=${item.label.toLowerCase().replace(/ & /g, "-")}`),
                           );
                           setSearchOpen(false);
                         }}
@@ -326,7 +325,7 @@ export function SiteHeader({ onMenuClick }: SiteHeaderProps) {
                         key={item.label}
                         onClick={() => {
                           router.push(
-                            orgRoute(orgSlug, `/menu?category=alcohol&sub=${item.label.toLowerCase().replace(/ /g, "-")}`),
+                            orgRoute(orgSlug, `/catalog?category=alcohol&sub=${item.label.toLowerCase().replace(/ /g, "-")}`),
                           );
                           setSearchOpen(false);
                         }}

@@ -8,7 +8,7 @@ import { LocationSearchInput } from "@/components/location/location-search-input
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { useUserLocation } from "@/hooks/use-user-location";
-import { isWithinBusia } from "@/lib/geofence";
+import { BUSIA_BOUNDS, isWithinBusia } from "@/lib/geofence";
 import { getActiveLocation, useCustomerLocationStore } from "@/store/location";
 
 const FALLBACK: LatLngTuple = [-0.0607, 34.2855];
@@ -91,6 +91,9 @@ export function CustomerLocationPicker() {
             setFeedback(null);
           }}
           canClear={!!customLocation}
+          searchBounds={BUSIA_BOUNDS}
+          countryCodes="ke"
+          placeholder="Search Busia streets, estates, or landmarks"
         />
         <LocationMap
           value={activeLocation}

@@ -41,7 +41,8 @@ export const metadata: Metadata = {
   },
   keywords: [
     "online ordering",
-    "food delivery",
+    "delivery",
+    "marketplace",
     brand.shortName.toLowerCase(),
     "pwa",
     "real-time tracking",

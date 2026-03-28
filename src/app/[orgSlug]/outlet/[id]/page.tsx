@@ -10,12 +10,12 @@ import { toast } from "sonner";
 import { SiteShell } from "@/components/layout/site-shell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { useOutlet, useOutletMenu } from "@/hooks/use-menu";
+import { useOutlet, useOutletMenu } from "@/hooks/use-catalog";
 import { orgRoute } from "@/lib/routes";
 import { cn } from "@/lib/utils";
 import { useOrgSlug } from "@/providers/org-slug-provider";
 import { useCartStore } from "@/store/cart";
-import type { DietaryTag, MenuItem } from "@/types/menu";
+import type { DietaryTag, MenuItem } from "@/types/catalog";
 
 const dietaryLabels: Record<DietaryTag, string> = {
   vegan: "Vegan",
@@ -77,7 +77,7 @@ function MenuItemCard({ item, onAddToCart }: { item: MenuItem; onAddToCart: () =
 
       {/* Image */}
       <Link
-        href={orgRoute(orgSlug, `/menu/${item.id}`)}
+        href={orgRoute(orgSlug, `/catalog/${item.id}`)}
         className="relative size-24 shrink-0 overflow-hidden rounded-lg bg-muted sm:size-28"
       >
         {item.image ? (
@@ -121,9 +121,9 @@ export default function OutletPage() {
 
   const addItem = useCartStore((state) => state.addItem);
 
-  // Get unique categories
+  // Get unique categories (filter out empty/falsy names)
   const categories = useMemo(() => {
-    const unique = new Set(menuItems.map((item) => item.category));
+    const unique = new Set(menuItems.map((item) => item.category).filter(Boolean));
     return ["All", ...Array.from(unique)];
   }, [menuItems]);
 

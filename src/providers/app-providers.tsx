@@ -32,16 +32,21 @@ export function AppProviders({ children }: PropsWithChildren) {
   const [queryClient] = useState<QueryClient>(() => createQueryClient());
   const showDevtools = process.env.NODE_ENV !== "production";
   const initializeAuth = useAuthStore((state) => state.initialize);
-  const logout = useAuthStore((state) => state.logout);
 
   useEffect(() => {
     initializeAuth();
   }, [initializeAuth]);
 
   useEffect(() => {
-    setOn401(() => void logout());
+    // On 401, only clear local session — do NOT redirect to SSO.
+    // Public pages (landing, catalog) fire unauthenticated API calls and
+    // must not trigger a full SSO redirect cycle.
+    const clearSession = useAuthStore.getState().clearLocalSession;
+    setOn401(() => {
+      if (clearSession) clearSession();
+    });
     return () => setOn401(null);
-  }, [logout]);
+  }, []);
 
   return (
     <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>

@@ -57,7 +57,7 @@ export function FeaturedItemCard({
     setIsWhitelisted(!isWhitelisted);
   };
 
-  const itemHref = href || `/${orgSlug}/menu/${id}`;
+  const itemHref = href || (id ? `/${orgSlug}/catalog/${id}` : "#");
 
   return (
     <Link

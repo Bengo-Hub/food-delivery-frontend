@@ -1,4 +1,5 @@
 import { BrandThemeSync } from "@/components/layout/brand-theme-sync";
+import { MapProviderWrapper } from "@/providers/map-provider-wrapper";
 import { OrgSlugProvider } from "@/providers/org-slug-provider";
 
 export default async function OrgSlugLayout({
@@ -12,7 +13,7 @@ export default async function OrgSlugLayout({
   return (
     <OrgSlugProvider orgSlug={orgSlug}>
       <BrandThemeSync />
-      {children}
+      <MapProviderWrapper>{children}</MapProviderWrapper>
     </OrgSlugProvider>
   );
 }

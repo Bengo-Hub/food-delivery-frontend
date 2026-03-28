@@ -6,6 +6,8 @@
 
 export type DietaryTag = "vegan" | "vegetarian" | "glutenFree" | "spicy" | "chefSpecial" | "halal";
 
+export type ItemType = "GOODS" | "SERVICE" | "RECIPE" | "INGREDIENT" | "VOUCHER" | "EQUIPMENT";
+
 export interface MenuItem {
   id: string;
   name: string;
@@ -29,6 +31,12 @@ export interface MenuItem {
   customizations?: MenuItemCustomization[];
   modifierGroups?: ModifierGroup[];
   isFavorite?: boolean;
+  /** Item type from inventory (GOODS, SERVICE, RECIPE, etc.) */
+  itemType?: ItemType;
+  /** Duration in minutes for SERVICE type items */
+  durationMinutes?: number;
+  /** Whether this item requires age verification (alcohol, pharmacy) */
+  requiresAgeVerification?: boolean;
 }
 
 export interface ModifierGroup {
@@ -92,7 +100,7 @@ export interface Outlet {
   promoted?: boolean;
   offerBadge?: string;
   discount?: number;
-  businessType: "food" | "grocery" | "pharmacy" | "retail";
+  businessType: "food" | "grocery" | "pharmacy" | "retail" | "services" | "hospitality" | "quick_service" | "manufacturing" | "e_commerce" | "warehousing";
 }
 
 export interface OutletHours {

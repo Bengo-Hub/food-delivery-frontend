@@ -78,7 +78,7 @@ export async function GET() {
         icons: [{ src: "/icons/track-96x96.png", sizes: "96x96" }],
       },
     ],
-    categories: ["food", "lifestyle", "shopping"],
+    categories: ["shopping", "lifestyle", "business"],
     prefer_related_applications: false,
   };
 

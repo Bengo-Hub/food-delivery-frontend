@@ -190,7 +190,7 @@ export function CartDrawer({ open, onOpenChange }: CartDrawerProps) {
               </p>
             </div>
             <Button onClick={handleClose} asChild>
-              <Link href={orgRoute(orgSlug, "/menu")}>Browse Menu</Link>
+              <Link href={orgRoute(orgSlug, "/catalog")}>Browse Catalog</Link>
             </Button>
           </div>
         ) : (

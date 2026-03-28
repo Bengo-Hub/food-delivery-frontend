@@ -16,7 +16,14 @@ export interface ScheduledTime {
 }
 
 /** Use cases where pickup makes sense */
-const PICKUP_USE_CASES = new Set(["hospitality", "food_delivery", "quick_service"]);
+const PICKUP_USE_CASES = new Set([
+  "hospitality",
+  "food_delivery",
+  "quick_service",
+  "retail",
+  "pharmacy",
+  "services",
+]);
 
 function getSupportedModes(tenantUseCase: string): DiningMode[] {
   return PICKUP_USE_CASES.has(tenantUseCase) ? ["delivery", "pickup"] : ["delivery"];

@@ -3,7 +3,9 @@
 import { ChevronDown, MapPin, Search } from "lucide-react";
 import { useState } from "react";
 
-import { Button } from "@/components/ui/button";
+import type { LatLngTuple } from "leaflet";
+
+import { LocationSearchInput } from "@/components/location/location-search-input";
 import {
   Dialog,
   DialogContent,
@@ -11,27 +13,54 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { useTenantConfig } from "@/hooks/use-tenant-config";
+import { useUserLocation } from "@/hooks/use-user-location";
 import { cn } from "@/lib/utils";
+import { useDiningModeStore } from "@/store/dining-mode";
 
 export type HeroSectionProps = {
-  location?: string;
-  onLocationChange?: (location: string) => void;
   onSearch?: (query: string) => void;
   className?: string;
 };
 
 export function HeroSection({
-  location = "Select delivery location",
-  onLocationChange: _onLocationChange,
   onSearch,
   className,
 }: HeroSectionProps) {
   const [locationOpen, setLocationOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const { copy } = useTenantConfig();
+
+  const deliveryLocation = useDiningModeStore((s) => s.deliveryLocation);
+  const setDeliveryLocation = useDiningModeStore((s) => s.setDeliveryLocation);
+
+  const { coords, status, error, requestLocation } = useUserLocation();
+
+  const displayAddress = deliveryLocation?.address ?? "Select delivery location";
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     onSearch?.(searchQuery);
+  };
+
+  const handleLocationSelect = (latlng: LatLngTuple, label: string) => {
+    setDeliveryLocation({
+      address: label,
+      latitude: latlng[0],
+      longitude: latlng[1],
+    });
+    setLocationOpen(false);
+  };
+
+  const handleUseCurrent = () => {
+    requestLocation();
+    if (status === "resolved") {
+      setDeliveryLocation({
+        address: `${coords[0].toFixed(4)}, ${coords[1].toFixed(4)}`,
+        latitude: coords[0],
+        longitude: coords[1],
+      });
+    }
   };
 
   return (
@@ -47,10 +76,10 @@ export function HeroSection({
             {/* Title */}
             <div className="space-y-2 text-center sm:text-left">
               <h1 className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl md:text-5xl">
-                Order food to your door
+                {copy.heroTitle}
               </h1>
               <p className="text-sm text-muted-foreground sm:text-base">
-                Discover restaurants and shops near you
+                {copy.heroSubtitle}
               </p>
             </div>
 
@@ -63,8 +92,8 @@ export function HeroSection({
               >
                 <MapPin className="size-5 shrink-0 text-primary" />
                 <div className="min-w-0 flex-1">
-                  <p className="text-xs text-muted-foreground">Deliver to</p>
-                  <p className="truncate text-sm font-medium">{location}</p>
+                  <p className="text-xs text-muted-foreground">{copy.deliverToLabel}</p>
+                  <p className="truncate text-sm font-medium">{displayAddress}</p>
                 </div>
                 <ChevronDown className="size-4 shrink-0 text-muted-foreground" />
               </button>
@@ -74,28 +103,12 @@ export function HeroSection({
                 <Search className="absolute left-4 top-1/2 size-5 -translate-y-1/2 text-muted-foreground" />
                 <input
                   type="search"
-                  placeholder="Search for restaurants, dishes, or cuisines"
+                  placeholder={copy.searchPlaceholder}
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="w-full rounded-lg border border-border bg-card py-3 pl-12 pr-4 text-sm shadow-sm transition placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
                 />
               </form>
-            </div>
-
-            {/* Quick Actions - Optional */}
-            <div className="flex flex-wrap gap-2">
-              <Button variant="outline" size="sm" className="rounded-full">
-                🍕 Pizza
-              </Button>
-              <Button variant="outline" size="sm" className="rounded-full">
-                🍔 Burgers
-              </Button>
-              <Button variant="outline" size="sm" className="rounded-full">
-                🍱 Healthy
-              </Button>
-              <Button variant="outline" size="sm" className="rounded-full">
-                ☕ Coffee
-              </Button>
             </div>
           </div>
         </div>
@@ -107,28 +120,20 @@ export function HeroSection({
           <DialogHeader>
             <DialogTitle>Enter your delivery address</DialogTitle>
             <DialogDescription>
-              We&apos;ll find the best restaurants and delivery options for you
+              {copy.dialogDescription}
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div className="relative">
-              <MapPin className="absolute left-3 top-1/2 size-5 -translate-y-1/2 text-muted-foreground" />
-              <input
-                type="text"
-                placeholder="Enter street address or area"
-                className="w-full rounded-lg border border-border bg-background py-3 pl-11 pr-4 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
-                defaultValue={location !== "Select delivery location" ? location : ""}
-              />
-            </div>
-            <Button
-              className="w-full"
-              onClick={() => {
-                // Handle location update
-                setLocationOpen(false);
-              }}
-            >
-              Confirm Location
-            </Button>
+          <div className="py-4">
+            <LocationSearchInput
+              value={deliveryLocation?.address ?? null}
+              status={status}
+              error={error}
+              onSelect={handleLocationSelect}
+              onUseCurrent={handleUseCurrent}
+              label="Delivery location"
+              placeholder="Search for an address or landmark"
+              autoFocus
+            />
           </div>
         </DialogContent>
       </Dialog>

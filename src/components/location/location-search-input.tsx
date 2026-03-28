@@ -8,7 +8,7 @@ import { Loader2Icon, MapPinIcon } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { BUSIA_BOUNDS, isWithinBusia } from "@/lib/geofence";
+import type { SearchBounds } from "@/lib/geofence";
 
 const NOMINATIM_ENDPOINT = "https://nominatim.openstreetmap.org/search";
 
@@ -24,6 +24,10 @@ export type LocationSearchInputProps = {
   label?: string;
   placeholder?: string;
   autoFocus?: boolean;
+  /** Optional bounds to bias the Nominatim search. Pass null/undefined for global search. */
+  searchBounds?: SearchBounds | null;
+  /** Optional country code(s) to restrict results (comma-separated, e.g. "ke" or "ke,ug"). */
+  countryCodes?: string;
 };
 
 type Suggestion = {
@@ -41,8 +45,10 @@ export function LocationSearchInput({
   onClear,
   canClear = false,
   label = "Delivery location",
-  placeholder = "Search Busia streets, estates, or landmarks",
+  placeholder = "Search for an address or landmark",
   autoFocus,
+  searchBounds,
+  countryCodes,
 }: LocationSearchInputProps) {
   const [query, setQuery] = useState<string>(value ?? "");
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
@@ -69,11 +75,24 @@ export function LocationSearchInput({
           format: "json",
           addressdetails: "1",
           limit: "5",
-          countrycodes: "ke",
-          q: `${query}, Busia`,
-          viewbox: `${BUSIA_BOUNDS.minLng},${BUSIA_BOUNDS.maxLat},${BUSIA_BOUNDS.maxLng},${BUSIA_BOUNDS.minLat}`,
-          bounded: "1",
+          q: query,
         });
+
+        // Add country codes filter if provided
+        if (countryCodes) {
+          params.set("countrycodes", countryCodes);
+        }
+
+        // Add viewbox bias if search bounds are provided
+        if (searchBounds) {
+          params.set(
+            "viewbox",
+            `${searchBounds.minLng},${searchBounds.maxLat},${searchBounds.maxLng},${searchBounds.minLat}`,
+          );
+          // Use bounded=0 to prefer (not restrict) results within viewbox
+          params.set("bounded", "0");
+        }
+
         const response = await fetch(`${NOMINATIM_ENDPOINT}?${params.toString()}`, {
           headers: {
             "Accept-Language": "en",
@@ -86,12 +105,10 @@ export function LocationSearchInput({
         }
         const data: Array<{ lat: string; lon: string; display_name: string }> =
           await response.json();
-        const mapped: Suggestion[] = data
-          .map((item) => ({
-            label: item.display_name,
-            coords: [parseFloat(item.lat), parseFloat(item.lon)] as [number, number],
-          }))
-          .filter((item) => isWithinBusia(item.coords));
+        const mapped: Suggestion[] = data.map((item) => ({
+          label: item.display_name,
+          coords: [parseFloat(item.lat), parseFloat(item.lon)] as [number, number],
+        }));
         setSuggestions(mapped);
       } catch (err) {
         if ((err as DOMException).name === "AbortError") return;
@@ -105,7 +122,7 @@ export function LocationSearchInput({
       clearTimeout(timeout);
       controller.abort();
     };
-  }, [query]);
+  }, [query, searchBounds, countryCodes]);
 
   const helperMessage = useMemo(() => {
     if (searchError) return searchError;
@@ -157,7 +174,7 @@ export function LocationSearchInput({
             onClick={() => onClear()}
             aria-label="Clear custom location"
           >
-            ×
+            x
           </Button>
         ) : null}
         <Button

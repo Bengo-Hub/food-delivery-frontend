@@ -2,6 +2,7 @@
 
 import { AlertTriangle, Calendar, Package, Truck } from "lucide-react";
 
+import { useTenantConfig } from "@/hooks/use-tenant-config";
 import { cn } from "@/lib/utils";
 
 type FulfillmentMode = "delivery" | "pickup" | "schedule";
@@ -68,6 +69,8 @@ export function FulfillmentToggle({
   pickupTotal,
   estimatedTime,
 }: FulfillmentToggleProps) {
+  const { copy } = useTenantConfig();
+
   return (
     <section className="space-y-3">
       <div className="flex gap-2">
@@ -100,8 +103,7 @@ export function FulfillmentToggle({
         <div className="flex items-start gap-2 rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm text-amber-800 dark:border-amber-700 dark:bg-amber-950/40 dark:text-amber-200">
           <AlertTriangle className="mt-0.5 size-4 shrink-0" />
           <span>
-            This is a Pickup (takeaway) order, so you&apos;ll have to collect it yourself from the
-            restaurant.
+            This is a Pickup (takeaway) order, so you&apos;ll have to {copy.pickupMessage}.
           </span>
         </div>
       )}

@@ -283,7 +283,7 @@ function AddCategoryForm({ onClose }: { onClose: () => void }) {
             <Input
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="e.g., Main Dishes"
+              placeholder="e.g., Main Category"
               required
             />
           </div>

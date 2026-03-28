@@ -199,7 +199,7 @@ export default function OrdersPage() {
                   </p>
                   {tab === "all" && !search && (
                     <Button asChild size="sm" className="mt-2">
-                      <Link href={orgRoute(orgSlug, "/menu")}>Browse Menu</Link>
+                      <Link href={orgRoute(orgSlug, "/catalog")}>Browse Catalog</Link>
                     </Button>
                   )}
                 </CardContent>

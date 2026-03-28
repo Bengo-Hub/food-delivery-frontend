@@ -4,16 +4,15 @@
  */
 
 import { getMediaUrl } from "@/lib/utils";
-import { api } from "./base";
 import type {
-  MenuItem,
   MenuCategory,
   MenuFilters,
-  ModifierGroup,
+  MenuItem,
   Outlet,
   OutletFilters,
-  PaginatedResponse,
-} from "@/types/menu";
+  PaginatedResponse
+} from "@/types/catalog";
+import { api } from "./base";
 
 /** Backend list response (data, total, limit, page). */
 interface BackendListResponse<T> {
@@ -163,6 +162,7 @@ interface BackendMenuCategory {
   name: string;
   description?: string;
   imageUrl?: string;
+  icon?: string;
   itemCount: number;
 }
 
@@ -176,7 +176,7 @@ export async function fetchCategories(
     id: cat.id,
     name: cat.name,
     description: cat.description ?? "",
-    image: getMediaUrl(cat.imageUrl),
+    image: cat.imageUrl ? getMediaUrl(cat.imageUrl) : cat.icon ? getMediaUrl(cat.icon) : "",
     sortOrder: 0,
     itemCount: cat.itemCount,
   }));
@@ -189,7 +189,7 @@ export async function fetchCategory(tenantSlug: string, id: string): Promise<Men
     id: cat.id,
     name: cat.name,
     description: cat.description ?? "",
-    image: getMediaUrl(cat.imageUrl),
+    image: cat.imageUrl ? getMediaUrl(cat.imageUrl) : cat.icon ? getMediaUrl(cat.icon) : "",
     sortOrder: 0,
     itemCount: cat.itemCount,
   };
