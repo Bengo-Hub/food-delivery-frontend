@@ -188,8 +188,8 @@ export function LocationSearchInput({
         </Button>
         {suggestions.length > 0 ? (
           <ul className="absolute z-50 mt-2 max-h-60 w-full overflow-auto rounded-2xl border border-border bg-card text-sm shadow-2xl">
-            {suggestions.map((item) => (
-              <li key={`${item.coords[0]}-${item.coords[1]}`}>
+            {suggestions.map((item, idx) => (
+              <li key={`${idx}-${item.coords[0]}-${item.coords[1]}`}>
                 <button
                   type="button"
                   className="w-full px-4 py-2 text-left transition hover:bg-muted"
