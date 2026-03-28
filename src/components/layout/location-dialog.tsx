@@ -20,6 +20,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useAddresses } from "@/hooks/use-addresses";
 import type { Address } from "@/lib/api/addresses";
 import { cn } from "@/lib/utils";
+import { useOrgSlug } from "@/providers/org-slug-provider";
 import { useDiningModeStore } from "@/store/dining-mode";
 
 export interface SavedAddress {
@@ -59,6 +60,7 @@ function toSavedAddress(addr: Address): SavedAddress {
 type DialogView = "main" | "edit";
 
 export function LocationDialog({ open, onOpenChange }: LocationDialogProps) {
+  const orgSlug = useOrgSlug();
   const [view, setView] = useState<DialogView>("main");
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedAddress, setSelectedAddress] = useState<SavedAddress | null>(null);
@@ -190,9 +192,10 @@ export function LocationDialog({ open, onOpenChange }: LocationDialogProps) {
                 status={locationStatus}
                 onSelect={handleGeocodedSelect}
                 onUseCurrent={handleUseCurrent}
-                placeholder="Search for an address"
+                placeholder="Search for an address or business"
                 label=""
                 countryCodes="ke,ug,tz"
+                orgSlug={orgSlug || undefined}
                 autoFocus
               />
             </div>

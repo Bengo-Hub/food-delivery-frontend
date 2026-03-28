@@ -4,10 +4,11 @@ import type { ChangeEvent, FocusEvent } from "react";
 import { useEffect, useMemo, useState } from "react";
 
 import type { LatLngTuple } from "leaflet";
-import { Loader2Icon, MapPinIcon } from "lucide-react";
+import { Loader2Icon, MapPinIcon, StoreIcon } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { api } from "@/lib/api/base";
 import type { SearchBounds } from "@/lib/geofence";
 
 const NOMINATIM_ENDPOINT = "https://nominatim.openstreetmap.org/search";
@@ -28,12 +29,24 @@ export type LocationSearchInputProps = {
   searchBounds?: SearchBounds | null;
   /** Optional country code(s) to restrict results (comma-separated, e.g. "ke" or "ke,ug"). */
   countryCodes?: string;
+  /** Optional org slug to enable outlet/business search alongside address search. */
+  orgSlug?: string | undefined;
 };
 
 type Suggestion = {
+  type: "address" | "outlet";
   label: string;
+  subtitle?: string | undefined;
   coords: LatLngTuple;
 };
+
+interface OutletSearchResult {
+  id: string;
+  name: string;
+  address?: string;
+  latitude?: number;
+  longitude?: number;
+}
 
 export function LocationSearchInput({
   value,
@@ -49,6 +62,7 @@ export function LocationSearchInput({
   autoFocus,
   searchBounds,
   countryCodes,
+  orgSlug,
 }: LocationSearchInputProps) {
   const [query, setQuery] = useState<string>(value ?? "");
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
@@ -71,45 +85,76 @@ export function LocationSearchInput({
       try {
         setIsSearching(true);
         setSearchError(null);
-        const params = new URLSearchParams({
+
+        // Build Nominatim request
+        const nominatimParams = new URLSearchParams({
           format: "json",
           addressdetails: "1",
           limit: "5",
           q: query,
         });
-
-        // Add country codes filter if provided
         if (countryCodes) {
-          params.set("countrycodes", countryCodes);
+          nominatimParams.set("countrycodes", countryCodes);
         }
-
-        // Add viewbox bias if search bounds are provided
         if (searchBounds) {
-          params.set(
+          nominatimParams.set(
             "viewbox",
             `${searchBounds.minLng},${searchBounds.maxLat},${searchBounds.maxLng},${searchBounds.minLat}`,
           );
-          // Use bounded=0 to prefer (not restrict) results within viewbox
-          params.set("bounded", "0");
+          nominatimParams.set("bounded", "0");
         }
 
-        const response = await fetch(`${NOMINATIM_ENDPOINT}?${params.toString()}`, {
-          headers: {
-            "Accept-Language": "en",
-            "User-Agent": "OrderingApp/1.0 (support@codevertexitsolutions.com)",
+        const nominatimPromise = fetch(
+          `${NOMINATIM_ENDPOINT}?${nominatimParams.toString()}`,
+          {
+            headers: {
+              "Accept-Language": "en",
+              "User-Agent": "OrderingApp/1.0 (support@codevertexitsolutions.com)",
+            },
+            signal: controller.signal,
           },
-          signal: controller.signal,
+        ).then(async (res) => {
+          if (!res.ok) throw new Error("Unable to reach location service.");
+          const data: Array<{ lat: string; lon: string; display_name: string }> =
+            await res.json();
+          return data.map(
+            (item): Suggestion => ({
+              type: "address",
+              label: item.display_name,
+              coords: [parseFloat(item.lat), parseFloat(item.lon)] as [number, number],
+            }),
+          );
         });
-        if (!response.ok) {
-          throw new Error("Unable to reach location service.");
-        }
-        const data: Array<{ lat: string; lon: string; display_name: string }> =
-          await response.json();
-        const mapped: Suggestion[] = data.map((item) => ({
-          label: item.display_name,
-          coords: [parseFloat(item.lat), parseFloat(item.lon)] as [number, number],
-        }));
-        setSuggestions(mapped);
+
+        // Outlet search (only if orgSlug is provided)
+        const outletPromise: Promise<Suggestion[]> = orgSlug
+          ? api
+              .get<{ data: OutletSearchResult[] }>(
+                `${orgSlug}/outlets?q=${encodeURIComponent(query)}&pickup=true&limit=3`,
+                { signal: controller.signal },
+              )
+              .then((res) =>
+                (res.data.data ?? [])
+                  .filter((o) => o.latitude && o.longitude)
+                  .map(
+                    (o): Suggestion => ({
+                      type: "outlet",
+                      label: o.name,
+                      subtitle: o.address || undefined,
+                      coords: [o.latitude!, o.longitude!] as [number, number],
+                    }),
+                  ),
+              )
+              .catch(() => [] as Suggestion[])
+          : Promise.resolve([]);
+
+        const [addressResults, outletResults] = await Promise.all([
+          nominatimPromise,
+          outletPromise,
+        ]);
+
+        // Outlet results first, then address results
+        setSuggestions([...outletResults, ...addressResults]);
       } catch (err) {
         if ((err as DOMException).name === "AbortError") return;
         setSearchError((err as Error).message ?? "Could not search for that location.");
@@ -122,7 +167,7 @@ export function LocationSearchInput({
       clearTimeout(timeout);
       controller.abort();
     };
-  }, [query, searchBounds, countryCodes]);
+  }, [query, searchBounds, countryCodes, orgSlug]);
 
   const helperMessage = useMemo(() => {
     if (searchError) return searchError;
@@ -189,13 +234,27 @@ export function LocationSearchInput({
         {suggestions.length > 0 ? (
           <ul className="absolute z-50 mt-2 max-h-60 w-full overflow-auto rounded-2xl border border-border bg-card text-sm shadow-2xl">
             {suggestions.map((item, idx) => (
-              <li key={`${idx}-${item.coords[0]}-${item.coords[1]}`}>
+              <li key={`${item.type}-${idx}-${item.coords[0]}-${item.coords[1]}`}>
                 <button
                   type="button"
-                  className="w-full px-4 py-2 text-left transition hover:bg-muted"
+                  className="flex w-full items-start gap-3 px-4 py-2 text-left transition hover:bg-muted"
                   onClick={() => handleSelect(item)}
                 >
-                  {item.label}
+                  <span className="mt-0.5 shrink-0 text-muted-foreground">
+                    {item.type === "outlet" ? (
+                      <StoreIcon className="size-4" />
+                    ) : (
+                      <MapPinIcon className="size-4" />
+                    )}
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate">{item.label}</span>
+                    {item.subtitle ? (
+                      <span className="block truncate text-xs text-muted-foreground">
+                        {item.subtitle}
+                      </span>
+                    ) : null}
+                  </span>
                 </button>
               </li>
             ))}
