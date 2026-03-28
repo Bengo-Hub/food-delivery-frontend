@@ -131,7 +131,6 @@ export function LocationSearchInput({
   }, [error, helper, searchError]);
 
   const handleFocus = (event: FocusEvent<HTMLInputElement>) => {
-    onUseCurrent();
     event.target.select();
   };
 
