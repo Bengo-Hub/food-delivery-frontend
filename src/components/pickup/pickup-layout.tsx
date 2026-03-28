@@ -27,6 +27,7 @@ export function PickupLayout() {
   const [selectedOutletId, setSelectedOutletId] = useState<string | null>(null);
   const [filters, setFilters] = useState<ActiveFilters>(defaultFilters);
   const [activeCategory, setActiveCategory] = useState("all");
+  const [mobileShowMap, setMobileShowMap] = useState(false);
   const deliveryLocation = useDiningModeStore((s) => s.deliveryLocation);
   const { copy } = useTenantConfig();
   const { data: apiCategories } = useCategories();
@@ -52,18 +53,50 @@ export function PickupLayout() {
 
   const handleOutletSelect = useCallback((outletId: string) => {
     setSelectedOutletId(outletId);
+    setMobileShowMap(false);
     // Scroll to outlet card in the list
     const el = document.getElementById(`outlet-card-${outletId}`);
     el?.scrollIntoView({ behavior: "smooth", block: "center" });
   }, []);
 
   return (
-    <div className="flex h-[calc(100vh-64px)] flex-col lg:flex-row">
+    <div className="flex min-h-[calc(100dvh-64px)] flex-col lg:h-[calc(100dvh-64px)] lg:flex-row">
+      {/* Mobile: Map/List toggle */}
+      <div className="flex border-b border-border bg-background lg:hidden">
+        <button
+          onClick={() => setMobileShowMap(false)}
+          className={cn(
+            "flex-1 py-2.5 text-center text-sm font-medium transition",
+            !mobileShowMap
+              ? "border-b-2 border-primary text-primary"
+              : "text-muted-foreground",
+          )}
+        >
+          List ({outlets.length})
+        </button>
+        <button
+          onClick={() => setMobileShowMap(true)}
+          className={cn(
+            "flex-1 py-2.5 text-center text-sm font-medium transition",
+            mobileShowMap
+              ? "border-b-2 border-primary text-primary"
+              : "text-muted-foreground",
+          )}
+        >
+          Map
+        </button>
+      </div>
+
       {/* Left Panel: Outlet List */}
-      <div className="flex flex-1 flex-col overflow-y-auto border-r border-border lg:max-w-[480px]">
+      <div
+        className={cn(
+          "flex flex-1 flex-col overflow-y-auto lg:max-w-[480px] lg:border-r lg:border-border",
+          mobileShowMap && "hidden lg:flex",
+        )}
+      >
         {/* Header */}
         <div className="sticky top-0 z-10 space-y-3 border-b border-border bg-background px-4 pb-3 pt-4">
-          <h1 className="text-xl font-bold">Pickup nearby</h1>
+          <h1 className="text-lg font-bold sm:text-xl">Pickup nearby</h1>
 
           {/* Filters */}
           <FilterBar
@@ -82,11 +115,11 @@ export function PickupLayout() {
         </div>
 
         {/* Outlet List */}
-        <div className="flex-1 p-4">
+        <div className="flex-1 p-3 sm:p-4">
           {isLoading ? (
-            <div className="space-y-4">
+            <div className="space-y-3">
               {Array.from({ length: 4 }).map((_, i) => (
-                <Skeleton key={i} className="h-48 w-full rounded-lg" />
+                <Skeleton key={i} className="h-40 w-full rounded-lg sm:h-48" />
               ))}
             </div>
           ) : outlets.length === 0 ? (
@@ -97,7 +130,7 @@ export function PickupLayout() {
               </p>
             </div>
           ) : (
-            <div className="space-y-4">
+            <div className="space-y-3">
               {outlets.map((outlet) => (
                 <div
                   key={outlet.id}
@@ -127,14 +160,22 @@ export function PickupLayout() {
         </div>
       </div>
 
-      {/* Right Panel: Map (hidden on mobile by default, shown as bottom section) */}
-      <div className="h-64 lg:h-full lg:flex-1">
+      {/* Right Panel: Map */}
+      <div
+        className={cn(
+          "lg:flex-1",
+          mobileShowMap
+            ? "flex-1"
+            : "hidden lg:block",
+          "min-h-[300px] lg:min-h-0",
+        )}
+      >
         <PickupMapView
           outlets={outlets}
           {...(userLocation != null ? { userLocation } : {})}
           selectedOutletId={selectedOutletId}
           onOutletSelect={handleOutletSelect}
-          className="h-full"
+          className="h-full w-full"
         />
       </div>
     </div>
