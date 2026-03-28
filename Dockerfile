@@ -3,17 +3,13 @@
 FROM node:20-alpine AS deps
 WORKDIR /app
 RUN apk add --no-cache libc6-compat
-ENV PNPM_HOME="/root/.local/share/pnpm" \
-    PATH="$PNPM_HOME:$PATH"
-RUN corepack enable pnpm
+RUN npm install -g pnpm
 COPY package.json pnpm-lock.yaml* ./
 RUN pnpm install --frozen-lockfile
 
 FROM node:20-alpine AS builder
 WORKDIR /app
-ENV PNPM_HOME="/root/.local/share/pnpm" \
-    PATH="$PNPM_HOME:$PATH"
-RUN corepack enable pnpm
+RUN npm install -g pnpm
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
