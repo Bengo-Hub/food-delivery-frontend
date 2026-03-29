@@ -28,8 +28,8 @@ export function useSubscription() {
     // Mark as loading (null = loading, undefined = not started)
     setSubscriptionInfo(null);
 
-    const tenantId = (user as Record<string, unknown>).tenant_id as string | undefined;
-    const tenantSlug = (user as Record<string, unknown>).tenant_slug as string | undefined;
+    const tenantId = (user as any).tenant_id as string | undefined;
+    const tenantSlug = (user as any).tenant_slug as string | undefined;
 
     if (!tenantId || tenantSlug === "codevertex") {
       // Platform owner — always full access
@@ -39,13 +39,13 @@ export function useSubscription() {
         planName: "Enterprise",
         features: [],
         limits: {},
-      });
+      } as any);
       return;
     }
 
     fetchSubscriptionInfo(tenantId, tenantSlug ?? "", session.accessToken)
-      .then((info) => setSubscriptionInfo(info ?? { status: "none", planCode: "", planName: "", features: [], limits: {} }))
-      .catch(() => setSubscriptionInfo({ status: "none", planCode: "", planName: "", features: [], limits: {} }));
+      .then((info) => setSubscriptionInfo((info ?? { status: "none", planCode: "", planName: "", features: [], limits: {} }) as any))
+      .catch(() => setSubscriptionInfo({ status: "none", planCode: "", planName: "", features: [], limits: {} } as any));
   }, [status, session?.accessToken, user, subscriptionInfo, setSubscriptionInfo]);
 
   const info = subscriptionInfo as SubscriptionInfo | null | undefined;

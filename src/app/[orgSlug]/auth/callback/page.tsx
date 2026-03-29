@@ -7,6 +7,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 
 import { Button } from "@/components/ui/button";
 import { userHasRole } from "@/lib/auth/permissions";
+import { consumeState } from "@/lib/auth/pkce";
 import { orgRoute } from "@/lib/routes";
 import { useOrgSlug } from "@/providers/org-slug-provider";
 import { useAuthStore } from "@/store/auth";
@@ -28,9 +29,18 @@ function AuthCallbackContent() {
     if (oauthError || !code || hasStarted.current) return;
     hasStarted.current = true;
 
+    // Verify CSRF state parameter
+    const urlState = searchParams?.get("state");
+    const storedState = consumeState();
+    if (urlState && storedState && urlState !== storedState) {
+      console.error("CSRF state mismatch — possible attack");
+      router.replace(orgRoute(orgSlug, "/auth"));
+      return;
+    }
+
     const callbackUrl = `${window.location.origin}${window.location.pathname}`;
     void handleSSOCallback(code, callbackUrl, orgSlug);
-  }, [code, oauthError, handleSSOCallback, orgSlug]);
+  }, [code, oauthError, handleSSOCallback, orgSlug, searchParams, router]);
 
   // Step 2: Once synced and authenticated, redirect to the right destination
   useEffect(() => {

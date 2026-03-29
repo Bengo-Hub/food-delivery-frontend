@@ -52,6 +52,11 @@ export function RequireAuth({
 
   useEffect(() => {
     if (meError) {
+      // Skip redirect for subscription 403 — user is authenticated, just lacks subscription
+      const errorData = (meError as any)?.response?.data;
+      if (errorData?.code === "subscription_inactive" || errorData?.upgrade === true) {
+        return;
+      }
       router.replace((orgRoute(orgSlug, "/auth") + `?redirectTo=${encodeURIComponent(pathname ?? "/")}`) as Parameters<typeof router.replace>[0]);
       return;
     }
