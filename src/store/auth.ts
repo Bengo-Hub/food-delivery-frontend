@@ -262,37 +262,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       persistAuthState({ session, user: null });
       set({ session });
 
-      // Step 3: Wait for user sync via NATS and fetch profile from ordering-backend
-      // The SSO publishes auth.user.created/login → ordering-backend subscribes and syncs user
-      let syncAttempts = 0;
-      const maxAttempts = 10;
-      const pollInterval = 1000; // 1 second
-
-      while (syncAttempts < maxAttempts) {
-        try {
-          const response = await fetchProfile(tenantSlug ?? undefined);
-          const u = response.user;
-
-          applyAuthResponse(set, {
-            session: { ...session, sessionId: response.session?.sessionId ?? "" },
-            user: u,
-          });
-          await hydrateOrders(set);
-          toast.success("Welcome back!");
-          return;
-        } catch (err) {
-          const httpStatus = extractStatus(err);
-          // 404 means user not yet synced, keep polling
-          if (httpStatus === 404 || httpStatus === 401) {
-            syncAttempts++;
-            await new Promise((r) => setTimeout(r, pollInterval));
-            continue;
-          }
-          throw err;
-        }
-      }
-
-      // Ordering-backend user not synced yet: fall back to SSO /me so the UI shows authenticated state
+      // Step 3: Fetch profile from SSO /me first (always available, no JIT sync needed)
+      // Then optionally try ordering-backend /me in background for service-specific data.
       try {
         const ssoResponse = await fetchProfileFromSSO(session.accessToken);
         const payload: AuthResponse = {
@@ -304,16 +275,30 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         applyAuthResponse(set, payload);
         await hydrateOrders(set);
         toast.success("Welcome back!");
-        return;
       } catch {
-        // SSO /me also failed; still mark authenticated so user can retry or refresh
-        set({
-          status: "authenticated",
-          session,
-          error: null,
-        });
+        // SSO /me failed; still mark authenticated so user can retry or refresh
+        set({ status: "authenticated", session, error: null });
         toast.info("Signed in. Your profile is still syncing.");
       }
+
+      // Background: try to sync from ordering-backend (for service-specific user data)
+      // This runs asynchronously and updates the store when available.
+      (async () => {
+        for (let i = 0; i < 5; i++) {
+          try {
+            const response = await fetchProfile(tenantSlug ?? undefined);
+            if (response?.user) {
+              applyAuthResponse(set, {
+                session: { ...get().session!, sessionId: response.session?.sessionId ?? "" },
+                user: response.user,
+              });
+            }
+            return;
+          } catch {
+            await new Promise((r) => setTimeout(r, 2000));
+          }
+        }
+      })();
     } catch (error) {
       const message = error instanceof Error ? error.message : "Sign-in failed";
       set({ status: "error", error: message });
@@ -326,16 +311,15 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   },
 
   logout: async () => {
-    try {
-      toast.success("Signed out successfully.");
-    } catch {
-      toast.info("Signed out.");
-    } finally {
-      clearSession(set);
-      // Redirect to SSO logout for single sign-out
-      if (typeof window !== "undefined") {
-        window.location.href = buildLogoutUrl(window.location.origin);
-      }
+    clearSession(set);
+    // Clear Zustand persist storage to prevent rehydration of stale session
+    if (typeof window !== "undefined") {
+      try { localStorage.removeItem("ordering-auth-storage"); } catch { /* no-op */ }
+      try { localStorage.removeItem("tenantId"); } catch { /* no-op */ }
+      try { sessionStorage.clear(); } catch { /* no-op */ }
+      // Redirect to SSO logout → clears session cookie → redirects to accounts login page
+      // Use accounts URL (not app URL) so user lands on login page, not a redirect loop
+      window.location.href = buildLogoutUrl("https://accounts.codevertexitsolutions.com");
     }
   },
 

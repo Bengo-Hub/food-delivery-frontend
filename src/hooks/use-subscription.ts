@@ -43,6 +43,26 @@ export function useSubscription() {
       return;
     }
 
+    // Try to read subscription data from the SSO /me tenant object first (already available)
+    const tenant = (user as any).tenant;
+    if (tenant?.subscription_status) {
+      setSubscriptionInfo({
+        status: (tenant.subscription_status ?? "none").toLowerCase(),
+        planCode: tenant.subscription_plan ?? "",
+        planName: tenant.subscription_plan ?? "",
+        features: [],
+        limits: {},
+        trialEndsAt: tenant.subscription_expires_at,
+        currentPeriodEnd: tenant.subscription_expires_at,
+      } as any);
+      // Also fetch full details from subscriptions-api in background (has features/limits)
+      fetchSubscriptionInfo(tenantId, tenantSlug ?? "", session.accessToken)
+        .then((info) => { if (info) setSubscriptionInfo(info as any); })
+        .catch(() => {});
+      return;
+    }
+
+    // Fallback: fetch from subscriptions-api
     fetchSubscriptionInfo(tenantId, tenantSlug ?? "", session.accessToken)
       .then((info) => setSubscriptionInfo((info ?? { status: "none", planCode: "", planName: "", features: [], limits: {} }) as any))
       .catch(() => setSubscriptionInfo({ status: "none", planCode: "", planName: "", features: [], limits: {} } as any));
