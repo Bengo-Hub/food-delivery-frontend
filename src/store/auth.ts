@@ -2,7 +2,6 @@ import type { AxiosError } from "axios";
 import { create } from "zustand";
 
 import { attachAuthTokenGetter } from "@/lib/api/base";
-import { checkSubscription } from "@/lib/auth/subscription";
 import {
     buildAuthorizeUrl,
     buildLogoutUrl,
@@ -35,7 +34,7 @@ import type {
 } from "@/lib/auth/types";
 import { toast } from "@/lib/toast";
 
-type AuthStatus = "idle" | "loading" | "authenticated" | "syncing" | "error" | "subscription_required";
+type AuthStatus = "idle" | "loading" | "authenticated" | "syncing" | "error";
 
 interface AuthState {
   status: AuthStatus;
@@ -56,6 +55,9 @@ interface AuthState {
   updatePreferences: (input: PreferencesUpdateInput) => Promise<void>;
   updateSecurity: (input: SecurityUpdateInput) => Promise<void>;
   refreshOrders: () => Promise<void>;
+  /** Subscription info loaded lazily after auth — never blocks login. */
+  subscriptionInfo: Record<string, unknown> | null | undefined;
+  setSubscriptionInfo: (info: Record<string, unknown> | null) => void;
 }
 
 function applyAuthResponse(set: (value: Partial<AuthState>) => void, response: AuthResponse) {
@@ -118,6 +120,8 @@ function getInitialAuthState(): Pick<AuthState, "session" | "user" | "status" | 
 
 export const useAuthStore = create<AuthState>((set, get) => ({
   ...getInitialAuthState(),
+  subscriptionInfo: undefined,
+  setSubscriptionInfo: (info) => set({ subscriptionInfo: info }),
 
   syncFromProfile: (response) => {
     applyAuthResponse(set, response);
@@ -145,9 +149,13 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       await hydrateOrders(set);
     } catch (error) {
       const status = extractStatus(error);
-      if (status === 401 || status === 403) {
+      if (status === 401) {
         clearSession(set);
         toast.error("Session expired. Please sign in again.");
+        return;
+      }
+      // 403 = authenticated but lacks permission or subscription — do NOT clear session
+      if (status === 403) {
         return;
       }
       // Ordering /auth/me failed (e.g. 404 user not synced): try SSO /me so UI shows authenticated state
@@ -264,19 +272,6 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         try {
           const response = await fetchProfile(tenantSlug ?? undefined);
           const u = response.user;
-
-          // Subscription check — separate from profile fetch, never blocks login on failure
-          if (u.tenant_slug !== 'codevertex' && u.tenant_id) {
-            try {
-              const active = await checkSubscription(u.tenant_id, u.tenant_slug ?? '', session.accessToken);
-              if (!active) {
-                set({ status: 'subscription_required' });
-                return;
-              }
-            } catch {
-              // Fail open — subscription API unreachable, allow login
-            }
-          }
 
           applyAuthResponse(set, {
             session: { ...session, sessionId: response.session?.sessionId ?? "" },
