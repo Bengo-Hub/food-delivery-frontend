@@ -264,13 +264,20 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         try {
           const response = await fetchProfile(tenantSlug ?? undefined);
           const u = response.user;
+
+          // Subscription check — separate from profile fetch, never blocks login on failure
           if (u.tenant_slug !== 'codevertex' && u.tenant_id) {
-            const active = await checkSubscription(u.tenant_id, u.tenant_slug ?? '', session.accessToken);
-            if (!active) {
-              set({ status: 'subscription_required' });
-              return;
+            try {
+              const active = await checkSubscription(u.tenant_id, u.tenant_slug ?? '', session.accessToken);
+              if (!active) {
+                set({ status: 'subscription_required' });
+                return;
+              }
+            } catch {
+              // Fail open — subscription API unreachable, allow login
             }
           }
+
           applyAuthResponse(set, {
             session: { ...session, sessionId: response.session?.sessionId ?? "" },
             user: u,
