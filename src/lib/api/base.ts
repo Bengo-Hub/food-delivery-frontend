@@ -70,7 +70,13 @@ api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401 && on401Callback) {
-      on401Callback();
+      // Do not auto-logout for /auth/me — it may 401 before JIT sync completes.
+      // The handleSSOCallback polling loop handles this; firing on401 here
+      // clears the session mid-sync and causes a redirect loop.
+      const url: string = error.config?.url ?? "";
+      if (!url.includes("/auth/me")) {
+        on401Callback();
+      }
     }
     if (error.response?.status === 403 && onSubscription403Callback) {
       const data = error.response?.data;
