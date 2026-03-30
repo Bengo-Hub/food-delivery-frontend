@@ -38,12 +38,13 @@ export function AppProviders({ children }: PropsWithChildren) {
   }, [initializeAuth]);
 
   useEffect(() => {
-    // On 401, only clear local session — do NOT redirect to SSO.
-    // Public pages (landing, catalog) fire unauthenticated API calls and
-    // must not trigger a full SSO redirect cycle.
-    const clearSession = useAuthStore.getState().clearLocalSession;
+    // On 401 from backend API calls, only clear local session if the user
+    // is fully authenticated. During 'syncing'/'loading' states, backend
+    // calls may 401 because JIT sync hasn't completed — do NOT clear session.
     setOn401(() => {
-      if (clearSession) clearSession();
+      const state = useAuthStore.getState();
+      if (state.status === "syncing" || state.status === "loading") return;
+      if (state.clearLocalSession) state.clearLocalSession();
     });
     return () => setOn401(null);
   }, []);

@@ -125,7 +125,9 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
   syncFromProfile: (response) => {
     applyAuthResponse(set, response);
-    void hydrateOrders(set);
+    // Do NOT call hydrateOrders here — it hits the backend which may 401
+    // before JIT sync completes, triggering the on401 interceptor.
+    // Orders will be fetched lazily when the user navigates to orders pages.
   },
 
   initialize: async () => {
@@ -135,18 +137,23 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       return;
     }
 
-    // Optimistically set authenticated if we have user and session
+    // Optimistically set authenticated if we have user and session from persist
     if (user && session) {
       set({ status: "authenticated" });
-      hydrateOrders(set);
       return;
     }
 
+    // Fetch profile from SSO (not backend — avoids 401 during JIT sync)
     try {
       set({ status: "loading", error: null });
-      const response = await fetchProfile();
-      applyAuthResponse(set, response);
-      await hydrateOrders(set);
+      const ssoResponse = await fetchProfileFromSSO(session.accessToken);
+      const payload: AuthResponse = {
+        session: { ...session, sessionId: ssoResponse.session?.sessionId ?? "" },
+        user: ssoResponse.user,
+      };
+      if (ssoResponse.tenant_id != null) payload.tenant_id = ssoResponse.tenant_id;
+      if (ssoResponse.tenant_slug != null) payload.tenant_slug = ssoResponse.tenant_slug;
+      applyAuthResponse(set, payload);
     } catch (error) {
       const status = extractStatus(error);
       if (status === 401) {
@@ -157,23 +164,6 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       // 403 = authenticated but lacks permission or subscription — do NOT clear session
       if (status === 403) {
         return;
-      }
-      // Ordering /auth/me failed (e.g. 404 user not synced): try SSO /me so UI shows authenticated state
-      if (session?.accessToken) {
-        try {
-          const ssoResponse = await fetchProfileFromSSO(session.accessToken);
-          const payload: AuthResponse = {
-            session: { ...session, sessionId: ssoResponse.session?.sessionId ?? "" },
-            user: ssoResponse.user,
-          };
-          if (ssoResponse.tenant_id != null) payload.tenant_id = ssoResponse.tenant_id;
-          if (ssoResponse.tenant_slug != null) payload.tenant_slug = ssoResponse.tenant_slug;
-          applyAuthResponse(set, payload);
-          await hydrateOrders(set);
-          return;
-        } catch {
-          // fall through
-        }
       }
       if (user && session) {
         set({ status: "authenticated" });
@@ -262,8 +252,10 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       persistAuthState({ session, user: null });
       set({ session });
 
-      // Step 3: Fetch profile from SSO /me first (always available, no JIT sync needed)
-      // Then optionally try ordering-backend /me in background for service-specific data.
+      // Step 3: Fetch profile from SSO /me (always available, no JIT sync needed).
+      // Do NOT call backend APIs here — the user may not be JIT-synced yet and
+      // any 401 from backend calls triggers the on401 interceptor which clears
+      // the session and causes a redirect loop.
       try {
         const ssoResponse = await fetchProfileFromSSO(session.accessToken);
         const payload: AuthResponse = {
@@ -273,32 +265,12 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         if (ssoResponse.tenant_id != null) payload.tenant_id = ssoResponse.tenant_id;
         if (ssoResponse.tenant_slug != null) payload.tenant_slug = ssoResponse.tenant_slug;
         applyAuthResponse(set, payload);
-        await hydrateOrders(set);
         toast.success("Welcome back!");
       } catch {
         // SSO /me failed; still mark authenticated so user can retry or refresh
         set({ status: "authenticated", session, error: null });
         toast.info("Signed in. Your profile is still syncing.");
       }
-
-      // Background: try to sync from ordering-backend (for service-specific user data)
-      // This runs asynchronously and updates the store when available.
-      (async () => {
-        for (let i = 0; i < 5; i++) {
-          try {
-            const response = await fetchProfile(tenantSlug ?? undefined);
-            if (response?.user) {
-              applyAuthResponse(set, {
-                session: { ...get().session!, sessionId: response.session?.sessionId ?? "" },
-                user: response.user,
-              });
-            }
-            return;
-          } catch {
-            await new Promise((r) => setTimeout(r, 2000));
-          }
-        }
-      })();
     } catch (error) {
       const message = error instanceof Error ? error.message : "Sign-in failed";
       set({ status: "error", error: message });

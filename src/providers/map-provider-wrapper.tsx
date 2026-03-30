@@ -7,7 +7,7 @@ import { useAuthStore } from "@/store/auth";
 
 const TILE_SERVER_URL =
   process.env.NEXT_PUBLIC_TILE_SERVER_URL || "https://tiles.codevertexitsolutions.com";
-const TILE_STYLE_URL = `${TILE_SERVER_URL}/styles/basic-preview/style.json`;
+const TILE_STYLE_URL = `${TILE_SERVER_URL}/styles/osm-bright/style.json`;
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_URL || "https://orderingapi.codevertexitsolutions.com/api/v1/";
 const LOGISTICS_API_URL =
