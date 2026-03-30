@@ -266,10 +266,12 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         if (ssoResponse.tenant_slug != null) payload.tenant_slug = ssoResponse.tenant_slug;
         applyAuthResponse(set, payload);
         toast.success("Welcome back!");
-      } catch {
-        // SSO /me failed; still mark authenticated so user can retry or refresh
-        set({ status: "authenticated", session, error: null });
-        toast.info("Signed in. Your profile is still syncing.");
+      } catch (ssoErr) {
+        // SSO /me failed — set error state so callback page shows retry button.
+        // Never set "authenticated" without a user — it causes the callback to hang.
+        const msg = ssoErr instanceof Error ? ssoErr.message : "Failed to load profile";
+        set({ status: "error", session, error: msg });
+        toast.error("Failed to load your profile. Please try again.");
       }
     } catch (error) {
       const message = error instanceof Error ? error.message : "Sign-in failed";
