@@ -70,9 +70,11 @@ api.interceptors.response.use(
   (response) => response,
   async (error) => {
     if (error.response?.status === 401) {
+      // If token is already cleared (explicit logout in progress), skip entirely
+      if (!accessTokenGetter()) return Promise.reject(error);
+
       const url: string = error.config?.url ?? "";
       if (!url.includes("/auth/me") && !error.config?._retried) {
-        // Attempt token refresh before triggering logout
         const { refreshAccessToken } = await import("@/lib/auth/token-refresh");
         const newToken = await refreshAccessToken();
 
@@ -82,7 +84,6 @@ api.interceptors.response.use(
           return api.request(error.config);
         }
 
-        // Refresh failed — fire logout callback
         on401Callback?.();
       }
     }
