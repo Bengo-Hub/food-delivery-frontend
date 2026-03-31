@@ -68,14 +68,22 @@ export function setOnSubscription403(callback: ((data: any) => void) | null) {
 
 api.interceptors.response.use(
   (response) => response,
-  (error) => {
-    if (error.response?.status === 401 && on401Callback) {
-      // Do not auto-logout for /auth/me — it may 401 before JIT sync completes.
-      // The handleSSOCallback polling loop handles this; firing on401 here
-      // clears the session mid-sync and causes a redirect loop.
+  async (error) => {
+    if (error.response?.status === 401) {
       const url: string = error.config?.url ?? "";
-      if (!url.includes("/auth/me")) {
-        on401Callback();
+      if (!url.includes("/auth/me") && !error.config?._retried) {
+        // Attempt token refresh before triggering logout
+        const { refreshAccessToken } = await import("@/lib/auth/token-refresh");
+        const newToken = await refreshAccessToken();
+
+        if (newToken) {
+          error.config._retried = true;
+          error.config.headers.Authorization = `Bearer ${newToken}`;
+          return api.request(error.config);
+        }
+
+        // Refresh failed — fire logout callback
+        on401Callback?.();
       }
     }
     if (error.response?.status === 403 && onSubscription403Callback) {

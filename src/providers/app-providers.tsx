@@ -38,16 +38,18 @@ export function AppProviders({ children }: PropsWithChildren) {
   }, [initializeAuth]);
 
   useEffect(() => {
-    // On 401 from backend API calls, only clear local session if the user
-    // is fully authenticated. During 'syncing'/'loading' states, backend
-    // calls may 401 because JIT sync hasn't completed — do NOT clear session.
+    // On 401 from backend API calls, only fire after token refresh has failed
+    // (handled in base.ts interceptor). Skip during syncing/loading (JIT sync)
+    // and within 15s of authentication (token propagation grace period).
     setOn401(() => {
-      const state = useAuthStore.getState();
-      if (state.status === "syncing" || state.status === "loading") return;
-      if (state.clearLocalSession) state.clearLocalSession();
+      const { status, lastAuthenticatedAt } = useAuthStore.getState();
+      if (status === "syncing" || status === "loading") return;
+      if (lastAuthenticatedAt && Date.now() - lastAuthenticatedAt < 15_000) return;
+      queryClient.clear();
+      void useAuthStore.getState().logout();
     });
     return () => setOn401(null);
-  }, []);
+  }, [queryClient]);
 
   return (
     <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>

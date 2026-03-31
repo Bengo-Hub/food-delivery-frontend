@@ -42,6 +42,7 @@ interface AuthState {
   session: SessionTokens | null;
   user: UserProfile | null;
   orders: OrderSummary[];
+  lastAuthenticatedAt: number | null;
   /** Sync user/roles/permissions from GET /auth/me (e.g. from useMe query). */
   syncFromProfile: (response: AuthResponse) => void;
   initialize: () => Promise<void>;
@@ -70,6 +71,7 @@ function applyAuthResponse(set: (value: Partial<AuthState>) => void, response: A
     session: response.session,
     user: response.user,
     error: null,
+    lastAuthenticatedAt: Date.now(),
   };
   persistAuthState(newState);
   set(newState);
@@ -109,6 +111,7 @@ function clearSession(set: (value: Partial<AuthState>) => void) {
     session: null,
     orders: [],
     error: null,
+    lastAuthenticatedAt: null,
   });
 }
 
@@ -120,6 +123,7 @@ function getInitialAuthState(): Pick<AuthState, "session" | "user" | "status" | 
 
 export const useAuthStore = create<AuthState>((set, get) => ({
   ...getInitialAuthState(),
+  lastAuthenticatedAt: null,
   subscriptionInfo: undefined,
   setSubscriptionInfo: (info) => set({ subscriptionInfo: info }),
 
