@@ -25,6 +25,7 @@ export type CartItem = {
 interface CartState {
   items: CartItem[];
   updatedAt: number;
+  sessionId: string;
   requestUtensils: boolean;
   orderNotes: string;
   addItem: (item: {
@@ -52,6 +53,7 @@ export const useCartStore = create<CartState>()(
     (set, get) => ({
       items: [],
       updatedAt: Date.now(),
+      sessionId: typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(36).slice(2)}`,
       requestUtensils: false,
       orderNotes: "",
       addItem: ({ id, name, price, outletId, outletName, quantity = 1, modifiers, notes, image, inventorySku }) => {
@@ -95,12 +97,19 @@ export const useCartStore = create<CartState>()(
     }),
     {
       name: "ordering-cart-storage",
-      version: 1,
+      version: 2,
       migrate: (persisted: unknown, version: number) => {
         const state = persisted as CartState;
         if (version === 0) {
           // v0 → v1: add updatedAt field, clear stale items
           return { ...state, updatedAt: Date.now() };
+        }
+        if (version <= 1) {
+          // v1 → v2: add sessionId for guest checkout
+          const sid = typeof crypto !== "undefined" && crypto.randomUUID
+            ? crypto.randomUUID()
+            : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+          return { ...state, sessionId: sid };
         }
         return state as CartState;
       },

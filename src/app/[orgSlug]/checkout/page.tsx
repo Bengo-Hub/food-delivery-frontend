@@ -1,6 +1,6 @@
 "use client";
 
-import { AlertTriangle, ArrowLeft, CheckCircle2, Loader2, Tag } from "lucide-react";
+import { AlertTriangle, ArrowLeft, CheckCircle2, Loader2, LogIn, Mail, Phone, ShoppingBag, Star, Tag, Truck, User } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -19,7 +19,7 @@ import { SiteShell } from "@/components/layout/site-shell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useAddresses } from "@/hooks/use-addresses";
-import { useCheckout, useFeeBreakdown } from "@/hooks/use-cart-api";
+import { useCheckout, useGuestCheckout, useFeeBreakdown } from "@/hooks/use-cart-api";
 import { useApplyPromoCode } from "@/hooks/use-orders";
 import { useZoneCheck } from "@/hooks/use-zones";
 import { orgRoute } from "@/lib/routes";
@@ -151,16 +151,81 @@ export default function CheckoutPage() {
     [setScheduledTime],
   );
 
-  // Redirect to auth if not logged in
-  if (status !== "authenticated") {
+  // Guest checkout state
+  const [checkoutMode, setCheckoutMode] = useState<"choose" | "guest" | "authenticated">(
+    status === "authenticated" ? "authenticated" : "choose",
+  );
+  const [guestEmail, setGuestEmail] = useState("");
+  const [guestPhone, setGuestPhone] = useState("");
+  const [guestName, setGuestName] = useState("");
+  const sessionId = useCartStore((s) => s.sessionId);
+  const guestCheckoutMutation = useGuestCheckout();
+  const redirectToSSO = useAuthStore((s) => s.redirectToSSO);
+
+  // Sync mode when auth status changes (e.g. after login redirect back)
+  useEffect(() => {
+    if (status === "authenticated") setCheckoutMode("authenticated");
+  }, [status]);
+
+  const handleSignInForCheckout = () => {
+    const checkoutUrl = orgRoute(orgSlug, "/checkout");
+    if (typeof window !== "undefined") {
+      sessionStorage.setItem("sso_return_to", checkoutUrl);
+    }
+    void redirectToSSO(checkoutUrl, orgSlug);
+  };
+
+  // Show guest/auth choice when not logged in
+  if (checkoutMode === "choose" && status !== "authenticated") {
     return (
       <SiteShell>
-        <div className="container mx-auto flex max-w-4xl flex-col items-center gap-4 px-4 py-16">
-          <h1 className="text-2xl font-bold">Sign in to continue</h1>
-          <p className="text-muted-foreground">You need to be signed in to place an order.</p>
-          <Button asChild>
-            <Link href={orgRoute(orgSlug, "/auth")}>Sign In</Link>
-          </Button>
+        <div className="container mx-auto max-w-lg px-4 py-8">
+          <h1 className="mb-6 text-center text-2xl font-bold">How would you like to checkout?</h1>
+          <div className="space-y-4">
+            {/* Guest checkout option */}
+            <button
+              onClick={() => setCheckoutMode("guest")}
+              className="w-full rounded-xl border border-border p-5 text-left transition-colors hover:border-primary hover:bg-primary/5"
+            >
+              <div className="flex items-center gap-3">
+                <div className="flex size-10 items-center justify-center rounded-full bg-muted">
+                  <ShoppingBag className="size-5 text-muted-foreground" />
+                </div>
+                <div>
+                  <p className="font-semibold">Continue as Guest</p>
+                  <p className="text-sm text-muted-foreground">Quick checkout with just your email</p>
+                </div>
+              </div>
+            </button>
+
+            {/* Sign in option */}
+            <button
+              onClick={handleSignInForCheckout}
+              className="w-full rounded-xl border border-primary bg-primary/5 p-5 text-left transition-colors hover:bg-primary/10"
+            >
+              <div className="flex items-center gap-3">
+                <div className="flex size-10 items-center justify-center rounded-full bg-primary/10">
+                  <LogIn className="size-5 text-primary" />
+                </div>
+                <div>
+                  <p className="font-semibold">Sign In or Create Account</p>
+                  <p className="text-sm text-muted-foreground">For a personalized experience</p>
+                </div>
+              </div>
+              <ul className="mt-3 space-y-1.5 pl-[52px]">
+                {[
+                  { icon: Truck, text: "Order tracking & delivery updates" },
+                  { icon: Star, text: "Earn loyalty points & rewards" },
+                  { icon: User, text: "Saved addresses & preferences" },
+                ].map(({ icon: Icon, text }) => (
+                  <li key={text} className="flex items-center gap-2 text-xs text-muted-foreground">
+                    <Icon className="size-3.5 text-primary" />
+                    {text}
+                  </li>
+                ))}
+              </ul>
+            </button>
+          </div>
         </div>
       </SiteShell>
     );
@@ -198,7 +263,21 @@ export default function CheckoutPage() {
     }
   };
 
+  const isGuestMode = checkoutMode === "guest" && status !== "authenticated";
+
   const handlePlaceOrder = async () => {
+    // Guest mode validations
+    if (isGuestMode) {
+      if (!guestEmail.trim() && !guestPhone.trim()) {
+        toast.error("Please provide an email or phone number");
+        return;
+      }
+      if (guestEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(guestEmail)) {
+        toast.error("Please enter a valid email address");
+        return;
+      }
+    }
+
     // Validate delivery address for delivery/schedule modes
     if (fulfillmentMode !== "pickup" && !selectedAddressId && addresses.length > 0) {
       toast.error("Please select a delivery address");
@@ -226,28 +305,59 @@ export default function CheckoutPage() {
           ? crypto.randomUUID()
           : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
 
-      const payload: Parameters<typeof checkoutMutation.mutateAsync>[0] = {
-        outletId,
-        fulfillmentType: fulfillmentMode,
-        items: items.map((item) => ({
-          menuItemId: item.id,
-          name: item.name,
-          quantity: item.quantity,
-          unitPrice: item.price,
-          totalPrice: item.total,
-        })),
-        idempotencyKey,
-      };
-      if (fulfillmentMode !== "pickup" && selectedAddressId) {
-        payload.deliveryAddressId = selectedAddressId;
-      }
-      if (deliveryNotes) payload.deliveryNotes = deliveryNotes;
-      if (promoCode) payload.promoCode = promoCode;
-      if (orderNotes) payload.orderNotes = orderNotes;
-      if (requestUtensils) payload.requestUtensils = requestUtensils;
-      if (scheduledTime) payload.scheduledAt = scheduledTime.date.toISOString();
+      let result;
 
-      const result = await checkoutMutation.mutateAsync(payload);
+      if (isGuestMode) {
+        // Guest checkout flow
+        const selectedAddr = addresses.find((a) => a.id === selectedAddressId);
+        const guestPayload: Parameters<typeof guestCheckoutMutation.mutateAsync>[0] = {
+          outletId,
+          sessionId,
+          fulfillmentType: fulfillmentMode,
+          idempotencyKey,
+        };
+        const trimmedEmail = guestEmail.trim();
+        const trimmedPhone = guestPhone.trim();
+        const trimmedName = guestName.trim();
+        if (trimmedEmail) guestPayload.contactEmail = trimmedEmail;
+        if (trimmedPhone) guestPayload.contactPhone = trimmedPhone;
+        if (trimmedName) guestPayload.contactName = trimmedName;
+        if (selectedAddr) {
+          guestPayload.deliveryAddress = {
+            lat: selectedAddr.lat,
+            lng: selectedAddr.lng,
+            formatted: selectedAddr.address ?? "",
+          };
+        }
+        if (deliveryNotes) guestPayload.deliveryNotes = deliveryNotes;
+        if (scheduledTime) guestPayload.scheduledAt = scheduledTime.date.toISOString();
+
+        result = await guestCheckoutMutation.mutateAsync(guestPayload);
+      } else {
+        // Authenticated checkout flow
+        const payload: Parameters<typeof checkoutMutation.mutateAsync>[0] = {
+          outletId,
+          fulfillmentType: fulfillmentMode,
+          items: items.map((item) => ({
+            menuItemId: item.id,
+            name: item.name,
+            quantity: item.quantity,
+            unitPrice: item.price,
+            totalPrice: item.total,
+          })),
+          idempotencyKey,
+        };
+        if (fulfillmentMode !== "pickup" && selectedAddressId) {
+          payload.deliveryAddressId = selectedAddressId;
+        }
+        if (deliveryNotes) payload.deliveryNotes = deliveryNotes;
+        if (promoCode) payload.promoCode = promoCode;
+        if (orderNotes) payload.orderNotes = orderNotes;
+        if (requestUtensils) payload.requestUtensils = requestUtensils;
+        if (scheduledTime) payload.scheduledAt = scheduledTime.date.toISOString();
+
+        result = await checkoutMutation.mutateAsync(payload);
+      }
 
       setOrderId(result.orderId);
       setPaymentIntentId(result.paymentIntentId);
@@ -308,6 +418,53 @@ export default function CheckoutPage() {
           <SuccessView orderId={orderId!} />
         ) : (
           <div className="space-y-4 pb-24 sm:space-y-6 sm:pb-6">
+            {/* Guest Contact Info */}
+            {isGuestMode && (
+              <section className="rounded-xl border border-border p-4">
+                <h2 className="mb-3 text-sm font-medium">Contact Information</h2>
+                <div className="space-y-3">
+                  <div className="relative">
+                    <Mail className="absolute left-3 top-3 size-4 text-muted-foreground" />
+                    <Input
+                      type="email"
+                      placeholder="Email address *"
+                      value={guestEmail}
+                      onChange={(e) => setGuestEmail(e.target.value)}
+                      className="min-h-[44px] pl-10"
+                    />
+                  </div>
+                  <div className="relative">
+                    <Phone className="absolute left-3 top-3 size-4 text-muted-foreground" />
+                    <Input
+                      type="tel"
+                      placeholder="Phone number (optional)"
+                      value={guestPhone}
+                      onChange={(e) => setGuestPhone(e.target.value)}
+                      className="min-h-[44px] pl-10"
+                    />
+                  </div>
+                  <div className="relative">
+                    <User className="absolute left-3 top-3 size-4 text-muted-foreground" />
+                    <Input
+                      placeholder="Your name (optional)"
+                      value={guestName}
+                      onChange={(e) => setGuestName(e.target.value)}
+                      className="min-h-[44px] pl-10"
+                    />
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    We&apos;ll use this to send your order confirmation and delivery updates.{" "}
+                    <button
+                      onClick={handleSignInForCheckout}
+                      className="font-medium text-primary hover:underline"
+                    >
+                      Sign in instead
+                    </button>
+                  </p>
+                </div>
+              </section>
+            )}
+
             {/* Fulfillment Toggle */}
             <FulfillmentToggle
               mode={fulfillmentMode}
@@ -424,7 +581,7 @@ export default function CheckoutPage() {
             {/* Place Order */}
             <SlideToConfirm
               onConfirm={handlePlaceOrder}
-              loading={step === "processing" || checkoutMutation.isPending}
+              loading={step === "processing" || checkoutMutation.isPending || guestCheckoutMutation.isPending}
               total={grandTotal}
             />
           </div>

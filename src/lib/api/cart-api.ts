@@ -57,3 +57,27 @@ export async function checkout(slug: string, data: CheckoutRequest): Promise<Che
   const res = await api.post(`${slug}/checkout`, data);
   return res.data;
 }
+
+// ─── Guest Checkout ─────────────────────────────────────────────────
+
+export interface GuestCheckoutRequest {
+  outletId: string;
+  sessionId: string;
+  contactEmail?: string;
+  contactPhone?: string;
+  contactName?: string;
+  fulfillmentType: "delivery" | "pickup" | "schedule";
+  deliveryAddress?: {
+    lat: number;
+    lng: number;
+    formatted: string;
+  };
+  deliveryNotes?: string;
+  scheduledAt?: string;
+  idempotencyKey?: string;
+}
+
+export async function guestCheckout(slug: string, data: GuestCheckoutRequest): Promise<CheckoutResponse> {
+  const res = await api.post(`${slug}/checkout/guest`, data);
+  return res.data;
+}

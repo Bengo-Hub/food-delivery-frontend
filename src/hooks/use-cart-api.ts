@@ -4,9 +4,11 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 
 import {
   checkout,
+  guestCheckout,
   getFeeBreakdown,
   type CheckoutRequest,
   type CheckoutResponse,
+  type GuestCheckoutRequest,
   type FeeBreakdown,
 } from "@/lib/api/cart-api";
 import { useOrgSlug } from "@/providers/org-slug-provider";
@@ -36,5 +38,12 @@ export function useCheckout() {
   const slug = useOrgSlug();
   return useMutation<CheckoutResponse, Error, CheckoutRequest>({
     mutationFn: (data) => checkout(slug, data),
+  });
+}
+
+export function useGuestCheckout() {
+  const slug = useOrgSlug();
+  return useMutation<CheckoutResponse, Error, GuestCheckoutRequest>({
+    mutationFn: (data) => guestCheckout(slug, data),
   });
 }
