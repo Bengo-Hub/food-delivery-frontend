@@ -34,14 +34,12 @@ export default function CartPage() {
 
   const cartSubtotal = subtotal();
 
-  // Use backend fee breakdown when a server-side cart ID exists; fall back to
-  // client-side estimates until the checkout flow creates one.
-  const { data: feeData } = useFeeBreakdown(null);
-  const deliveryFee =
-    feeData?.delivery_fee ??
-    (diningMode === "delivery" ? (cartSubtotal > 2000 ? 0 : 150) : 0);
+  // Fetch fee breakdown from backend using the first item's outlet and current dining mode
+  const outletId = items[0]?.outletId ?? null;
+  const { data: feeData } = useFeeBreakdown(outletId, diningMode);
+  const deliveryFee = feeData?.delivery_fee ?? 0;
   const serviceFee = feeData?.service_fee ?? 0;
-  const total = cartSubtotal + deliveryFee + serviceFee;
+  const total = feeData?.grand_total ?? cartSubtotal + deliveryFee + serviceFee;
 
   if (items.length === 0) {
     return (
@@ -60,7 +58,6 @@ export default function CartPage() {
 
   // Group items by outlet for display
   const outletName = items[0]?.outletName;
-  const outletId = items[0]?.outletId;
 
   // Fetch outlet details for address display
   const { data: outletData } = useOutlet(orgSlug, outletId ?? "");
@@ -243,9 +240,6 @@ export default function CartPage() {
               <div className="flex justify-between">
                 <span className="text-muted-foreground">
                   Delivery fee
-                  {cartSubtotal > 2000 && (
-                    <span className="ml-1 text-xs text-green-600">(free over KES 2,000)</span>
-                  )}
                 </span>
                 <span>{deliveryFee === 0 ? <span className="text-green-600">Free</span> : formatCurrency(deliveryFee)}</span>
               </div>

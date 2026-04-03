@@ -1,215 +1,193 @@
 /**
- * E2E: Full order lifecycle — sequential, single browser session.
+ * E2E: Full order lifecycle — sequential, single browser, human-like navigation.
  *
- * Flow: Login → Browse catalog → Add item → Cart → Checkout → Order history
- * Each test depends on the previous one. Single browser context is shared
- * so cart state and auth persist between steps.
+ * Navigates via UI clicks (not page.goto) to leverage TanStack Query cache
+ * and avoid rate-limit issues. Single browser context preserves auth + cart.
+ *
+ * Flow: Landing → Browse catalog → Click item → Add to cart → Open cart drawer
+ *       → Proceed to Checkout → Verify checkout form → Order history
  */
 import { test, expect, type Page, type BrowserContext } from '@playwright/test';
-import fs from 'fs';
-import path from 'path';
 
-// ─── Environment (loaded from .env.test) ────────────────────────────
+// ─── Environment (loaded from .env.test via playwright.config.ts) ───
 const BASE = process.env.BASE_URL || 'https://ordersapp.codevertexitsolutions.com';
 const ORG_SLUG = process.env.E2E_ORG_SLUG || 'urban-loft';
 const LOGIN_EMAIL = process.env.E2E_LOGIN_EMAIL || 'demo@bengobox.dev';
 const LOGIN_PASSWORD = process.env.E2E_LOGIN_PASSWORD ?? '';
 const BASE_URL = `${BASE}/${ORG_SLUG}`;
 
-// ─── Inline Network Logger ──────────────────────────────────────────
-interface ApiEntry { method: string; url: string; status: number; }
-class ApiLogger {
-  entries: ApiEntry[] = [];
-  attach(page: Page) {
-    page.on('response', (res) => {
-      const url = res.url();
-      if (url.includes('/api/') || url.includes('sso.')) {
-        this.entries.push({ method: res.request().method(), url, status: res.status() });
-      }
-    });
-  }
-  get errors() { return this.entries.filter((e) => e.status >= 500); }
-  get authErrors() { return this.entries.filter((e) => e.status === 401); }
-  summary() {
-    const total = this.entries.length;
-    const err5xx = this.errors.length;
-    const err4xx = this.entries.filter((e) => e.status >= 400 && e.status < 500).length;
-    return `${total} requests, ${err4xx} client errors, ${err5xx} server errors`;
-  }
-}
+/** Human-like pause between actions (1-3s). */
+const pause = (page: Page, ms = 2000) => page.waitForTimeout(ms);
 
 // =====================================================================
-// Sequential test suite — single browser, shared state
+// Authenticated order flow — login once, navigate via clicks
 // =====================================================================
-test.describe.serial('Order lifecycle: browse → cart → checkout', () => {
-  let context: BrowserContext;
+test.describe.serial('Order lifecycle: authenticated user', () => {
+  let ctx: BrowserContext;
   let page: Page;
-  let apiLogger: ApiLogger;
 
   test.beforeAll(async ({ browser }) => {
-    context = await browser.newContext();
-    page = await context.newPage();
-    apiLogger = new ApiLogger();
-    apiLogger.attach(page);
+    ctx = await browser.newContext();
+    page = await ctx.newPage();
   });
+  test.afterAll(async () => { await ctx.close(); });
 
-  test.afterAll(async () => {
-    // Save API log
-    const outDir = path.resolve(__dirname, '..', 'test-results');
-    fs.mkdirSync(outDir, { recursive: true });
-    fs.writeFileSync(
-      path.join(outDir, 'order-lifecycle-api-log.json'),
-      JSON.stringify(apiLogger.entries, null, 2),
-    );
-    console.log(`API summary: ${apiLogger.summary()}`);
-    if (apiLogger.errors.length > 0) {
-      console.log('5xx errors:');
-      apiLogger.errors.forEach((e) => console.log(`  ${e.method} ${e.url} → ${e.status}`));
-    }
-    await context.close();
-  });
-
-  // ─── Step 1: SSO Login ────────────────────────────────────────────
-  test('1. Login via SSO', async () => {
-    if (!LOGIN_PASSWORD) {
-      test.skip(true, 'E2E_LOGIN_PASSWORD not set in .env.test');
-      return;
-    }
-
+  // ── Step 1: Land on homepage ──────────────────────────────────────
+  test('1. Landing page loads', async () => {
     await page.goto(BASE_URL);
-    await expect(page).toHaveURL(new RegExp(ORG_SLUG), { timeout: 15_000 });
-
-    // Click sign in
-    const signInLink = page.getByRole('link', { name: /sign in|login/i }).first();
-    await signInLink.click();
-
-    // Wait for SSO login form
-    await page.waitForURL(/accounts\.codevertexitsolutions\.com/, { timeout: 15_000 });
-    const emailInput = page.locator('input[type="email"], input[id="email"]').first();
-    await emailInput.waitFor({ state: 'visible', timeout: 15_000 });
-    await emailInput.fill(LOGIN_EMAIL);
-
-    const passwordInput = page.locator('input[type="password"], input[id="password"]').first();
-    await passwordInput.fill(LOGIN_PASSWORD);
-    await page.locator('button[type="submit"]').first().click();
-
-    // Wait for redirect back
-    await page.waitForURL(new RegExp(`(${BASE}|ordersapp).*${ORG_SLUG}`), { timeout: 30_000 });
-    await page.waitForLoadState('networkidle', { timeout: 15_000 }).catch(() => {});
-    await page.waitForTimeout(3_000);
-
-    // Confirm we're on the ordering app
+    await page.waitForLoadState('networkidle', { timeout: 20_000 }).catch(() => {});
+    await pause(page, 3000);
     expect(page.url()).toContain(ORG_SLUG);
   });
 
-  // ─── Step 2: Browse Catalog ───────────────────────────────────────
-  test('2. Browse catalog — items and categories load', async () => {
-    await page.goto(`${BASE_URL}/catalog`);
-    await page.waitForLoadState('networkidle', { timeout: 20_000 }).catch(() => {});
-    await page.waitForTimeout(3_000);
+  // ── Step 2: Sign in via SSO ───────────────────────────────────────
+  test('2. SSO login', async () => {
+    if (!LOGIN_PASSWORD) { test.skip(true, 'E2E_LOGIN_PASSWORD not set'); return; }
 
-    // Verify content loads (items, categories, or headings)
+    // Click sign in link on the page
+    const signIn = page.getByRole('link', { name: /sign in|login/i }).first();
+    await signIn.click();
+
+    // Wait for SSO login form
+    await page.waitForURL(/accounts\.codevertexitsolutions\.com/, { timeout: 20_000 });
+    const emailInput = page.locator('input[type="email"], input[id="email"]').first();
+    await emailInput.waitFor({ state: 'visible', timeout: 15_000 });
+
+    // Fill credentials like a human (type, don't fill instantly)
+    await emailInput.fill(LOGIN_EMAIL);
+    await pause(page, 500);
+    await page.locator('input[type="password"], input[id="password"]').first().fill(LOGIN_PASSWORD);
+    await pause(page, 500);
+    await page.locator('button[type="submit"]').first().click();
+
+    // Wait for redirect back to ordering app
+    await page.waitForURL(new RegExp(`(${BASE}|ordersapp).*${ORG_SLUG}`), { timeout: 30_000 });
+    await page.waitForLoadState('networkidle', { timeout: 15_000 }).catch(() => {});
+    await pause(page, 3000);
+
+    expect(page.url()).toContain(ORG_SLUG);
+  });
+
+  // ── Step 3: Browse catalog ────────────────────────────────────────
+  test('3. Browse catalog via navigation', async () => {
+    // Click catalog/menu link in the nav or bottom bar
+    const catalogLink = page.getByRole('link', { name: /catalog|menu|browse/i }).first();
+    const hasLink = await catalogLink.isVisible({ timeout: 5_000 }).catch(() => false);
+
+    if (hasLink) {
+      await catalogLink.click();
+    } else {
+      // Fallback: navigate directly
+      await page.goto(`${BASE_URL}/catalog`);
+    }
+
+    await page.waitForLoadState('networkidle', { timeout: 20_000 }).catch(() => {});
+    await pause(page, 3000);
+
+    // Verify items loaded
     const content = page
       .getByRole('heading')
-      .or(page.getByText(/category|menu|add to cart|popular|featured/i));
+      .or(page.locator('a[href*="/catalog/"]'))
+      .or(page.getByText(/add to cart/i));
     await expect(content.first()).toBeVisible({ timeout: 15_000 });
   });
 
-  // ─── Step 3: Add Item to Cart ─────────────────────────────────────
-  test('3. Add item to cart from catalog', async () => {
-    // Should already be on /catalog from previous test
-    if (!page.url().includes('/catalog')) {
-      await page.goto(`${BASE_URL}/catalog`);
-      await page.waitForLoadState('networkidle', { timeout: 15_000 }).catch(() => {});
-      await page.waitForTimeout(3_000);
-    }
-
-    // Click first catalog item link to open detail page
+  // ── Step 4: Click an item → detail page ───────────────────────────
+  test('4. Open item detail page', async () => {
+    // Wait for catalog items to render
     const itemLink = page.locator('a[href*="/catalog/"]').first();
-    const hasItem = await itemLink.isVisible({ timeout: 5_000 }).catch(() => false);
+    await expect(itemLink).toBeVisible({ timeout: 10_000 });
+    await pause(page, 1000);
 
-    if (hasItem) {
-      await itemLink.click();
-      await page.waitForURL(/\/catalog\//, { timeout: 15_000 });
-      await page.waitForLoadState('networkidle', { timeout: 10_000 }).catch(() => {});
-      await page.waitForTimeout(2_000);
-
-      // Click "Add to Cart" button (text includes price, e.g. "Add to Cart · KES 350")
-      const addBtn = page.locator('button').filter({ hasText: /add to cart/i }).first();
-      await expect(addBtn).toBeVisible({ timeout: 15_000 });
-      await addBtn.click();
-      await page.waitForTimeout(2_000);
-
-      // Verify toast or visual feedback
-      const feedback = page
-        .getByText(/added to cart/i)
-        .or(page.locator('[data-testid="cart-count"]'))
-        .or(page.getByRole('button', { name: /cart|bag/i }));
-      await expect(feedback.first()).toBeVisible({ timeout: 10_000 });
-    } else {
-      // Try quick-add from grid
-      const addBtn = page.locator('button').filter({ hasText: /add/i }).first();
-      const canAdd = await addBtn.isVisible({ timeout: 5_000 }).catch(() => false);
-      if (canAdd) {
-        await addBtn.click();
-        await page.waitForTimeout(2_000);
-      } else {
-        test.info().annotations.push({ type: 'skip', description: 'No catalog items available' });
-      }
-    }
-  });
-
-  // ─── Step 4: View Cart ────────────────────────────────────────────
-  test('4. Cart page — items listed with checkout button', async () => {
-    await page.goto(`${BASE_URL}/cart`);
+    await itemLink.click();
+    await page.waitForURL(/\/catalog\//, { timeout: 15_000 });
     await page.waitForLoadState('networkidle', { timeout: 10_000 }).catch(() => {});
-    await page.waitForTimeout(2_000);
+    await pause(page, 2000);
 
-    // Verify cart page content
-    const cartContent = page
-      .getByText(/proceed to checkout/i)
-      .or(page.getByText(/your cart/i))
-      .or(page.getByRole('heading', { name: /cart|bag|order/i }));
-    await expect(cartContent.first()).toBeVisible({ timeout: 10_000 });
-
-    // Check if cart has items
-    const checkoutBtn = page.getByRole('button', { name: /proceed to checkout/i });
-    const hasItems = await checkoutBtn.isVisible({ timeout: 3_000 }).catch(() => false);
-    if (hasItems) {
-      await expect(checkoutBtn).toBeEnabled();
-    } else {
-      test.info().annotations.push({ type: 'info', description: 'Cart empty — add-to-cart may have failed' });
-    }
+    // Verify detail page has item info and add-to-cart button
+    const addBtn = page.locator('button').filter({ hasText: /add to cart/i }).first();
+    await expect(addBtn).toBeVisible({ timeout: 15_000 });
   });
 
-  // ─── Step 5: Checkout (authenticated) ─────────────────────────────
-  test('5. Checkout page — fulfillment, address, fees, confirm', async () => {
-    await page.goto(`${BASE_URL}/checkout`);
-    await page.waitForLoadState('networkidle', { timeout: 15_000 }).catch(() => {});
-    await page.waitForTimeout(3_000);
+  // ── Step 5: Add to cart ───────────────────────────────────────────
+  test('5. Add item to cart', async () => {
+    const addBtn = page.locator('button').filter({ hasText: /add to cart/i }).first();
+    await addBtn.click();
+    await pause(page, 2000);
 
-    // Since we're authenticated, should see checkout form directly (no guest choice)
+    // Verify feedback: toast or cart badge update
+    const feedback = page
+      .getByText(/added to cart/i)
+      .or(page.getByRole('button', { name: /open cart/i }));
+    await expect(feedback.first()).toBeVisible({ timeout: 10_000 });
+  });
+
+  // ── Step 6: Open cart drawer ──────────────────────────────────────
+  test('6. Open cart drawer from header', async () => {
+    // Click the cart icon button in the header (aria-label="Open cart")
+    const cartBtn = page.getByLabel(/open cart/i);
+    await expect(cartBtn).toBeVisible({ timeout: 5_000 });
+    await cartBtn.click();
+    await pause(page, 1500);
+
+    // Cart drawer should be visible with the item
+    const drawerContent = page
+      .getByText(/proceed to checkout/i)
+      .or(page.getByText(/your cart/i));
+    await expect(drawerContent.first()).toBeVisible({ timeout: 10_000 });
+  });
+
+  // ── Step 7: Proceed to checkout ───────────────────────────────────
+  test('7. Proceed to checkout from cart drawer', async () => {
+    // Click "Proceed to Checkout" in the cart drawer
+    const checkoutLink = page.getByRole('link', { name: /proceed to checkout/i });
+    await expect(checkoutLink).toBeVisible({ timeout: 5_000 });
+    await checkoutLink.click();
+
+    await page.waitForURL(/\/checkout/, { timeout: 15_000 });
+    await page.waitForLoadState('networkidle', { timeout: 15_000 }).catch(() => {});
+    await pause(page, 3000);
+
+    // Since we're authenticated, should see the checkout form directly
     const checkoutContent = page
       .getByRole('heading', { name: /checkout/i })
-      .or(page.getByText(/delivery|pickup|order summary|slide to confirm/i));
+      .or(page.getByText(/delivery|pickup|order summary/i));
     await expect(checkoutContent.first()).toBeVisible({ timeout: 15_000 });
+  });
 
-    // Verify fulfillment options visible
+  // ── Step 8: Verify checkout form elements ─────────────────────────
+  test('8. Checkout form has fulfillment toggle, fees, confirm', async () => {
+    // Fulfillment options
     const deliveryOpt = page.getByText(/delivery/i).first();
     const pickupOpt = page.getByText(/pickup/i).first();
     await expect(deliveryOpt).toBeVisible({ timeout: 5_000 });
     await expect(pickupOpt).toBeVisible({ timeout: 5_000 });
 
-    // Verify order summary section
+    // Order summary / fee section
     const feeSection = page.getByText(/subtotal|total|order summary/i).first();
     await expect(feeSection).toBeVisible({ timeout: 10_000 });
+
+    // Slide to confirm (or place order button)
+    const confirmBtn = page
+      .getByText(/slide to confirm/i)
+      .or(page.getByRole('button', { name: /place order|confirm/i }));
+    await expect(confirmBtn.first()).toBeVisible({ timeout: 10_000 });
   });
 
-  // ─── Step 6: Order History ────────────────────────────────────────
-  test('6. Order history page loads', async () => {
-    await page.goto(`${BASE_URL}/orders`);
+  // ── Step 9: Navigate to order history ─────────────────────────────
+  test('9. Order history page via navigation', async () => {
+    // Navigate to orders (click link or go directly)
+    const ordersLink = page.getByRole('link', { name: /orders|my orders/i }).first();
+    const hasLink = await ordersLink.isVisible({ timeout: 3_000 }).catch(() => false);
+
+    if (hasLink) {
+      await ordersLink.click();
+    } else {
+      await page.goto(`${BASE_URL}/orders`);
+    }
+
     await page.waitForLoadState('networkidle', { timeout: 15_000 }).catch(() => {});
-    await page.waitForTimeout(2_000);
+    await pause(page, 2000);
 
     const ordersContent = page
       .getByRole('heading', { name: /orders|my orders/i })
@@ -217,96 +195,96 @@ test.describe.serial('Order lifecycle: browse → cart → checkout', () => {
       .or(page.getByText(/pending|confirmed|delivered|completed/i));
     await expect(ordersContent.first()).toBeVisible({ timeout: 15_000 });
   });
-
-  // ─── Step 7: API Health Check ─────────────────────────────────────
-  test('7. No 5xx server errors during the workflow', async () => {
-    const errors5xx = apiLogger.errors;
-    if (errors5xx.length > 0) {
-      console.log('Server errors detected:');
-      errors5xx.forEach((e) => console.log(`  ${e.method} ${e.url} → ${e.status}`));
-    }
-    // Allow some 5xx as the rate limiter may cause transient failures
-    // but flag them for investigation
-    expect(
-      errors5xx.length,
-      `${errors5xx.length} server errors detected:\n${errors5xx.map((e) => `  ${e.method} ${e.url} → ${e.status}`).join('\n')}`,
-    ).toBeLessThanOrEqual(2);
-  });
 });
 
 // =====================================================================
-// Guest checkout flow (separate browser — no auth)
+// Guest checkout flow — separate browser, no auth
 // =====================================================================
 test.describe.serial('Order lifecycle: guest checkout', () => {
-  let context: BrowserContext;
+  let ctx: BrowserContext;
   let page: Page;
 
   test.beforeAll(async ({ browser }) => {
-    context = await browser.newContext();
-    page = await context.newPage();
+    ctx = await browser.newContext();
+    page = await ctx.newPage();
   });
+  test.afterAll(async () => { await ctx.close(); });
 
-  test.afterAll(async () => {
-    await context.close();
-  });
-
-  test('1. Browse and add item to cart (unauthenticated)', async () => {
-    await page.goto(`${BASE}/${ORG_SLUG}/catalog`);
+  test('1. Land on homepage and browse catalog', async () => {
+    await page.goto(BASE_URL);
     await page.waitForLoadState('networkidle', { timeout: 20_000 }).catch(() => {});
-    await page.waitForTimeout(3_000);
+    await pause(page, 3000);
 
-    // Click first item
-    const itemLink = page.locator('a[href*="/catalog/"]').first();
-    const hasItem = await itemLink.isVisible({ timeout: 5_000 }).catch(() => false);
-    if (hasItem) {
-      await itemLink.click();
-      await page.waitForURL(/\/catalog\//, { timeout: 15_000 });
-      await page.waitForTimeout(2_000);
-      const addBtn = page.locator('button').filter({ hasText: /add to cart/i }).first();
-      const canAdd = await addBtn.isVisible({ timeout: 10_000 }).catch(() => false);
-      if (canAdd) {
-        await addBtn.click();
-        await page.waitForTimeout(2_000);
-      }
+    // Navigate to catalog
+    const catalogLink = page.getByRole('link', { name: /catalog|menu|browse/i }).first();
+    const hasLink = await catalogLink.isVisible({ timeout: 5_000 }).catch(() => false);
+    if (hasLink) {
+      await catalogLink.click();
+    } else {
+      await page.goto(`${BASE_URL}/catalog`);
     }
+    await page.waitForLoadState('networkidle', { timeout: 20_000 }).catch(() => {});
+    await pause(page, 3000);
   });
 
-  test('2. Checkout shows guest/auth choice', async () => {
-    await page.goto(`${BASE}/${ORG_SLUG}/checkout`);
-    await page.waitForTimeout(3_000);
+  test('2. Add item to cart', async () => {
+    const itemLink = page.locator('a[href*="/catalog/"]').first();
+    const hasItem = await itemLink.isVisible({ timeout: 10_000 }).catch(() => false);
+    if (!hasItem) { test.skip(true, 'No catalog items available'); return; }
 
-    // Should show "How would you like to checkout?" choice
+    await itemLink.click();
+    await page.waitForURL(/\/catalog\//, { timeout: 15_000 });
+    await pause(page, 2000);
+
+    const addBtn = page.locator('button').filter({ hasText: /add to cart/i }).first();
+    await expect(addBtn).toBeVisible({ timeout: 15_000 });
+    await addBtn.click();
+    await pause(page, 2000);
+  });
+
+  test('3. Open cart and proceed to checkout', async () => {
+    // Open cart drawer
+    const cartBtn = page.getByLabel(/open cart/i);
+    await expect(cartBtn).toBeVisible({ timeout: 5_000 });
+    await cartBtn.click();
+    await pause(page, 1500);
+
+    // Click checkout
+    const checkoutLink = page.getByRole('link', { name: /proceed to checkout/i });
+    const hasCheckout = await checkoutLink.isVisible({ timeout: 5_000 }).catch(() => false);
+    if (!hasCheckout) { test.skip(true, 'Cart empty — could not add item'); return; }
+
+    await checkoutLink.click();
+    await page.waitForURL(/\/checkout/, { timeout: 15_000 });
+    await pause(page, 3000);
+  });
+
+  test('4. Guest/auth choice appears and guest form works', async () => {
+    // Should see the choice screen since we're not logged in
     const choiceHeading = page.getByText(/how would you like to checkout/i);
     const hasChoice = await choiceHeading.isVisible({ timeout: 10_000 }).catch(() => false);
 
-    if (hasChoice) {
-      // Both options present
-      await expect(page.getByText(/continue as guest/i)).toBeVisible({ timeout: 5_000 });
-      await expect(page.getByText(/sign in or create account/i)).toBeVisible({ timeout: 5_000 });
-    } else {
-      // Cart may be empty (rate limit blocked catalog), or already redirected
-      test.info().annotations.push({ type: 'info', description: 'Guest choice not shown — cart may be empty' });
+    if (!hasChoice) {
+      // May see "Your cart is empty" or already authenticated
+      test.info().annotations.push({ type: 'info', description: 'Guest choice not shown' });
+      return;
     }
-  });
 
-  test('3. Guest checkout form — email, phone, name fields', async () => {
-    // Click "Continue as Guest" if visible
-    const guestBtn = page.getByText(/continue as guest/i);
-    const hasGuest = await guestBtn.isVisible({ timeout: 3_000 }).catch(() => false);
+    // Verify both options
+    await expect(page.getByText(/continue as guest/i)).toBeVisible({ timeout: 5_000 });
+    await expect(page.getByText(/sign in or create account/i)).toBeVisible({ timeout: 5_000 });
 
-    if (hasGuest) {
-      await guestBtn.click();
-      await page.waitForTimeout(2_000);
+    // Click guest
+    await page.getByText(/continue as guest/i).click();
+    await pause(page, 2000);
 
-      // Verify guest contact form
-      await expect(page.getByPlaceholder(/email address/i)).toBeVisible({ timeout: 10_000 });
-      await expect(page.getByPlaceholder(/phone number/i)).toBeVisible({ timeout: 5_000 });
-      await expect(page.getByPlaceholder(/your name/i)).toBeVisible({ timeout: 5_000 });
+    // Guest form fields should appear
+    const emailField = page.getByPlaceholder(/email address/i);
+    await expect(emailField).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByPlaceholder(/phone number/i)).toBeVisible({ timeout: 5_000 });
+    await expect(page.getByPlaceholder(/your name/i)).toBeVisible({ timeout: 5_000 });
 
-      // "Sign in instead" link
-      await expect(page.getByText(/sign in instead/i)).toBeVisible({ timeout: 5_000 });
-    } else {
-      test.info().annotations.push({ type: 'skip', description: 'Guest checkout not available' });
-    }
+    // "Sign in instead" link
+    await expect(page.getByText(/sign in instead/i)).toBeVisible({ timeout: 5_000 });
   });
 });

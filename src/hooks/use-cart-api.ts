@@ -17,18 +17,24 @@ import { useOrgSlug } from "@/providers/org-slug-provider";
 
 export const cartApiKeys = {
   all: ["cart-api"] as const,
-  feeBreakdown: (cartId: string) => [...cartApiKeys.all, "fee-breakdown", cartId] as const,
+  feeBreakdown: (outletId: string, fulfillmentType: string) =>
+    [...cartApiKeys.all, "fee-breakdown", outletId, fulfillmentType] as const,
 };
 
 // ─── Queries ─────────────────────────────────────────────────────────
 
-export function useFeeBreakdown(cartId: string | null) {
+/**
+ * Fetch fee breakdown from the backend (authenticated).
+ * Requires outletId to identify which cart/outlet to compute fees for.
+ * Pass fulfillmentType to get accurate delivery vs pickup fees.
+ */
+export function useFeeBreakdown(outletId: string | null, fulfillmentType = "delivery") {
   const slug = useOrgSlug();
   return useQuery<FeeBreakdown>({
-    queryKey: cartApiKeys.feeBreakdown(cartId ?? ""),
-    queryFn: () => getFeeBreakdown(slug, cartId!),
-    enabled: !!cartId,
-    staleTime: 30_000,
+    queryKey: cartApiKeys.feeBreakdown(outletId ?? "", fulfillmentType),
+    queryFn: () => getFeeBreakdown(slug, outletId!, fulfillmentType),
+    enabled: !!outletId,
+    staleTime: 60_000,
   });
 }
 

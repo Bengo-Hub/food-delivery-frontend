@@ -36,13 +36,17 @@ export interface CheckoutRequest {
 
 // ─── API Functions ───────────────────────────────────────────────────
 
-export async function getCartSummary(slug: string, cartId: string): Promise<FeeBreakdown> {
-  const res = await api.get(`${slug}/cart/${cartId}/fee-breakdown`);
+export async function getCartSummary(slug: string, outletId: string, fulfillmentType = "delivery"): Promise<FeeBreakdown> {
+  const res = await api.get(`${slug}/cart/fee-breakdown`, {
+    params: { outlet_id: outletId, fulfillment_type: fulfillmentType },
+  });
   return res.data;
 }
 
-export async function getFeeBreakdown(slug: string, cartId: string): Promise<FeeBreakdown> {
-  const res = await api.get(`${slug}/cart/${cartId}/fee-breakdown`);
+export async function getFeeBreakdown(slug: string, outletId: string, fulfillmentType = "delivery"): Promise<FeeBreakdown> {
+  const res = await api.get(`${slug}/cart/fee-breakdown`, {
+    params: { outlet_id: outletId, fulfillment_type: fulfillmentType },
+  });
   return res.data;
 }
 

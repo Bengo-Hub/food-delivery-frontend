@@ -121,14 +121,12 @@ export function CartDrawer({ open, onOpenChange }: CartDrawerProps) {
   const itemCount = items.reduce((sum, item) => sum + item.quantity, 0);
   const cartSubtotal = subtotal();
 
-  // Use backend fee breakdown when a server-side cart ID exists; fall back to
-  // client-side estimates until the checkout flow creates one.
-  const { data: feeData } = useFeeBreakdown(null);
-  const deliveryFee =
-    feeData?.delivery_fee ??
-    (cartSubtotal > 0 ? (cartSubtotal > 2000 ? 0 : 150) : 0);
+  // Fetch fee breakdown from backend using the first item's outlet
+  const outletId = items[0]?.outletId ?? null;
+  const { data: feeData } = useFeeBreakdown(outletId);
+  const deliveryFee = feeData?.delivery_fee ?? 0;
   const serviceFee = feeData?.service_fee ?? 0;
-  const total = cartSubtotal + deliveryFee + serviceFee;
+  const total = feeData?.grand_total ?? cartSubtotal + deliveryFee + serviceFee;
 
   if (!open) return null;
 
@@ -233,9 +231,9 @@ export function CartDrawer({ open, onOpenChange }: CartDrawerProps) {
                   <span className="text-muted-foreground">Service fee</span>
                   <span className="font-medium">{formatCurrency(serviceFee)}</span>
                 </div>
-                {deliveryFee > 0 && cartSubtotal < 2000 && (
+                {deliveryFee > 0 && feeData?.delivery_discount === 0 && (
                   <p className="text-xs text-muted-foreground">
-                    Add {formatCurrency(2000 - cartSubtotal)} more for free delivery
+                    Delivery fee based on your location
                   </p>
                 )}
                 <div className="flex justify-between border-t border-border pt-2 text-base font-semibold">

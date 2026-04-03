@@ -97,11 +97,9 @@ export default function CheckoutPage() {
     !zoneLoading &&
     (zoneError || !zoneResult);
 
-  // Fee breakdown — we use a synthetic cartId derived from items hash to cache
-  const cartId = items.length > 0
-    ? items.map((i) => `${i.id}:${i.quantity}`).join(",")
-    : null;
-  const { data: feeBreakdown, isLoading: feesLoading } = useFeeBreakdown(cartId);
+  // Fee breakdown — fetched from backend based on outlet and fulfillment type
+  const outletId = items[0]?.outletId ?? null;
+  const { data: feeBreakdown, isLoading: feesLoading } = useFeeBreakdown(outletId, fulfillmentMode);
 
   const cartSubtotal = subtotal();
   const grandTotal = feeBreakdown?.grand_total ?? cartSubtotal - discount;
