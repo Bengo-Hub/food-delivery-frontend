@@ -9,7 +9,7 @@ import { expect, test } from '@playwright/test';
 const BASE = process.env.BASE_URL || 'https://ordersapp.codevertexitsolutions.com';
 const ORG_SLUG = process.env.E2E_ORG_SLUG || 'urban-loft';
 const LOGIN_EMAIL = process.env.E2E_LOGIN_EMAIL || 'demo@bengobox.dev';
-const LOGIN_PASSWORD = process.env.E2E_LOGIN_PASSWORD || 'DemoUser2024!';
+const LOGIN_PASSWORD = process.env.E2E_LOGIN_PASSWORD ?? '';
 
 function isOrderingAuthMe(url: string): boolean {
   return url.includes('/auth/me') && url.includes(ORG_SLUG) && !url.includes('sso.');

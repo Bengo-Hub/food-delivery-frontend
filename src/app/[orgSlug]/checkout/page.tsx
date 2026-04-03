@@ -175,6 +175,21 @@ export default function CheckoutPage() {
     void redirectToSSO(checkoutUrl, orgSlug);
   };
 
+  // Empty cart check — must come after all hooks to respect Rules of Hooks
+  if (items.length === 0 && step !== "success") {
+    return (
+      <SiteShell>
+        <div className="container mx-auto flex max-w-4xl flex-col items-center gap-4 px-4 py-16">
+          <h1 className="text-2xl font-bold">Your cart is empty</h1>
+          <p className="text-muted-foreground">Add some items before checking out.</p>
+          <Button asChild>
+            <Link href={orgRoute(orgSlug, "/catalog")}>Browse Catalog</Link>
+          </Button>
+        </div>
+      </SiteShell>
+    );
+  }
+
   // Show guest/auth choice when not logged in
   if (checkoutMode === "choose" && status !== "authenticated") {
     return (
@@ -226,21 +241,6 @@ export default function CheckoutPage() {
               </ul>
             </button>
           </div>
-        </div>
-      </SiteShell>
-    );
-  }
-
-  // Empty cart
-  if (items.length === 0 && step !== "success") {
-    return (
-      <SiteShell>
-        <div className="container mx-auto flex max-w-4xl flex-col items-center gap-4 px-4 py-16">
-          <h1 className="text-2xl font-bold">Your cart is empty</h1>
-          <p className="text-muted-foreground">Add some items before checking out.</p>
-          <Button asChild>
-            <Link href={orgRoute(orgSlug, "/catalog")}>Browse Catalog</Link>
-          </Button>
         </div>
       </SiteShell>
     );

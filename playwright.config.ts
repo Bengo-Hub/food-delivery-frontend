@@ -1,4 +1,21 @@
 import { defineConfig, devices } from '@playwright/test';
+import fs from 'fs';
+import path from 'path';
+
+// Load test credentials from .env.test (gitignored, not committed)
+const envTestPath = path.resolve(__dirname, '.env.test');
+if (fs.existsSync(envTestPath)) {
+  for (const line of fs.readFileSync(envTestPath, 'utf-8').split('\n')) {
+    const trimmed = line.trim();
+    if (!trimmed || trimmed.startsWith('#')) continue;
+    const eqIdx = trimmed.indexOf('=');
+    if (eqIdx > 0) {
+      const key = trimmed.slice(0, eqIdx).trim();
+      const val = trimmed.slice(eqIdx + 1).trim();
+      if (!process.env[key]) process.env[key] = val;
+    }
+  }
+}
 
 const defaultOrgSlug = process.env.E2E_ORG_SLUG || 'urban-loft';
 
