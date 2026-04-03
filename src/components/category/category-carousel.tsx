@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 
@@ -167,10 +168,13 @@ export function CategoryCarousel({
                 {category.emoji ? (
                   <span>{category.emoji}</span>
                 ) : category.imageUrl ? (
-                  <img
+                  <Image
                     src={getMediaUrl(category.imageUrl)}
                     alt={category.name}
+                    width={56}
+                    height={56}
                     className="size-full rounded-full object-cover"
+                    loading="lazy"
                   />
                 ) : (
                   <span className="text-muted-foreground">?</span>

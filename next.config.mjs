@@ -6,7 +6,8 @@ const nextConfig = {
   ...(process.env.SKIP_STANDALONE !== 'true' && { output: 'standalone' }),
   reactStrictMode: true,
   images: {
-    unoptimized: true,
+    // Enable Next.js image optimization for automatic resizing, format conversion
+    // (WebP/AVIF), and lazy loading. This significantly reduces page load times.
     remotePatterns: [
       {
         protocol: "http",
@@ -25,7 +26,17 @@ const nextConfig = {
         hostname: "orderingapi.codevertexitsolutions.com",
         pathname: "/media/**",
       },
+      {
+        protocol: "https",
+        hostname: "inventoryapi.codevertexitsolutions.com",
+        pathname: "/media/**",
+      },
     ],
+    // Serve optimized images in modern formats with quality 80
+    formats: ["image/avif", "image/webp"],
+    minimumCacheTTL: 86400,
+    deviceSizes: [640, 750, 828, 1080, 1200],
+    imageSizes: [64, 96, 128, 256, 384],
   },
   typescript: {
     tsconfigPath: "./tsconfig.json",

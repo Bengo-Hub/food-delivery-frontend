@@ -10,20 +10,24 @@ import type { Category } from "@/components/category/category-carousel";
 interface BackendCategory {
   id: string;
   name: string;
-  slug: string;
+  code?: string;
+  slug?: string;
   description?: string;
   icon?: string;
   image_url?: string;
+  imageUrl?: string;
   parent_id?: string;
   depth?: number;
   sort_order?: number;
   is_active?: boolean;
+  isActive?: boolean;
 }
 
 function mapCategory(c: BackendCategory): Category {
-  const imageUrl = c.icon ? getMediaUrl(c.icon) : c.image_url ? getMediaUrl(c.image_url) : undefined;
+  const rawIcon = c.icon || c.imageUrl || c.image_url;
+  const imageUrl = rawIcon ? getMediaUrl(rawIcon) : undefined;
   return {
-    id: c.slug || c.id,
+    id: c.slug || c.code || c.id,
     name: c.name,
     ...(imageUrl != null ? { imageUrl } : {}),
   };
@@ -38,7 +42,7 @@ async function fetchCategories(tenantSlug: string): Promise<Category[]> {
     const res = await api.get(`${tenantSlug}/catalog/categories`);
     const body = res.data;
     const items: BackendCategory[] = Array.isArray(body) ? body : (body?.data ?? []);
-    return items.filter((c) => c.is_active !== false).map(mapCategory);
+    return items.filter((c) => c.is_active !== false && c.isActive !== false).map(mapCategory);
   } catch {
     return [];
   }
