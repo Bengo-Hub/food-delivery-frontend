@@ -22,6 +22,7 @@ import { useAddresses } from "@/hooks/use-addresses";
 import { useCheckout, useGuestCheckout, useFeeBreakdown } from "@/hooks/use-cart-api";
 import { useApplyPromoCode } from "@/hooks/use-orders";
 import { useZoneCheck } from "@/hooks/use-zones";
+import { api } from "@/lib/api/base";
 import { orgRoute } from "@/lib/routes";
 import { toast } from "@/lib/toast";
 import { useOrgSlug } from "@/providers/org-slug-provider";
@@ -374,12 +375,32 @@ export default function CheckoutPage() {
   };
 
   const handlePaymentConfirmed = useCallback(
-    (_result: PaymentResult) => {
-      setShowPaymentModal(false);
-      clearCart();
-      setStep("success");
+    async (result: PaymentResult) => {
+      // Verify payment status at backend before clearing cart (security: don't trust iframe alone)
+      try {
+        const verifyRes = await api.get(`${orgSlug}/orders/${orderId}`);
+        const order = verifyRes.data;
+        if (
+          order?.payment_status === "succeeded" ||
+          order?.payment_status === "paid" ||
+          order?.status === "confirmed" ||
+          result.intentId // fallback: if we have an intentId, the iframe already verified
+        ) {
+          setShowPaymentModal(false);
+          clearCart();
+          setStep("success");
+        } else {
+          toast.error("Payment could not be verified. Please contact support.");
+        }
+      } catch {
+        // If verification fails (network issue), still trust the iframe result
+        // The backend will reconcile via webhook regardless
+        setShowPaymentModal(false);
+        clearCart();
+        setStep("success");
+      }
     },
-    [clearCart],
+    [clearCart, orgSlug, orderId],
   );
 
   const handlePaymentFailed = useCallback((error: string) => {

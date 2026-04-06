@@ -66,9 +66,24 @@ export function setOnSubscription403(callback: ((data: any) => void) | null) {
   onSubscription403Callback = callback;
 }
 
+// Retry on 429 (rate limit) with exponential backoff
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
+    if (error.response?.status === 429) {
+      const retryCount = error.config?._retryCount ?? 0;
+      if (retryCount < 3) {
+        error.config._retryCount = retryCount + 1;
+        // Exponential backoff: 1s, 2s, 4s (respect Retry-After header if present)
+        const retryAfter = error.response?.headers?.['retry-after'];
+        const delayMs = retryAfter
+          ? parseInt(retryAfter, 10) * 1000
+          : Math.pow(2, retryCount) * 1000;
+        await new Promise((resolve) => setTimeout(resolve, delayMs));
+        return api.request(error.config);
+      }
+    }
+
     if (error.response?.status === 401) {
       // If token is already cleared (explicit logout in progress), skip entirely
       if (!accessTokenGetter()) return Promise.reject(error);
