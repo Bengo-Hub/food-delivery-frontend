@@ -91,7 +91,11 @@ export default function CheckoutPage() {
               addresses={state.addresses}
               selectedId={state.selectedAddressId}
               onSelect={state.setSelectedAddressId}
-              onAddNew={() => state.router.push(orgRoute(state.orgSlug, "/account/addresses/new"))}
+              onGuestLocationSelect={state.setGuestDeliveryLocation}
+              onAddNew={() => {/* handled inside modal */}}
+              isGuest={state.isGuestMode}
+              scheduledTime={state.scheduledTime}
+              onSchedule={state.handleScheduleSelect}
             />
           )}
 
@@ -165,7 +169,7 @@ export default function CheckoutPage() {
           <SlideToConfirm
             onConfirm={state.handlePlaceOrder}
             loading={state.isPlacingOrder}
-            disabled={state.fulfillmentMode !== "pickup" && !state.selectedAddressId}
+            disabled={state.fulfillmentMode !== "pickup" && !state.hasDeliveryAddress}
             total={state.grandTotal}
           />
         </div>

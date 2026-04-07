@@ -70,6 +70,11 @@ export function useCheckoutState() {
   const [guestEmail, setGuestEmail] = useState("");
   const [guestPhone, setGuestPhone] = useState("");
   const [guestName, setGuestName] = useState("");
+  const [guestDeliveryLocation, setGuestDeliveryLocation] = useState<{
+    lat: number;
+    lng: number;
+    address: string;
+  } | null>(null);
 
   // Queries & mutations
   const { data: addresses = [], isLoading: addressesLoading } = useAddresses();
@@ -82,12 +87,18 @@ export function useCheckoutState() {
     [addresses, selectedAddressId],
   );
 
-  const zoneCheckLat = fulfillmentMode !== "pickup" ? (selectedAddress?.lat ?? null) : null;
-  const zoneCheckLng = fulfillmentMode !== "pickup" ? (selectedAddress?.lng ?? null) : null;
-  const { data: zoneResult, isLoading: zoneLoading, isError: zoneError } = useZoneCheck(zoneCheckLat, zoneCheckLng);
+  // Zone check — use saved address coords OR guest-picked location coords
+  const deliveryLat = fulfillmentMode !== "pickup"
+    ? (selectedAddress?.lat ?? guestDeliveryLocation?.lat ?? null)
+    : null;
+  const deliveryLng = fulfillmentMode !== "pickup"
+    ? (selectedAddress?.lng ?? guestDeliveryLocation?.lng ?? null)
+    : null;
+  const { data: zoneResult, isLoading: zoneLoading, isError: zoneError } = useZoneCheck(deliveryLat, deliveryLng);
 
+  const hasDeliveryAddress = !!(selectedAddress || guestDeliveryLocation);
   const isOutsideDeliveryZone =
-    fulfillmentMode !== "pickup" && selectedAddress != null && !zoneLoading && (zoneError || !zoneResult);
+    fulfillmentMode !== "pickup" && hasDeliveryAddress && !zoneLoading && (zoneError || !zoneResult);
 
   const outletId = items[0]?.outletId ?? null;
   const { data: feeBreakdown, isLoading: feesLoading } = useFeeBreakdown(outletId, fulfillmentMode);
@@ -217,10 +228,15 @@ export function useCheckoutState() {
         if (guestEmail.trim()) guestPayload.contactEmail = guestEmail.trim();
         if (guestPhone.trim()) guestPayload.contactPhone = guestPhone.trim();
         if (guestName.trim()) guestPayload.contactName = guestName.trim();
+        // Delivery address from saved address or guest-picked location
         if (selectedAddr) {
           guestPayload.deliveryAddress = selectedAddr.address ?? "";
           guestPayload.deliveryLat = selectedAddr.lat;
           guestPayload.deliveryLng = selectedAddr.lng;
+        } else if (guestDeliveryLocation) {
+          guestPayload.deliveryAddress = guestDeliveryLocation.address;
+          guestPayload.deliveryLat = guestDeliveryLocation.lat;
+          guestPayload.deliveryLng = guestDeliveryLocation.lng;
         }
         if (deliveryNotes) guestPayload.deliveryNotes = deliveryNotes;
         if (scheduledTime) guestPayload.scheduledAt = scheduledTime.date.toISOString();
@@ -261,9 +277,10 @@ export function useCheckoutState() {
       toast.error(message);
     }
   }, [
-    isGuestMode, guestEmail, guestPhone, guestName, fulfillmentMode, selectedAddressId,
-    addresses, isOutsideDeliveryZone, scheduledTime, items, sessionId, deliveryNotes,
-    promoCode, orderNotes, requestUtensils, checkoutMutation, guestCheckoutMutation,
+    isGuestMode, guestEmail, guestPhone, guestName, guestDeliveryLocation,
+    fulfillmentMode, selectedAddressId, addresses, isOutsideDeliveryZone, scheduledTime,
+    items, sessionId, deliveryNotes, promoCode, orderNotes, requestUtensils,
+    checkoutMutation, guestCheckoutMutation,
   ]);
 
   const handlePaymentConfirmed = useCallback(
@@ -364,7 +381,10 @@ export function useCheckoutState() {
     setGuestPhone,
     guestName,
     setGuestName,
+    guestDeliveryLocation,
+    setGuestDeliveryLocation,
     handleSignInForCheckout,
+    hasDeliveryAddress,
 
     // Payment
     showPaymentModal,
