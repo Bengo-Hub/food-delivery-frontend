@@ -9,6 +9,7 @@ import { cn } from "@/lib/utils";
 interface SlideToConfirmProps {
   onConfirm: () => void;
   loading: boolean;
+  disabled?: boolean;
   label?: string;
   total?: number;
 }
@@ -18,6 +19,7 @@ const THRESHOLD = 0.85; // 85% of track width to confirm
 export function SlideToConfirm({
   onConfirm,
   loading,
+  disabled = false,
   label,
   total,
 }: SlideToConfirmProps) {
@@ -28,11 +30,17 @@ export function SlideToConfirm({
     <>
       {/* Mobile: slide gesture */}
       <div className="sm:hidden">
-        <SlideTrack
-          onConfirm={onConfirm}
-          loading={loading}
-          label={displayLabel}
-        />
+        {disabled ? (
+          <div className="flex h-14 items-center justify-center rounded-full bg-muted text-sm font-medium text-muted-foreground">
+            Select delivery address or pickup to continue
+          </div>
+        ) : (
+          <SlideTrack
+            onConfirm={onConfirm}
+            loading={loading}
+            label={displayLabel}
+          />
+        )}
       </div>
 
       {/* Desktop: regular button */}
@@ -41,7 +49,7 @@ export function SlideToConfirm({
           className="w-full min-h-[48px]"
           size="lg"
           onClick={onConfirm}
-          disabled={loading}
+          disabled={loading || disabled}
         >
           {loading ? (
             <>

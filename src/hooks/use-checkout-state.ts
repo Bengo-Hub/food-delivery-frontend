@@ -218,11 +218,9 @@ export function useCheckoutState() {
         if (guestPhone.trim()) guestPayload.contactPhone = guestPhone.trim();
         if (guestName.trim()) guestPayload.contactName = guestName.trim();
         if (selectedAddr) {
-          guestPayload.deliveryAddress = {
-            lat: selectedAddr.lat,
-            lng: selectedAddr.lng,
-            formatted: selectedAddr.address ?? "",
-          };
+          guestPayload.deliveryAddress = selectedAddr.address ?? "";
+          guestPayload.deliveryLat = selectedAddr.lat;
+          guestPayload.deliveryLng = selectedAddr.lng;
         }
         if (deliveryNotes) guestPayload.deliveryNotes = deliveryNotes;
         if (scheduledTime) guestPayload.scheduledAt = scheduledTime.date.toISOString();

@@ -71,11 +71,9 @@ export interface GuestCheckoutRequest {
   contactPhone?: string;
   contactName?: string;
   fulfillmentType: "delivery" | "pickup" | "schedule";
-  deliveryAddress?: {
-    lat: number;
-    lng: number;
-    formatted: string;
-  };
+  deliveryAddress?: string;
+  deliveryLat?: number;
+  deliveryLng?: number;
   deliveryNotes?: string;
   scheduledAt?: string;
   idempotencyKey?: string;

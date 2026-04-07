@@ -85,14 +85,15 @@ export default function CheckoutPage() {
             />
           )}
 
-          {/* Fulfillment toggle */}
-          <FulfillmentToggle
-            mode={state.fulfillmentMode}
-            onModeChange={state.handleFulfillmentChange}
-            deliveryTotal={state.zoneResult?.delivery_fee ?? state.feeBreakdown?.delivery_fee ?? 0}
-            pickupTotal={0}
-            estimatedTime={state.estimatedTime}
-          />
+          {/* 1. LOCATION — Address selector comes first (delivery/schedule) */}
+          {state.fulfillmentMode !== "pickup" && (
+            <AddressSelector
+              addresses={state.addresses}
+              selectedId={state.selectedAddressId}
+              onSelect={state.setSelectedAddressId}
+              onAddNew={() => state.router.push(orgRoute(state.orgSlug, "/account/addresses/new"))}
+            />
+          )}
 
           {/* Zone validation error */}
           {state.isOutsideDeliveryZone && (
@@ -107,27 +108,26 @@ export default function CheckoutPage() {
             </div>
           )}
 
+          {/* 2. FULFILLMENT — Delivery / Pickup / Schedule toggle */}
+          <FulfillmentToggle
+            mode={state.fulfillmentMode}
+            onModeChange={state.handleFulfillmentChange}
+            deliveryTotal={state.zoneResult?.delivery_fee ?? state.feeBreakdown?.delivery_fee ?? 0}
+            pickupTotal={0}
+            estimatedTime={state.estimatedTime}
+          />
+
           {/* Schedule picker */}
           {state.fulfillmentMode === "schedule" && (
             <SchedulePicker onSchedule={state.handleScheduleSelect} />
           )}
 
-          {/* Address selector (delivery/schedule) */}
-          {state.fulfillmentMode !== "pickup" && (
-            <AddressSelector
-              addresses={state.addresses}
-              selectedId={state.selectedAddressId}
-              onSelect={state.setSelectedAddressId}
-              onAddNew={() => state.router.push(orgRoute(state.orgSlug, "/account/addresses/new"))}
-            />
-          )}
-
-          {/* Delivery notes */}
+          {/* Delivery notes (delivery/schedule only) */}
           {state.fulfillmentMode !== "pickup" && (
             <DeliveryNotesSection value={state.deliveryNotes} onChange={state.setDeliveryNotes} />
           )}
 
-          {/* Order summary */}
+          {/* 3. ORDER — Items summary */}
           <OrderSummarySection items={state.items} />
 
           {/* Promo code */}
@@ -149,7 +149,7 @@ export default function CheckoutPage() {
             />
           )}
 
-          {/* Fee breakdown */}
+          {/* 4. FEES — Breakdown */}
           <FeeBreakdownCard feeBreakdown={state.feeBreakdown ?? null} loading={state.feesLoading} />
 
           {/* Error message */}
@@ -161,10 +161,11 @@ export default function CheckoutPage() {
             </div>
           )}
 
-          {/* Place order */}
+          {/* 5. PLACE ORDER — disabled until address selected (delivery) or pickup chosen */}
           <SlideToConfirm
             onConfirm={state.handlePlaceOrder}
             loading={state.isPlacingOrder}
+            disabled={state.fulfillmentMode !== "pickup" && !state.selectedAddressId}
             total={state.grandTotal}
           />
         </div>
