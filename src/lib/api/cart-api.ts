@@ -43,10 +43,10 @@ export async function getCartSummary(slug: string, outletId: string, fulfillment
   return res.data;
 }
 
-export async function getFeeBreakdown(slug: string, outletId: string, fulfillmentType = "delivery"): Promise<FeeBreakdown> {
-  const res = await api.get(`${slug}/cart/fee-breakdown`, {
-    params: { outlet_id: outletId, fulfillment_type: fulfillmentType },
-  });
+export async function getFeeBreakdown(slug: string, outletId: string, fulfillmentType = "delivery", sessionId?: string): Promise<FeeBreakdown> {
+  const params: Record<string, string> = { outlet_id: outletId, fulfillment_type: fulfillmentType };
+  if (sessionId) params.session_id = sessionId;
+  const res = await api.get(`${slug}/cart/fee-breakdown`, { params });
   return res.data;
 }
 

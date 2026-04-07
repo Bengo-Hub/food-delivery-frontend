@@ -28,11 +28,11 @@ export const cartApiKeys = {
  * Requires outletId to identify which cart/outlet to compute fees for.
  * Pass fulfillmentType to get accurate delivery vs pickup fees.
  */
-export function useFeeBreakdown(outletId: string | null, fulfillmentType = "delivery") {
+export function useFeeBreakdown(outletId: string | null, fulfillmentType = "delivery", sessionId?: string) {
   const slug = useOrgSlug();
   return useQuery<FeeBreakdown>({
     queryKey: cartApiKeys.feeBreakdown(outletId ?? "", fulfillmentType),
-    queryFn: () => getFeeBreakdown(slug, outletId!, fulfillmentType),
+    queryFn: () => getFeeBreakdown(slug, outletId!, fulfillmentType, sessionId),
     enabled: !!outletId,
     staleTime: 60_000,
   });

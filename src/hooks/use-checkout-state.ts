@@ -101,7 +101,7 @@ export function useCheckoutState() {
     fulfillmentMode !== "pickup" && hasDeliveryAddress && !zoneLoading && (zoneError || !zoneResult);
 
   const outletId = items[0]?.outletId ?? null;
-  const { data: feeBreakdown, isLoading: feesLoading } = useFeeBreakdown(outletId, fulfillmentMode);
+  const { data: feeBreakdown, isLoading: feesLoading } = useFeeBreakdown(outletId, fulfillmentMode, sessionId);
 
   const cartSubtotal = subtotal();
   const grandTotal = feeBreakdown?.grand_total ?? cartSubtotal - discount;
