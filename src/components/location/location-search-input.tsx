@@ -31,6 +31,8 @@ export type LocationSearchInputProps = {
   countryCodes?: string;
   /** Optional org slug to enable outlet/business search alongside address search. */
   orgSlug?: string | undefined;
+  /** Optional user coordinates for finding adjacent outlets sorted by distance. */
+  userCoords?: LatLngTuple | null;
 };
 
 type Suggestion = {
@@ -63,6 +65,7 @@ export function LocationSearchInput({
   searchBounds,
   countryCodes,
   orgSlug,
+  userCoords,
 }: LocationSearchInputProps) {
   const [query, setQuery] = useState<string>(value ?? "");
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
@@ -126,13 +129,18 @@ export function LocationSearchInput({
           );
         });
 
-        // Outlet search — always show tenant's pickup outlets for easy selection.
-        // Uses a loose search (first 2 words) but falls back to showing all outlets.
-        const outletQuery = query.split(",")[0].trim();
+        // Outlet search — find outlets adjacent to user's location, sorted by distance.
+        // Falls back to listing all outlets if no coordinates available.
+        const outletParams = new URLSearchParams({ limit: "5" });
+        if (userCoords) {
+          outletParams.set("lat", String(userCoords[0]));
+          outletParams.set("lng", String(userCoords[1]));
+          outletParams.set("sort", "distance");
+        }
         const outletPromise: Promise<Suggestion[]> = orgSlug
           ? api
               .get<{ data: OutletSearchResult[] }>(
-                `${orgSlug}/outlets?limit=5`,
+                `${orgSlug}/outlets?${outletParams.toString()}`,
                 { signal: controller.signal },
               )
               .then((res) =>

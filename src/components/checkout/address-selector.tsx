@@ -212,6 +212,7 @@ function LocationSelectorModal({
             canClear={!!pickedLocation}
             countryCodes="ke"
             orgSlug={orgSlug}
+            userCoords={coords}
             placeholder="Search for address or landmark"
           />
 
