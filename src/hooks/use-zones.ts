@@ -14,9 +14,13 @@ export const zoneKeys = {
 
 // ─── Queries ─────────────────────────────────────────────────────────
 
+/**
+ * Check if coordinates are within a delivery zone.
+ * Returns ZoneCheckResult if serviceable, null if not.
+ */
 export function useZoneCheck(lat: number | null, lng: number | null) {
   const slug = useOrgSlug();
-  return useQuery<ZoneCheckResult>({
+  return useQuery<ZoneCheckResult | null>({
     queryKey: zoneKeys.check(lat ?? 0, lng ?? 0),
     queryFn: () => checkZone(slug, lat!, lng!),
     enabled: lat != null && lng != null,
