@@ -1,20 +1,23 @@
 "use client";
 
 import {
+  DollarSign,
   Loader2,
   MapPin,
   Pencil,
   Plus,
+  Save,
   Trash2,
   X,
 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { SiteShell } from "@/components/layout/site-shell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { api } from "@/lib/api/base";
 import {
   listZones,
   createZone,
@@ -46,6 +49,47 @@ export default function DeliveryZonesPage() {
   const [editingZone, setEditingZone] = useState<DeliveryZone | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState<FormData>(emptyForm);
+
+  // Fee config state
+  const [baseFee, setBaseFee] = useState("100");
+  const [perKmRate, setPerKmRate] = useState("30");
+  const [freeDeliveryMin, setFreeDeliveryMin] = useState("2000");
+  const [configSaved, setConfigSaved] = useState(false);
+
+  // Load fee config from tenant settings
+  const { data: tenantConfig } = useQuery({
+    queryKey: ["tenant-config", slug],
+    queryFn: async () => {
+      const res = await api.get(`${slug}/config`);
+      return res.data;
+    },
+  });
+
+  useEffect(() => {
+    const fc = tenantConfig?.features?.fee_config;
+    if (fc) {
+      if (fc.delivery_fee_base) setBaseFee(String(fc.delivery_fee_base));
+      if (fc.delivery_fee_per_km) setPerKmRate(String(fc.delivery_fee_per_km));
+      if (fc.free_delivery_minimum) setFreeDeliveryMin(String(fc.free_delivery_minimum));
+    }
+  }, [tenantConfig]);
+
+  const saveFeeConfig = useMutation({
+    mutationFn: async () => {
+      const existing = tenantConfig?.features?.fee_config ?? {};
+      await api.put(`${slug}/admin/config/fees`, {
+        ...existing,
+        delivery_fee_base: parseFloat(baseFee) || 100,
+        delivery_fee_per_km: parseFloat(perKmRate) || 30,
+        free_delivery_minimum: parseFloat(freeDeliveryMin) || 2000,
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["tenant-config"] });
+      setConfigSaved(true);
+      setTimeout(() => setConfigSaved(false), 2000);
+    },
+  });
 
   const { data: zones = [], isLoading } = useQuery({
     queryKey: ["admin-delivery-zones", slug],
@@ -131,6 +175,73 @@ export default function DeliveryZonesPage() {
               Add Zone
             </Button>
           )}
+        </div>
+
+        {/* Delivery fee config */}
+        <div className="mb-6 rounded-xl border border-border p-5">
+          <div className="mb-3 flex items-center gap-2">
+            <DollarSign className="size-4 text-primary" />
+            <h2 className="text-sm font-semibold">Auto-Calculation Settings</h2>
+          </div>
+          <p className="mb-4 text-xs text-muted-foreground">
+            When a delivery address doesn&apos;t match any zone polygon, fees are auto-calculated:
+            Base Fee + (Per-Km Rate x distance from outlet).
+          </p>
+          <div className="grid gap-4 sm:grid-cols-3">
+            <div>
+              <label className="mb-1 block text-xs font-medium text-muted-foreground">
+                Base Fee (KES)
+              </label>
+              <Input
+                type="number"
+                min="0"
+                step="10"
+                value={baseFee}
+                onChange={(e) => setBaseFee(e.target.value)}
+              />
+            </div>
+            <div>
+              <label className="mb-1 block text-xs font-medium text-muted-foreground">
+                Per-Km Rate (KES)
+              </label>
+              <Input
+                type="number"
+                min="0"
+                step="5"
+                value={perKmRate}
+                onChange={(e) => setPerKmRate(e.target.value)}
+              />
+            </div>
+            <div>
+              <label className="mb-1 block text-xs font-medium text-muted-foreground">
+                Free Delivery Above (KES)
+              </label>
+              <Input
+                type="number"
+                min="0"
+                step="100"
+                value={freeDeliveryMin}
+                onChange={(e) => setFreeDeliveryMin(e.target.value)}
+              />
+            </div>
+          </div>
+          <div className="mt-4 flex items-center gap-3">
+            <Button
+              size="sm"
+              onClick={() => saveFeeConfig.mutate()}
+              disabled={saveFeeConfig.isPending}
+            >
+              {saveFeeConfig.isPending ? (
+                <Loader2 className="mr-1.5 size-4 animate-spin" />
+              ) : (
+                <Save className="mr-1.5 size-4" />
+              )}
+              Save Config
+            </Button>
+            {configSaved && (
+              <span className="text-xs text-green-600">Saved!</span>
+            )}
+          </div>
         </div>
 
         {/* Create / Edit form */}
