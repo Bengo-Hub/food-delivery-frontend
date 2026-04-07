@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useQuery } from "@tanstack/react-query";
 
 import { useAddresses } from "@/hooks/use-addresses";
 import { useCheckout, useGuestCheckout, useFeeBreakdown } from "@/hooks/use-cart-api";
@@ -100,7 +101,20 @@ export function useCheckoutState() {
   const isOutsideDeliveryZone =
     fulfillmentMode !== "pickup" && hasDeliveryAddress && !zoneLoading && (zoneError || !zoneResult);
 
-  const outletId = items[0]?.outletId ?? null;
+  // Resolve outlet ID — from cart item or fetch first outlet as fallback
+  const cartOutletId = items[0]?.outletId || null;
+  const { data: outlets = [] } = useQuery({
+    queryKey: ["checkout-outlets", orgSlug],
+    queryFn: async () => {
+      const res = await api.get(`${orgSlug}/outlets?limit=10`);
+      return res.data?.data ?? [];
+    },
+    enabled: !cartOutletId, // only fetch if cart items don't have outletId
+    staleTime: 5 * 60_000,
+  });
+  const outletId = cartOutletId || outlets[0]?.id || null;
+  const [selectedPickupOutletId, setSelectedPickupOutletId] = useState<string | null>(null);
+
   const { data: feeBreakdown, isLoading: feesLoading } = useFeeBreakdown(outletId, fulfillmentMode, sessionId);
 
   const cartSubtotal = subtotal();
@@ -209,7 +223,7 @@ export function useCheckoutState() {
     setOrderError(null);
 
     try {
-      const outletId = items[0]?.outletId || "";
+      const checkoutOutletId = outletId || selectedPickupOutletId || items[0]?.outletId || "";
       const idempotencyKey =
         typeof crypto !== "undefined" && crypto.randomUUID
           ? crypto.randomUUID()
@@ -220,7 +234,7 @@ export function useCheckoutState() {
       if (isGuestMode) {
         const selectedAddr = addresses.find((a) => a.id === selectedAddressId);
         const guestPayload: Parameters<typeof guestCheckoutMutation.mutateAsync>[0] = {
-          outletId,
+          outletId: checkoutOutletId,
           sessionId,
           fulfillmentType: fulfillmentMode,
           idempotencyKey,
@@ -243,7 +257,7 @@ export function useCheckoutState() {
         result = await guestCheckoutMutation.mutateAsync(guestPayload);
       } else {
         const payload: Parameters<typeof checkoutMutation.mutateAsync>[0] = {
-          outletId,
+          outletId: checkoutOutletId,
           fulfillmentType: fulfillmentMode,
           items: items.map((item) => ({
             menuItemId: item.id,
@@ -385,6 +399,10 @@ export function useCheckoutState() {
     setGuestDeliveryLocation,
     handleSignInForCheckout,
     hasDeliveryAddress,
+    outlets,
+    outletId,
+    selectedPickupOutletId,
+    setSelectedPickupOutletId,
 
     // Payment
     showPaymentModal,

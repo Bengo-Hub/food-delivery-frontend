@@ -18,6 +18,8 @@ interface AddressSelectorProps {
   onSelect: (id: string) => void;
   /** Called when guest picks a location (no saved address). Returns the address details. */
   onGuestLocationSelect?: (location: { lat: number; lng: number; address: string }) => void;
+  /** The currently selected guest delivery location (displayed when no saved address is selected). */
+  guestAddress?: { lat: number; lng: number; address: string } | null;
   /** Called when "Add new" is used by an authenticated user to save an address. */
   onAddNew: () => void;
   isGuest?: boolean;
@@ -31,6 +33,7 @@ export function AddressSelector({
   selectedId,
   onSelect,
   onGuestLocationSelect,
+  guestAddress,
   onAddNew,
   isGuest = false,
   scheduledTime,
@@ -38,9 +41,11 @@ export function AddressSelector({
 }: AddressSelectorProps) {
   const [showModal, setShowModal] = useState(false);
 
-  // Current selected address display
+  // Current selected address display — saved address or guest-picked location
   const selectedAddress = addresses.find((a) => a.id === selectedId);
-  const hasAddress = !!selectedAddress;
+  const hasAddress = !!(selectedAddress || guestAddress);
+  const displayLabel = selectedAddress?.label ?? "Delivery Location";
+  const displayAddress = selectedAddress?.address ?? guestAddress?.address ?? "";
 
   return (
     <section className="rounded-xl border border-border p-4">
@@ -59,8 +64,8 @@ export function AddressSelector({
             <MapPin className="size-4 text-primary" />
           </div>
           <div className="min-w-0 flex-1">
-            <p className="text-sm font-medium">{selectedAddress.label}</p>
-            <p className="truncate text-xs text-muted-foreground">{selectedAddress.address}</p>
+            <p className="text-sm font-medium">{displayLabel}</p>
+            <p className="truncate text-xs text-muted-foreground">{displayAddress}</p>
           </div>
           <span className="text-xs text-primary">Change</span>
         </button>

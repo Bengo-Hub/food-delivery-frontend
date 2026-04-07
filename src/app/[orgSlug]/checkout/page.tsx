@@ -1,6 +1,6 @@
 "use client";
 
-import { AlertTriangle, ArrowLeft, ShoppingBag } from "lucide-react";
+import { AlertTriangle, ArrowLeft, MapPin, ShoppingBag, Store } from "lucide-react";
 import Link from "next/link";
 
 import { AddressSelector } from "@/components/checkout/address-selector";
@@ -21,6 +21,7 @@ import {
 import { SiteShell } from "@/components/layout/site-shell";
 import { Button } from "@/components/ui/button";
 import { useCheckoutState } from "@/hooks/use-checkout-state";
+import { cn } from "@/lib/utils";
 import { orgRoute } from "@/lib/routes";
 
 const SMALL_ORDER_THRESHOLD = 500;
@@ -85,19 +86,26 @@ export default function CheckoutPage() {
             />
           )}
 
-          {/* 1. LOCATION — Address selector comes first (delivery/schedule) */}
-          {state.fulfillmentMode !== "pickup" && (
+          {/* 1. LOCATION — Address selector for delivery/schedule, outlet selector for pickup */}
+          {state.fulfillmentMode !== "pickup" ? (
             <AddressSelector
               addresses={state.addresses}
               selectedId={state.selectedAddressId}
               onSelect={state.setSelectedAddressId}
               onGuestLocationSelect={state.setGuestDeliveryLocation}
+              guestAddress={state.guestDeliveryLocation}
               onAddNew={() => {/* handled inside modal */}}
               isGuest={state.isGuestMode}
               scheduledTime={state.scheduledTime}
               onSchedule={state.handleScheduleSelect}
             />
-          )}
+          ) : state.outlets.length > 0 ? (
+            <PickupOutletSelector
+              outlets={state.outlets}
+              selectedId={state.selectedPickupOutletId ?? state.outletId}
+              onSelect={state.setSelectedPickupOutletId}
+            />
+          ) : null}
 
           {/* Zone validation error */}
           {state.isOutsideDeliveryZone && (
@@ -195,5 +203,59 @@ export default function CheckoutPage() {
         onPaymentFailed={state.handlePaymentFailed}
       />
     </SiteShell>
+  );
+}
+
+// ─── Pickup Outlet Selector ─────────────────────────────────────────
+
+interface PickupOutletSelectorProps {
+  outlets: Array<{ id: string; name: string; address?: string }>;
+  selectedId: string | null;
+  onSelect: (id: string) => void;
+}
+
+function PickupOutletSelector({ outlets, selectedId, onSelect }: PickupOutletSelectorProps) {
+  return (
+    <section className="rounded-xl border border-border p-4">
+      <div className="mb-3 flex items-center gap-2 text-sm font-medium">
+        <Store className="size-4 text-primary" />
+        <span>Pickup Location</span>
+      </div>
+      <p className="mb-3 text-xs text-muted-foreground">
+        Select the outlet where you&apos;ll pick up your order.
+      </p>
+      <div className="space-y-2">
+        {outlets.map((outlet) => {
+          const selected = selectedId === outlet.id;
+          return (
+            <button
+              key={outlet.id}
+              type="button"
+              onClick={() => onSelect(outlet.id)}
+              className={cn(
+                "flex w-full items-center gap-3 rounded-xl border p-3 text-left transition-colors",
+                selected
+                  ? "border-primary bg-primary/5"
+                  : "border-border hover:bg-muted/50",
+              )}
+            >
+              <div className={cn(
+                "flex size-5 items-center justify-center rounded-full border-2",
+                selected ? "border-primary" : "border-muted-foreground/40",
+              )}>
+                {selected && <div className="size-2.5 rounded-full bg-primary" />}
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-medium">{outlet.name}</p>
+                {outlet.address && (
+                  <p className="truncate text-xs text-muted-foreground">{outlet.address}</p>
+                )}
+              </div>
+              <MapPin className={cn("size-4 shrink-0", selected ? "text-primary" : "text-muted-foreground/40")} />
+            </button>
+          );
+        })}
+      </div>
+    </section>
   );
 }

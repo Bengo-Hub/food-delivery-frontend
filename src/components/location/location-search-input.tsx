@@ -126,11 +126,13 @@ export function LocationSearchInput({
           );
         });
 
-        // Outlet search (only if orgSlug is provided)
+        // Outlet search — always show tenant's pickup outlets for easy selection.
+        // Uses a loose search (first 2 words) but falls back to showing all outlets.
+        const outletQuery = query.split(",")[0].trim();
         const outletPromise: Promise<Suggestion[]> = orgSlug
           ? api
               .get<{ data: OutletSearchResult[] }>(
-                `${orgSlug}/outlets?q=${encodeURIComponent(query)}&pickup=true&limit=3`,
+                `${orgSlug}/outlets?limit=5`,
                 { signal: controller.signal },
               )
               .then((res) =>
