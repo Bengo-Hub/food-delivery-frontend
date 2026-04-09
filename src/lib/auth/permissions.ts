@@ -2,6 +2,12 @@ import type { Permission, UserProfile, UserRole } from "./types";
 
 type Operator = "and" | "or";
 
+/** Check if user has elevated access (superuser or platform owner). */
+function isElevated(user: UserProfile | null): boolean {
+  if (!user) return false;
+  return !!(user.isSuperUser || user.is_platform_owner || user.roles.includes("superuser"));
+}
+
 export function userHasRole(
   user: UserProfile | null,
   roles?: UserRole[] | null,
@@ -9,8 +15,8 @@ export function userHasRole(
 ): boolean {
   if (!roles?.length) return true;
   if (!user) return false;
-  // Superuser bypasses all role checks
-  if (user.isSuperUser || user.roles.includes("superuser")) return true;
+  // Superuser and platform owner bypass all role checks
+  if (isElevated(user)) return true;
   const matches = roles.map((role) => user.roles.includes(role));
   return operator === "and" ? matches.every(Boolean) : matches.some(Boolean);
 }
@@ -22,8 +28,8 @@ export function userHasPermission(
 ): boolean {
   if (!permissions?.length) return true;
   if (!user) return false;
-  // Superuser bypasses all permission checks
-  if (user.isSuperUser || user.roles.includes("superuser")) return true;
+  // Superuser and platform owner bypass all permission checks
+  if (isElevated(user)) return true;
   const matches = permissions.map((permission) => user.permissions.includes(permission));
   return operator === "and" ? matches.every(Boolean) : matches.some(Boolean);
 }

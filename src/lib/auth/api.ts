@@ -146,6 +146,7 @@ interface SSOMeResponse {
   tenant_id?: string;
   tenant_slug?: string;
   tenant?: { id: string; name: string; slug: string };
+  is_platform_owner?: boolean;
 }
 
 /**
@@ -177,7 +178,8 @@ export async function fetchProfileFromSSO(accessToken: string): Promise<AuthResp
       phone: (profile.phone as string) ?? null,
       roles: (raw.roles ?? []) as UserRole[],
       permissions: (raw.permissions ?? []) as Permission[],
-      isSuperUser: (raw.roles ?? []).includes("superuser"),
+      isSuperUser: (raw.roles ?? []).includes("superuser") || raw.is_platform_owner === true,
+      is_platform_owner: raw.is_platform_owner ?? false,
       avatarUrl: (profile.avatar_url as string) ?? null,
       loyaltyPoints: 0,
       availableCoupons: 0,
