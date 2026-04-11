@@ -288,7 +288,7 @@ export function useCheckoutState() {
           outletId: checkoutOutletId,
           fulfillmentType: fulfillmentMode,
           items: items.map((item) => ({
-            menuItemId: item.id,
+            inventorySku: item.inventorySku || item.id,
             name: item.name,
             quantity: item.quantity,
             unitPrice: item.price,

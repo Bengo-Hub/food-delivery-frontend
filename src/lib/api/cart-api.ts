@@ -19,7 +19,7 @@ export interface CheckoutRequest {
   outletId: string;
   fulfillmentType: "delivery" | "pickup" | "schedule";
   items: {
-    menuItemId: string;
+    inventorySku: string;
     name: string;
     quantity: number;
     unitPrice: number;
