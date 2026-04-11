@@ -115,9 +115,30 @@ export function useCheckoutState() {
   const outletId = cartOutletId || outlets[0]?.id || null;
   const [selectedPickupOutletId, setSelectedPickupOutletId] = useState<string | null>(null);
 
-  const { data: feeBreakdown, isLoading: feesLoading } = useFeeBreakdown(outletId, fulfillmentMode, sessionId);
+  const { data: remoteFees, isLoading: feesLoading } = useFeeBreakdown(outletId, fulfillmentMode, sessionId);
 
   const cartSubtotal = subtotal();
+  const deliveryFee = zoneResult?.delivery_fee ?? remoteFees?.delivery_fee ?? 0;
+
+  // Use backend fee breakdown when available and non-zero; otherwise compute locally
+  const feeBreakdown: import("@/lib/api/cart-api").FeeBreakdown | undefined =
+    remoteFees && remoteFees.item_total > 0
+      ? remoteFees
+      : cartSubtotal > 0
+        ? {
+            item_total: cartSubtotal,
+            discount,
+            packaging_fee: 0,
+            subtotal: cartSubtotal - discount,
+            small_order_fee: 0,
+            service_fee: 0,
+            delivery_fee: fulfillmentMode === "pickup" ? 0 : deliveryFee,
+            delivery_discount: 0,
+            tax_total: 0,
+            grand_total: cartSubtotal - discount + (fulfillmentMode === "pickup" ? 0 : deliveryFee),
+          }
+        : undefined;
+
   const grandTotal = feeBreakdown?.grand_total ?? cartSubtotal - discount;
 
   const estimatedTime = zoneResult
@@ -238,6 +259,13 @@ export function useCheckoutState() {
           sessionId,
           fulfillmentType: fulfillmentMode,
           idempotencyKey,
+          items: items.map((item) => ({
+            inventorySku: item.inventorySku || item.id,
+            name: item.name,
+            quantity: item.quantity,
+            unitPrice: item.price,
+            totalPrice: item.total,
+          })),
         };
         if (guestEmail.trim()) guestPayload.contactEmail = guestEmail.trim();
         if (guestPhone.trim()) guestPayload.contactPhone = guestPhone.trim();

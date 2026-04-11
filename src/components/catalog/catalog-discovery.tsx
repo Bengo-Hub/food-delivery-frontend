@@ -12,6 +12,7 @@ import {
   WheatIcon
 } from "lucide-react";
 import Image from "next/image";
+import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 
@@ -44,12 +45,13 @@ function DiscoveryMenuItem({
   item,
   orgSlug,
   onAddToCart,
+  index = 0,
 }: {
   item: MenuItem;
   orgSlug: string;
   onAddToCart: (item: MenuItem) => void;
+  index?: number;
 }) {
-  const router = useRouter();
   const itemUrl = item.id ? `/${orgSlug}/catalog/${item.id}` : "#";
   const { mutate: toggleFavorite } = useToggleFavorite(orgSlug);
   const [isWhitelisted, setIsWhitelisted] = useState(item.isFavorite ?? false);
@@ -62,14 +64,14 @@ function DiscoveryMenuItem({
   };
 
   return (
-    <article
-      key={item.id}
+    <Link
+      href={itemUrl}
+      prefetch={false}
       data-menu-item-id={item.id}
-      onClick={() => router.push(itemUrl)}
-      className="flex h-full cursor-pointer flex-col justify-between overflow-hidden rounded-2xl border border-border bg-card shadow-sm transition hover:-translate-y-1 hover:shadow-lg sm:rounded-3xl"
+      className="flex h-full cursor-pointer flex-col justify-between overflow-hidden rounded-2xl border border-border bg-card shadow-sm transition hover:-translate-y-1 hover:shadow-lg active:scale-[0.98] sm:rounded-3xl"
     >
-      {/* Image - Fixed 240x240 */}
-      <div className="relative h-60 w-full overflow-hidden bg-muted">
+      {/* Image - Responsive height */}
+      <div className="relative h-44 w-full overflow-hidden bg-muted sm:h-52 md:h-60">
         {item.image ? (
           <Image
             src={getMediaUrl(item.image)}
@@ -77,6 +79,8 @@ function DiscoveryMenuItem({
             fill
             className="object-cover transition-transform duration-300 hover:scale-105"
             sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+            loading={index < 4 ? "eager" : "lazy"}
+            priority={index < 2}
           />
         ) : (
           <div className="flex size-full items-center justify-center bg-gradient-to-br from-muted to-muted/50">
@@ -141,10 +145,11 @@ function DiscoveryMenuItem({
           </div>
           <Button
             onClick={(e) => {
+              e.preventDefault();
               e.stopPropagation();
               onAddToCart(item);
             }}
-            className="w-full min-h-[44px]"
+            className="w-full min-h-[48px]"
             size="sm"
           >
             <ShoppingCartIcon className="mr-2 size-4" />
@@ -152,7 +157,7 @@ function DiscoveryMenuItem({
           </Button>
         </footer>
       </div>
-    </article>
+    </Link>
   );
 }
 
@@ -462,12 +467,13 @@ export function MenuDiscovery({
               </p>
             </div>
           ) : (
-            menuItems.map((item) => (
+            menuItems.map((item, idx) => (
               <DiscoveryMenuItem
                 key={item.id}
                 item={item}
                 orgSlug={orgSlug}
                 onAddToCart={handleAddToCart}
+                index={idx}
               />
             ))
           )}

@@ -70,6 +70,13 @@ export interface GuestCheckoutRequest {
   contactEmail?: string;
   contactPhone?: string;
   contactName?: string;
+  items: {
+    inventorySku: string;
+    name: string;
+    quantity: number;
+    unitPrice: number;
+    totalPrice: number;
+  }[];
   fulfillmentType: "delivery" | "pickup" | "schedule";
   deliveryAddress?: string;
   deliveryLat?: number;
