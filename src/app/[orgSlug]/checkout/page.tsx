@@ -72,7 +72,7 @@ export default function CheckoutPage() {
           <h1 className="text-xl font-bold sm:text-2xl">Checkout</h1>
         </div>
 
-        <div className="space-y-4 pb-24 sm:space-y-6 sm:pb-6">
+        <div className="space-y-4 pb-28 sm:space-y-6 sm:pb-6">
           {/* Guest contact info */}
           {state.isGuestMode && (
             <GuestContactForm
@@ -195,6 +195,8 @@ export default function CheckoutPage() {
         open={state.showPaymentModal}
         onOpenChange={state.handlePaymentModalClose}
         paymentIntentId={state.paymentIntentId ?? ""}
+        initiateUrl={state.initiateUrl ?? ""}
+        customerEmail={state.isGuestMode ? state.guestEmail : (state.user?.email ?? "")}
         tenantSlug={state.orgSlug}
         amount={state.paymentAmount}
         currency={state.paymentCurrency}

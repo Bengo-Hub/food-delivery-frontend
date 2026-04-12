@@ -60,6 +60,7 @@ export function useCheckoutState() {
   // Payment
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [paymentIntentId, setPaymentIntentId] = useState<string | null>(null);
+  const [initiateUrl, setInitiateUrl] = useState<string | null>(null);
   const [paymentAmount, setPaymentAmount] = useState(0);
   const [paymentCurrency, setPaymentCurrency] = useState("KES");
   const [orderId, setOrderId] = useState<string | null>(null);
@@ -307,6 +308,7 @@ export function useCheckoutState() {
 
       setOrderId(result.orderId);
       setPaymentIntentId(result.paymentIntentId);
+      setInitiateUrl(result.initiateUrl);
       setPaymentAmount(result.amount);
       setPaymentCurrency(result.currency || "KES");
       setStep("payment");
@@ -440,6 +442,7 @@ export function useCheckoutState() {
     // Payment
     showPaymentModal,
     paymentIntentId,
+    initiateUrl,
     paymentAmount,
     paymentCurrency,
     orderId,

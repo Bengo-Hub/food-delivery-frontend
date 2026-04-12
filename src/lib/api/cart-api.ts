@@ -53,6 +53,7 @@ export async function getFeeBreakdown(slug: string, outletId: string, fulfillmen
 export interface CheckoutResponse {
   orderId: string;
   paymentIntentId: string;
+  initiateUrl: string;
   amount: number;
   currency: string;
 }
@@ -63,7 +64,8 @@ export async function checkout(slug: string, data: CheckoutRequest): Promise<Che
   // Backend returns full Order object — normalize to CheckoutResponse
   return {
     orderId: raw.orderId ?? raw.id ?? "",
-    paymentIntentId: raw.paymentIntentId ?? "",
+    paymentIntentId: raw.paymentIntentId ?? raw.payment_intent_id ?? "",
+    initiateUrl: raw.initiateUrl ?? raw.initiate_url ?? "",
     amount: raw.amount ?? raw.grandTotal ?? 0,
     currency: raw.currency ?? "KES",
   };
@@ -98,7 +100,8 @@ export async function guestCheckout(slug: string, data: GuestCheckoutRequest): P
   const raw = res.data;
   return {
     orderId: raw.orderId ?? raw.id ?? "",
-    paymentIntentId: raw.paymentIntentId ?? "",
+    paymentIntentId: raw.paymentIntentId ?? raw.payment_intent_id ?? "",
+    initiateUrl: raw.initiateUrl ?? raw.initiate_url ?? "",
     amount: raw.amount ?? raw.grandTotal ?? 0,
     currency: raw.currency ?? "KES",
   };
