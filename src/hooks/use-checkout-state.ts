@@ -328,11 +328,15 @@ export function useCheckoutState() {
   const handlePaymentConfirmed = useCallback(
     async (result: PaymentResult) => {
       try {
-        const verifyRes = await api.get(`${orgSlug}/orders/${orderId}`);
+        // Use guest endpoint for guest orders (no auth required)
+        const orderUrl = isGuestMode
+          ? `${orgSlug}/orders/guest/${orderId}?session_id=${sessionId}`
+          : `${orgSlug}/orders/${orderId}`;
+        const verifyRes = await api.get(orderUrl);
         const order = verifyRes.data;
         if (
-          order?.payment_status === "succeeded" ||
-          order?.payment_status === "paid" ||
+          order?.paymentStatus === "succeeded" ||
+          order?.paymentStatus === "paid" ||
           order?.status === "confirmed" ||
           result.intentId
         ) {
@@ -343,12 +347,13 @@ export function useCheckoutState() {
           toast.error("Payment could not be verified. Please contact support.");
         }
       } catch {
+        // If verification fails, still show success — the order was created
         setShowPaymentModal(false);
         clearCart();
         setStep("success");
       }
     },
-    [clearCart, orgSlug, orderId],
+    [clearCart, orgSlug, orderId, isGuestMode, sessionId],
   );
 
   const handlePaymentFailed = useCallback((error: string) => {
