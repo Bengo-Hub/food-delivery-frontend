@@ -24,12 +24,12 @@ export function SlideToConfirm({
   total,
 }: SlideToConfirmProps) {
   const displayLabel =
-    label || (total !== undefined ? `Place Order - KES ${total.toLocaleString()}` : "Place Order");
+    label || (total != null && total > 0 ? `Place Order - KES ${total.toLocaleString()}` : "Place Order");
 
   return (
     <>
-      {/* Mobile: slide gesture */}
-      <div className="sm:hidden">
+      {/* Mobile: slide gesture — fixed to bottom so it's always visible */}
+      <div className="fixed inset-x-0 bottom-0 z-30 border-t border-border bg-background/95 px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] backdrop-blur-sm sm:hidden">
         {disabled ? (
           <div className="flex h-14 items-center justify-center rounded-full bg-muted text-sm font-medium text-muted-foreground">
             Select delivery address or pickup to continue

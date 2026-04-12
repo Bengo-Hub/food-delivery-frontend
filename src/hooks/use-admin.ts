@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import {
   cancelAdminOrder,
+  deleteAdminOrder,
   createCategory,
   createMenuItem,
   deleteCategory,
@@ -77,6 +78,17 @@ export function useCancelAdminOrder() {
       cancelAdminOrder(slug, orderId, reason),
     onSuccess: (_data, { orderId }) => {
       queryClient.invalidateQueries({ queryKey: adminKeys.orderDetail(orderId) });
+      queryClient.invalidateQueries({ queryKey: adminKeys.orders() });
+    },
+  });
+}
+
+export function useDeleteAdminOrder() {
+  const slug = useOrgSlug();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (orderId: string) => deleteAdminOrder(slug, orderId),
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: adminKeys.orders() });
     },
   });

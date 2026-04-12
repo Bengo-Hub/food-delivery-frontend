@@ -59,7 +59,14 @@ export interface CheckoutResponse {
 
 export async function checkout(slug: string, data: CheckoutRequest): Promise<CheckoutResponse> {
   const res = await api.post(`${slug}/checkout`, data);
-  return res.data;
+  const raw = res.data;
+  // Backend returns full Order object — normalize to CheckoutResponse
+  return {
+    orderId: raw.orderId ?? raw.id ?? "",
+    paymentIntentId: raw.paymentIntentId ?? "",
+    amount: raw.amount ?? raw.grandTotal ?? 0,
+    currency: raw.currency ?? "KES",
+  };
 }
 
 // ─── Guest Checkout ─────────────────────────────────────────────────
@@ -88,5 +95,11 @@ export interface GuestCheckoutRequest {
 
 export async function guestCheckout(slug: string, data: GuestCheckoutRequest): Promise<CheckoutResponse> {
   const res = await api.post(`${slug}/checkout/guest`, data);
-  return res.data;
+  const raw = res.data;
+  return {
+    orderId: raw.orderId ?? raw.id ?? "",
+    paymentIntentId: raw.paymentIntentId ?? "",
+    amount: raw.amount ?? raw.grandTotal ?? 0,
+    currency: raw.currency ?? "KES",
+  };
 }

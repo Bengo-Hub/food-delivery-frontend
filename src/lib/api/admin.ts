@@ -176,6 +176,10 @@ export async function cancelAdminOrder(
   await api.post(`${slug}/admin/orders/${orderId}/cancel`, { reason });
 }
 
+export async function deleteAdminOrder(slug: string, orderId: string): Promise<void> {
+  await api.delete(`${slug}/admin/orders/${orderId}`);
+}
+
 // ─── Catalog API ────────────────────────────────────────────────────
 
 export async function listCategories(

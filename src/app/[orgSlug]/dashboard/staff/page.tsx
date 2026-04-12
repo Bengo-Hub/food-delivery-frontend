@@ -20,7 +20,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Pagination } from "@/components/ui/pagination";
-import { useAdminOrders, useUpdateOrderStatus } from "@/hooks/use-admin";
+import { useAdminOrders, useUpdateOrderStatus, useDeleteAdminOrder } from "@/hooks/use-admin";
 import { toast } from "@/lib/toast";
 import type { AdminOrder } from "@/lib/api/admin";
 
@@ -109,6 +109,7 @@ export default function StaffDashboardPage() {
 
   const { data, isLoading } = useAdminOrders(filters);
   const updateStatus = useUpdateOrderStatus();
+  const deleteOrder = useDeleteAdminOrder();
 
   const orders = data?.orders ?? [];
   const total = data?.total ?? 0;
@@ -221,7 +222,8 @@ export default function StaffDashboardPage() {
                   key={order.id}
                   order={order}
                   onStatusUpdate={handleStatusUpdate}
-                  isUpdating={updateStatus.isPending}
+                  onDelete={(id) => deleteOrder.mutate(id)}
+                  isUpdating={updateStatus.isPending || deleteOrder.isPending}
                 />
               ))}
             </div>
@@ -242,10 +244,12 @@ export default function StaffDashboardPage() {
 function OrderCard({
   order,
   onStatusUpdate,
+  onDelete,
   isUpdating,
 }: {
   order: AdminOrder;
   onStatusUpdate: (orderId: string, status: string) => void;
+  onDelete: (orderId: string) => void;
   isUpdating: boolean;
 }) {
   const actions = STATUS_ACTIONS[order.status] ?? [];
@@ -330,6 +334,19 @@ function OrderCard({
                   {action.label}
                 </Button>
               ))}
+              <Button
+                size="sm"
+                variant="ghost"
+                className="text-destructive hover:bg-destructive/10"
+                disabled={isUpdating}
+                onClick={() => {
+                  if (window.confirm(`Delete order #${order.orderNumber}? This cannot be undone.`)) {
+                    onDelete(order.id);
+                  }
+                }}
+              >
+                Delete
+              </Button>
             </div>
           )}
         </div>
