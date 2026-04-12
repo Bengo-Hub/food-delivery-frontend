@@ -267,7 +267,13 @@ function OrderCard({
               #{order.orderNumber}
             </CardTitle>
             <p className="text-sm text-muted-foreground">
-              {order.customerName} &middot; {timeLabel}
+              {order.customerName || "—"} &middot; {timeLabel}
+              {order.source === "guest" && (
+                <span className="ml-1.5 inline-flex items-center rounded px-1.5 py-0.5 text-[9px] font-bold uppercase bg-purple-100 text-purple-600 dark:bg-purple-900/30 dark:text-purple-400">Guest</span>
+              )}
+              {order.channel && (
+                <span className="ml-1 inline-flex items-center rounded px-1.5 py-0.5 text-[9px] font-bold uppercase bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400">{order.channel}</span>
+              )}
             </p>
           </div>
           <div className="flex items-center gap-2">

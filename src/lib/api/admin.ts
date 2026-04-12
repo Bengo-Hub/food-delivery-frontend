@@ -132,9 +132,9 @@ function normalizeOrder(o: Record<string, unknown>): AdminOrder {
   const isGuest = !!meta.guest;
   return {
     ...o,
-    customerName: (isGuest ? meta.contactName : "") as string || "",
-    customerPhone: (isGuest ? meta.contactPhone : "") as string || "",
-    customerEmail: (isGuest ? meta.contactEmail : "") as string || "",
+    customerName: (o.customerName ?? (isGuest ? meta.contactName : "") ?? "") as string,
+    customerPhone: (o.customerPhone ?? (isGuest ? meta.contactPhone : "") ?? "") as string,
+    customerEmail: (o.customerEmail ?? (isGuest ? meta.contactEmail : "") ?? "") as string,
     items: ((o.items as unknown[]) ?? []).map((item: unknown) => {
       const it = item as Record<string, unknown>;
       return {
