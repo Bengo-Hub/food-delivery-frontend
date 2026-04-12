@@ -8,6 +8,9 @@ export interface AdminOrder {
   status: string;
   paymentStatus: string;
   paymentMethod: string;
+  fulfillmentType: string;
+  customerId?: string;
+  // Resolved customer info (from metadata for guests, from user for auth)
   customerName: string;
   customerPhone: string;
   customerEmail: string;
@@ -15,20 +18,27 @@ export interface AdminOrder {
   items: AdminOrderItem[];
   subtotal: number;
   deliveryFee: number;
-  discount: number;
+  discountTotal: number;
   grandTotal: number;
   currency: string;
+  instructions: string;
   deliveryAddress: string;
-  deliveryNotes: string;
+  channel: string;
+  source?: string;
+  metadata?: Record<string, unknown>;
   riderName?: string;
   riderPhone?: string;
   estimatedDeliveryAt?: string;
+  placedAt: string;
   createdAt: string;
   updatedAt: string;
 }
 
 export interface AdminOrderItem {
-  catalogItemId: string;
+  id: string;
+  inventorySku: string;
+  nameSnapshot: string;
+  /** Alias for nameSnapshot — used by UI components */
   name: string;
   quantity: number;
   unitPrice: number;
@@ -110,12 +120,43 @@ export async function listAdminOrders(
   filters?: AdminOrderFilters,
 ): Promise<{ orders: AdminOrder[]; total: number }> {
   const res = await api.get(`${slug}/admin/orders`, { params: filters });
-  return res.data;
+  const raw = res.data;
+  // Backend returns { data: [...], total, limit, page } — normalize to { orders, total }
+  const orders: AdminOrder[] = (raw.data ?? raw.orders ?? []).map(normalizeOrder);
+  return { orders, total: raw.total ?? orders.length };
+}
+
+/** Map backend Order JSON to AdminOrder, resolving guest contact info from metadata. */
+function normalizeOrder(o: Record<string, unknown>): AdminOrder {
+  const meta = (o.metadata ?? {}) as Record<string, unknown>;
+  const isGuest = !!meta.guest;
+  return {
+    ...o,
+    customerName: (isGuest ? meta.contactName : "") as string || "",
+    customerPhone: (isGuest ? meta.contactPhone : "") as string || "",
+    customerEmail: (isGuest ? meta.contactEmail : "") as string || "",
+    items: ((o.items as unknown[]) ?? []).map((item: unknown) => {
+      const it = item as Record<string, unknown>;
+      return {
+        id: (it.id ?? "") as string,
+        inventorySku: (it.inventorySku ?? "") as string,
+        nameSnapshot: (it.nameSnapshot ?? it.name ?? "") as string,
+        name: (it.nameSnapshot ?? it.name ?? "") as string,
+        quantity: (it.quantity ?? 0) as number,
+        unitPrice: (it.unitPrice ?? 0) as number,
+        totalPrice: (it.totalPrice ?? 0) as number,
+        notes: (it.notes ?? "") as string,
+      };
+    }),
+    discountTotal: (o.discountTotal ?? o.discount ?? 0) as number,
+    instructions: (o.instructions ?? "") as string,
+    deliveryAddress: (o.instructions ?? "") as string,
+  } as AdminOrder;
 }
 
 export async function getAdminOrder(slug: string, orderId: string): Promise<AdminOrder> {
   const res = await api.get(`${slug}/admin/orders/${orderId}`);
-  return res.data;
+  return normalizeOrder(res.data as Record<string, unknown>);
 }
 
 export async function updateOrderStatus(
