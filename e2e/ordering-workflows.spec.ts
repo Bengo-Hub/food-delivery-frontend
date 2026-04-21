@@ -1,9 +1,9 @@
 import { expect, test } from '@playwright/test';
 
 test.describe('Ordering workflows', () => {
-  test('menu page has categories or items', async ({ page }) => {
-    await page.goto('/menu');
-    await expect(page).toHaveURL(/\/menu/, { timeout: 15_000 });
+  test('catalog page has categories or items', async ({ page }) => {
+    await page.goto('/catalog');
+    await expect(page).toHaveURL(/\/catalog/, { timeout: 15_000 });
     const hasContent = page.getByRole('heading').or(page.getByText(/category|menu|add to cart/i));
     await expect(hasContent.first()).toBeVisible({ timeout: 10_000 });
   });

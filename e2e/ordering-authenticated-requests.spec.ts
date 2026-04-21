@@ -41,25 +41,28 @@ test.describe('Ordering: authenticated requests after login', () => {
       }
     });
 
-    // Click Sign in (redirects to SSO / accounts)
+    // Click Sign in — goes to /auth which auto-redirects to SSO via PKCE
     const signInLink = page.getByRole('link', { name: /sign in|login/i }).first();
     await signInLink.click();
 
-    // Wait for accounts login page
-    await page.waitForURL(/accounts\.codevertexitsolutions\.com\/login/, { timeout: 15_000 });
+    // Wait for SSO login form to appear (skips intermediate PKCE redirect)
+    const emailField = page.locator('input[type="email"], input[id="email"]').first();
+    await emailField.waitFor({ state: 'visible', timeout: 30_000 });
 
-    // Real UX: only email and password (no tenant field)
-    await page.getByRole('textbox', { name: /email/i }).fill(LOGIN_EMAIL);
-    await page.getByRole('textbox', { name: /password/i }).fill(LOGIN_PASSWORD);
-    await page.getByRole('button', { name: /sign in/i }).click();
+    await emailField.fill(LOGIN_EMAIL);
+    await page.locator('input[type="password"], input[id="password"]').first().fill(LOGIN_PASSWORD);
+    await page.locator('button[type="submit"]').first().click();
 
     // Wait for redirect back to ordering (callback then dashboard/menu)
-    await page.waitForURL(new RegExp(`(${BASE}|ordersapp).*${ORG_SLUG}`), { timeout: 25_000 });
+    await page.waitForURL(new RegExp(`(${BASE}|ordersapp).*${ORG_SLUG}`), { timeout: 30_000 });
+
+    // Wait for page to fully hydrate after SSO callback
+    await page.waitForLoadState('networkidle', { timeout: 15_000 }).catch(() => {});
 
     // 1) Ordering-backend GET /api/v1/{tenant}/auth/me → 200 and body has user.roles, user.permissions
     const orderingAuthMeRes = await page.waitForResponse(
       (res) => res.request().method() === 'GET' && isOrderingAuthMe(res.url()),
-      { timeout: 15_000 }
+      { timeout: 20_000 }
     ).catch(() => null);
     expect(orderingAuthMeRes, 'Ordering-backend GET /auth/me must be called after login').not.toBeNull();
     if (orderingAuthMeRes) {

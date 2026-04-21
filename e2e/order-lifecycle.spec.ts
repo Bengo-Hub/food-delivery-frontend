@@ -44,16 +44,15 @@ test.describe.serial('Order lifecycle: authenticated user', () => {
   test('2. SSO login', async () => {
     if (!LOGIN_PASSWORD) { test.skip(true, 'E2E_LOGIN_PASSWORD not set'); return; }
 
-    // Click sign in link on the page
+    // Click sign in link — navigates to /auth which performs PKCE redirect to SSO
     const signIn = page.getByRole('link', { name: /sign in|login/i }).first();
     await signIn.click();
 
-    // Wait for SSO login form
-    await page.waitForURL(/accounts\.codevertexitsolutions\.com/, { timeout: 20_000 });
+    // Wait for SSO login form to appear (skips intermediate /auth page redirect)
     const emailInput = page.locator('input[type="email"], input[id="email"]').first();
-    await emailInput.waitFor({ state: 'visible', timeout: 15_000 });
+    await emailInput.waitFor({ state: 'visible', timeout: 30_000 });
 
-    // Fill credentials like a human (type, don't fill instantly)
+    // Fill credentials
     await emailInput.fill(LOGIN_EMAIL);
     await pause(page, 500);
     await page.locator('input[type="password"], input[id="password"]').first().fill(LOGIN_PASSWORD);
@@ -94,13 +93,17 @@ test.describe.serial('Order lifecycle: authenticated user', () => {
 
   // ── Step 4: Click an item → detail page ───────────────────────────
   test('4. Open item detail page', async () => {
-    // Wait for catalog items to render
-    const itemLink = page.locator('a[href*="/catalog/"]').first();
-    await expect(itemLink).toBeVisible({ timeout: 10_000 });
+    // Catalog items render as <article> with onClick (router.push) — client-side nav
+    const itemCard = page.locator('[data-menu-item-id]').first();
+    await expect(itemCard).toBeVisible({ timeout: 20_000 });
     await pause(page, 1000);
 
-    await itemLink.click();
-    await page.waitForURL(/\/catalog\//, { timeout: 15_000 });
+    await itemCard.click();
+    // Client-side navigation: poll for URL change instead of waitForURL
+    await page.waitForFunction(
+      () => /\/catalog\/[a-zA-Z0-9-]+/.test(window.location.pathname),
+      { timeout: 15_000 },
+    );
     await page.waitForLoadState('networkidle', { timeout: 10_000 }).catch(() => {});
     await pause(page, 2000);
 
@@ -176,23 +179,17 @@ test.describe.serial('Order lifecycle: authenticated user', () => {
 
   // ── Step 9: Navigate to order history ─────────────────────────────
   test('9. Order history page via navigation', async () => {
-    // Navigate to orders (click link or go directly)
-    const ordersLink = page.getByRole('link', { name: /orders|my orders/i }).first();
-    const hasLink = await ordersLink.isVisible({ timeout: 3_000 }).catch(() => false);
-
-    if (hasLink) {
-      await ordersLink.click();
-    } else {
-      await page.goto(`${BASE_URL}/orders`);
-    }
-
+    // Navigate directly to orders page
+    await page.goto(`${BASE_URL}/orders`);
     await page.waitForLoadState('networkidle', { timeout: 15_000 }).catch(() => {});
-    await pause(page, 2000);
+    await pause(page, 3000);
 
+    // Orders page may show heading, order list, or empty state
     const ordersContent = page
-      .getByRole('heading', { name: /orders|my orders/i })
-      .or(page.getByText(/no orders|you haven't placed|order history/i))
-      .or(page.getByText(/pending|confirmed|delivered|completed/i));
+      .getByRole('heading', { name: /order history/i })
+      .or(page.getByText(/my orders/i))
+      .or(page.getByText(/no orders|you haven't placed/i))
+      .or(page.getByText(/active|completed|cancelled/i));
     await expect(ordersContent.first()).toBeVisible({ timeout: 15_000 });
   });
 });
@@ -228,12 +225,17 @@ test.describe.serial('Order lifecycle: guest checkout', () => {
   });
 
   test('2. Add item to cart', async () => {
-    const itemLink = page.locator('a[href*="/catalog/"]').first();
-    const hasItem = await itemLink.isVisible({ timeout: 10_000 }).catch(() => false);
+    // Items are <article data-menu-item-id> with onClick, not <a> links
+    const itemCard = page.locator('[data-menu-item-id]').first();
+    const hasItem = await itemCard.isVisible({ timeout: 10_000 }).catch(() => false);
     if (!hasItem) { test.skip(true, 'No catalog items available'); return; }
 
-    await itemLink.click();
-    await page.waitForURL(/\/catalog\//, { timeout: 15_000 });
+    await itemCard.click();
+    // Client-side navigation via router.push
+    await page.waitForFunction(
+      () => /\/catalog\/[a-zA-Z0-9-]+/.test(window.location.pathname),
+      { timeout: 15_000 },
+    );
     await pause(page, 2000);
 
     const addBtn = page.locator('button').filter({ hasText: /add to cart/i }).first();

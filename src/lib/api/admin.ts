@@ -126,15 +126,32 @@ export async function listAdminOrders(
   return { orders, total: raw.total ?? orders.length };
 }
 
-/** Map backend Order JSON to AdminOrder, resolving guest contact info from metadata. */
+/** Map backend Order (or AdminOrderSummary) JSON to AdminOrder. */
 function normalizeOrder(o: Record<string, unknown>): AdminOrder {
   const meta = (o.metadata ?? {}) as Record<string, unknown>;
   const isGuest = !!meta.guest;
+
+  // Resolve customer contact — top-level fields take priority (set by backend
+  // for both auth and guest orders). Fall back to metadata for older responses.
+  const customerName =
+    ((o.customerName as string) || (isGuest ? (meta.contactName as string) : "")) ?? "";
+  const customerEmail =
+    ((o.customerEmail as string) || (isGuest ? (meta.contactEmail as string) : "")) ?? "";
+  const customerPhone =
+    ((o.customerPhone as string) || (isGuest ? (meta.contactPhone as string) : "")) ?? "";
+
+  // Resolve delivery address — backend now returns it as a string in the
+  // AdminOrderSummary; full Order has a nested object under deliveryAddress.
+  let deliveryAddress = (o.deliveryAddress as string) ?? "";
+  if (!deliveryAddress && o.instructions) {
+    deliveryAddress = o.instructions as string;
+  }
+
   return {
     ...o,
-    customerName: (o.customerName ?? (isGuest ? meta.contactName : "") ?? "") as string,
-    customerPhone: (o.customerPhone ?? (isGuest ? meta.contactPhone : "") ?? "") as string,
-    customerEmail: (o.customerEmail ?? (isGuest ? meta.contactEmail : "") ?? "") as string,
+    customerName,
+    customerEmail,
+    customerPhone,
     items: ((o.items as unknown[]) ?? []).map((item: unknown) => {
       const it = item as Record<string, unknown>;
       return {
@@ -150,7 +167,7 @@ function normalizeOrder(o: Record<string, unknown>): AdminOrder {
     }),
     discountTotal: (o.discountTotal ?? o.discount ?? 0) as number,
     instructions: (o.instructions ?? "") as string,
-    deliveryAddress: (o.instructions ?? "") as string,
+    deliveryAddress,
   } as AdminOrder;
 }
 

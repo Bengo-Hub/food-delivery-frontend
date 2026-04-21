@@ -140,16 +140,18 @@ export function CartDrawer({ open, onOpenChange }: CartDrawerProps) {
         className={cn(
           "fixed inset-y-0 right-0 z-50 flex w-full max-w-md flex-col bg-background shadow-2xl",
           "duration-300 animate-in slide-in-from-right",
+          // Ensure drawer respects safe areas and doesn't extend behind system UI
+          "max-h-[100dvh]",
         )}
         role="dialog"
         aria-modal="true"
         aria-label="Shopping cart"
       >
-        {/* Header */}
-        <div className="flex items-center justify-between border-b border-border px-4 py-4">
+        {/* Header - shrink-0 to never collapse */}
+        <div className="flex shrink-0 items-center justify-between border-b border-border px-4 py-3 sm:py-4">
           <div className="flex items-center gap-2">
             <ShoppingBag className="size-5" />
-            <h2 className="text-lg font-semibold">Your Cart</h2>
+            <h2 className="text-base font-semibold sm:text-lg">Your Cart</h2>
             {itemCount > 0 && (
               <span className="rounded-full bg-primary px-2 py-0.5 text-xs font-medium text-primary-foreground">
                 {itemCount}
@@ -158,7 +160,7 @@ export function CartDrawer({ open, onOpenChange }: CartDrawerProps) {
           </div>
           <button
             onClick={handleClose}
-            className="rounded-full p-2 hover:bg-muted"
+            className="rounded-full p-2 hover:bg-muted active:bg-muted/80"
             aria-label="Close cart"
           >
             <X className="size-5" />
@@ -167,7 +169,7 @@ export function CartDrawer({ open, onOpenChange }: CartDrawerProps) {
 
         {/* Group order chip */}
         {items.length > 0 && (
-          <div className="border-b border-border px-4 py-2">
+          <div className="shrink-0 border-b border-border px-4 py-2">
             <button className="inline-flex items-center gap-1.5 rounded-full border border-border px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:border-foreground/50 hover:text-foreground">
               <Users className="size-3.5" />
               Start a group order
@@ -193,26 +195,26 @@ export function CartDrawer({ open, onOpenChange }: CartDrawerProps) {
           </div>
         ) : (
           <>
-            {/* Items list */}
-            <div className="flex-1 overflow-y-auto px-4">
+            {/* Items list - scrollable, takes remaining space */}
+            <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4">
               {items.map((item) => (
                 <CartItemRow key={item.id} item={item} />
               ))}
+
+              {/* Clear cart button - inside scroll area to save space on mobile */}
+              <div className="py-2">
+                <button
+                  onClick={clear}
+                  className="text-sm text-muted-foreground hover:text-destructive hover:underline"
+                >
+                  Clear cart
+                </button>
+              </div>
             </div>
 
-            {/* Clear cart button */}
-            <div className="border-t border-border px-4 py-2">
-              <button
-                onClick={clear}
-                className="text-sm text-muted-foreground hover:text-destructive hover:underline"
-              >
-                Clear cart
-              </button>
-            </div>
-
-            {/* Order Summary */}
-            <div className="border-t border-border bg-muted/30 px-4 py-4">
-              <div className="space-y-2">
+            {/* Order Summary - sticky bottom, never scrolls away */}
+            <div className="shrink-0 border-t border-border bg-muted/30 px-4 py-3 sm:py-4">
+              <div className="space-y-1.5 sm:space-y-2">
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">Subtotal</span>
                   <span className="font-medium">{formatCurrency(cartSubtotal)}</span>
@@ -243,8 +245,8 @@ export function CartDrawer({ open, onOpenChange }: CartDrawerProps) {
               </div>
             </div>
 
-            {/* Checkout Button */}
-            <div className="border-t border-border p-4 safe-area-pb">
+            {/* Checkout Button - always visible at bottom with safe area padding */}
+            <div className="shrink-0 border-t border-border p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:p-4 sm:pb-[max(1rem,env(safe-area-inset-bottom))]">
               <Button asChild className="w-full min-h-[48px]" size="lg">
                 <Link href={orgRoute(orgSlug, "/checkout")} onClick={handleClose}>
                   Proceed to Checkout

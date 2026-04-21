@@ -286,8 +286,16 @@ function OrderCard({
               {order.status.replace(/_/g, " ")}
             </Badge>
             <Badge variant="outline" className="text-xs">
-              {order.paymentMethod === "mpesa" ? "M-Pesa" : "COD"} &middot;{" "}
-              {order.paymentStatus}
+              {order.paymentMethod === "mpesa"
+                ? "M-Pesa"
+                : order.paymentMethod === "paystack"
+                  ? "Paystack"
+                  : order.paymentMethod === "wallet"
+                    ? "Wallet"
+                    : order.paymentMethod === "cod" || order.paymentMethod === "cash"
+                      ? "COD"
+                      : order.paymentMethod || "—"}{" "}
+              &middot; {order.paymentStatus}
             </Badge>
           </div>
         </div>

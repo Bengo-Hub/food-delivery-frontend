@@ -111,14 +111,27 @@ export default function CartPage() {
           </CardHeader>
           <CardContent className="divide-y p-0">
             {items.map((item) => (
-              <div key={item.id} className="px-6 py-4">
-                <div className="flex items-center gap-4">
+              <div key={item.id} className="px-4 py-4 sm:px-6">
+                {/* Mobile: stacked layout / Desktop: row layout */}
+                <div className="flex items-start gap-3 sm:items-center sm:gap-4">
                   {/* Item info */}
-                  <div className="flex-1 min-w-0">
+                  <div className="min-w-0 flex-1">
                     <p className="truncate font-medium">{item.name}</p>
                     <p className="text-sm text-muted-foreground">{formatCurrency(item.price)} each</p>
                   </div>
 
+                  {/* Remove - top right on mobile */}
+                  <button
+                    onClick={() => removeItem(item.id)}
+                    className="shrink-0 p-1 text-muted-foreground hover:text-destructive active:text-destructive"
+                    aria-label="Remove item"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                </div>
+
+                {/* Quantity + Total row */}
+                <div className="mt-2 flex items-center justify-between">
                   {/* Quantity controls */}
                   <div className="flex items-center gap-2">
                     <button
@@ -129,7 +142,7 @@ export default function CartPage() {
                           updateQuantity(item.id, item.quantity - 1);
                         }
                       }}
-                      className="flex h-7 w-7 items-center justify-center rounded-full border hover:bg-muted"
+                      className="flex h-8 w-8 items-center justify-center rounded-full border hover:bg-muted active:bg-muted/80 sm:h-7 sm:w-7"
                       aria-label="Decrease quantity"
                     >
                       <Minus className="h-3 w-3" />
@@ -137,7 +150,7 @@ export default function CartPage() {
                     <span className="w-6 text-center text-sm font-medium">{item.quantity}</span>
                     <button
                       onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                      className="flex h-7 w-7 items-center justify-center rounded-full border hover:bg-muted"
+                      className="flex h-8 w-8 items-center justify-center rounded-full border hover:bg-muted active:bg-muted/80 sm:h-7 sm:w-7"
                       aria-label="Increase quantity"
                     >
                       <Plus className="h-3 w-3" />
@@ -145,18 +158,9 @@ export default function CartPage() {
                   </div>
 
                   {/* Item total */}
-                  <p className="w-20 text-right text-sm font-semibold">
+                  <p className="text-sm font-semibold">
                     {formatCurrency(item.total)}
                   </p>
-
-                  {/* Remove */}
-                  <button
-                    onClick={() => removeItem(item.id)}
-                    className="text-muted-foreground hover:text-destructive"
-                    aria-label="Remove item"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </button>
                 </div>
 
                 {/* Modifier details */}

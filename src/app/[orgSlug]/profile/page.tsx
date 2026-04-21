@@ -54,11 +54,11 @@ export default function ProfilePage() {
   return (
     <RequireAuth roles={["customer"]}>
       <SiteShell>
-        <div className="mx-auto my-12 flex w-full max-w-6xl flex-col gap-6 px-4">
-          <div className="flex flex-wrap items-start justify-between gap-4">
+        <div className="mx-auto flex w-full max-w-6xl flex-col gap-4 px-4 py-4 sm:gap-6 sm:py-8 md:py-12">
+          <div className="flex flex-wrap items-start justify-between gap-3 sm:gap-4">
             <div>
-              <h1 className="flex items-center gap-2 text-3xl font-semibold text-foreground">
-                <UserCircle2Icon className="size-7 text-brand-emphasis" aria-hidden />
+              <h1 className="flex items-center gap-2 text-2xl font-semibold text-foreground sm:text-3xl">
+                <UserCircle2Icon className="size-6 text-brand-emphasis sm:size-7" aria-hidden />
                 Account & preferences
               </h1>
               <p className="text-sm text-muted-foreground">
