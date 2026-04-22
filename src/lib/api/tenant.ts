@@ -11,12 +11,24 @@ export interface TenantBrandMetadata {
   orgName?: string;
 }
 
+export interface TenantBrandColors {
+  primary?: string;
+  secondary?: string;
+  accent?: string;
+}
+
 export interface TenantResponse {
   id: string;
   name: string;
   slug: string;
   status?: string;
   use_case?: string;
+  // Top-level fields returned by auth-api (preferred source)
+  logo_url?: string;
+  brand_colors?: TenantBrandColors;
+  contact_email?: string;
+  website?: string;
+  // Legacy metadata fallback (older auth-api versions)
   metadata?: Record<string, unknown>;
 }
 
@@ -32,10 +44,11 @@ export interface TenantBrand {
 }
 
 export function parseBrandFromTenant(t: TenantResponse): TenantBrand {
+  // Prefer top-level fields (auth-api v2 response shape); fall back to metadata
   const meta = (t.metadata || {}) as TenantBrandMetadata;
-  const logoUrl = meta.logo_url ?? meta.logoUrl ?? null;
-  const primaryColor = (meta.primary_color ?? meta.primaryColor) ?? null;
-  const secondaryColor = (meta.secondary_color ?? meta.secondaryColor) ?? null;
+  const logoUrl = t.logo_url ?? meta.logo_url ?? meta.logoUrl ?? null;
+  const primaryColor = t.brand_colors?.primary ?? (meta.primary_color ?? meta.primaryColor) ?? null;
+  const secondaryColor = t.brand_colors?.secondary ?? (meta.secondary_color ?? meta.secondaryColor) ?? null;
   const orgName = (meta.org_name ?? meta.orgName) ?? t.name ?? '';
 
   return {
