@@ -88,10 +88,20 @@ function AuthCallbackContent() {
         return;
       }
 
-      // Member with ordering staff permissions → staff dashboard
+      // Member with any ordering staff permission → staff dashboard.
+      // Checks both the JWT-level permissions (from SSO) since ordering-backend
+      // service-level RBAC is not available yet at callback time (JIT sync pending).
       if (
         userHasRole(user, ["member"]) &&
-        userHasPermission(user, ["ordering.orders.manage", "ordering.orders.add"], "or")
+        userHasPermission(user, [
+          "ordering.orders.manage",
+          "ordering.orders.add",
+          "ordering.orders.read",      // can view all orders (not own-only)
+          "ordering.orders.change",    // can update any order status
+          "ordering.catalog.manage",
+          "ordering.catalog.change",
+          "ordering.operations.manage",
+        ], "or")
       ) {
         router.replace(orgRoute(orgSlug, "/dashboard/staff"));
         return;
