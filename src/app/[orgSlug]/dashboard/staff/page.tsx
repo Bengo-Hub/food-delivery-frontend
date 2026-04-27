@@ -133,7 +133,7 @@ export default function StaffDashboardPage() {
   );
 
   return (
-    <RequireAuth roles={["staff", "admin", "superuser"]} roleOperator="or">
+    <RequireAuth roles={["staff", "admin", "superuser", "member"]} roleOperator="or">
       <SiteShell>
         <div className="mx-auto w-full max-w-6xl px-4 py-6">
           {/* Header */}

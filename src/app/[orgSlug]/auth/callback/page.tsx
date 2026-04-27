@@ -6,7 +6,7 @@ import { CheckCircle2, Loader2, RefreshCw, ShieldCheckIcon, User } from "lucide-
 import { useRouter, useSearchParams } from "next/navigation";
 
 import { Button } from "@/components/ui/button";
-import { userHasRole } from "@/lib/auth/permissions";
+import { userHasPermission, userHasRole } from "@/lib/auth/permissions";
 import { consumeState } from "@/lib/auth/pkce";
 import { orgRoute } from "@/lib/routes";
 import { useOrgSlug } from "@/providers/org-slug-provider";
@@ -48,11 +48,23 @@ function AuthCallbackContent() {
 
     // Allow brief time for the user to see the confirmation
     const timer = setTimeout(() => {
-      // Check if profile needs completion
+      // Read sso_return_to early — must be captured before any redirect clears it
+      const returnTo = typeof window !== "undefined"
+        ? sessionStorage.getItem("sso_return_to") ?? orgRoute(orgSlug, "/")
+        : orgRoute(orgSlug, "/");
+
+      // Check if profile needs completion — preserve return destination via query param
       if (!user.phone) {
-        router.replace(orgRoute(orgSlug, "/profile"));
+        const profileUrl = orgRoute(orgSlug, "/profile");
+        const dest = returnTo !== orgRoute(orgSlug, "/")
+          ? `${profileUrl}?next=${encodeURIComponent(returnTo)}`
+          : profileUrl;
+        sessionStorage.removeItem("sso_return_to");
+        router.replace(dest);
         return;
       }
+
+      sessionStorage.removeItem("sso_return_to");
 
       // Route based on role
       if (userHasRole(user, ["superuser"])) {
@@ -72,15 +84,20 @@ function AuthCallbackContent() {
 
       if (userHasRole(user, ["rider"])) {
         const logisticsUrl = process.env.NEXT_PUBLIC_LOGISTICS_UI_URL ?? "https://logistics.codevertexitsolutions.com";
-        window.location.href = logisticsUrl;
+        window.location.href = `${logisticsUrl}/${orgSlug}`;
         return;
       }
 
-      // Customer (default) → home page with catalog items
-      let returnTo = typeof window !== "undefined"
-        ? sessionStorage.getItem("sso_return_to") ?? orgRoute(orgSlug, "/")
-        : orgRoute(orgSlug, "/");
-      sessionStorage.removeItem("sso_return_to");
+      // Member with ordering staff permissions → staff dashboard
+      if (
+        userHasRole(user, ["member"]) &&
+        userHasPermission(user, ["ordering.orders.manage", "ordering.orders.add"], "or")
+      ) {
+        router.replace(orgRoute(orgSlug, "/dashboard/staff"));
+        return;
+      }
+
+      // Customer / member without staff permissions → original destination or home
       router.replace(returnTo);
     }, 1500);
 

@@ -297,6 +297,10 @@ export function useCheckoutState() {
           })),
           idempotencyKey,
         };
+        // Attach authenticated user contact details so orders show customer info
+        if (user?.email) payload.contactEmail = user.email;
+        if (user?.fullName) payload.contactName = user.fullName;
+        if (user?.phone != null) payload.contactPhone = user.phone;
         if (fulfillmentMode !== "pickup" && selectedAddressId) payload.deliveryAddressId = selectedAddressId;
         if (deliveryNotes) payload.deliveryNotes = deliveryNotes;
         if (promoCode) payload.promoCode = promoCode;

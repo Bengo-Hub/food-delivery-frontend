@@ -1,4 +1,4 @@
-export type UserRole = "customer" | "rider" | "staff" | "admin" | "superuser";
+export type UserRole = "customer" | "rider" | "staff" | "admin" | "superuser" | "member";
 
 export type Permission =
   // New dot-prefix format (canonical)

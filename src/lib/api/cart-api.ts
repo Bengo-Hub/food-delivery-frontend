@@ -32,6 +32,9 @@ export interface CheckoutRequest {
   requestUtensils?: boolean;
   scheduledAt?: string;
   idempotencyKey?: string;
+  contactEmail?: string;
+  contactName?: string;
+  contactPhone?: string;
 }
 
 // ─── API Functions ───────────────────────────────────────────────────
