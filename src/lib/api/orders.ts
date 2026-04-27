@@ -139,3 +139,11 @@ export async function getOrderTracking(
   const res = await api.get(`${tenantSlug}/orders/${orderId}/tracking`);
   return res.data;
 }
+
+export async function payOrderWithWallet(
+  tenantSlug: string,
+  orderId: string,
+): Promise<{ success: boolean; payment_status: string; order_status: string }> {
+  const res = await api.post(`${tenantSlug}/orders/${orderId}/pay/wallet`, {});
+  return res.data;
+}

@@ -1,7 +1,8 @@
 "use client";
 
-import { AlertTriangle, ArrowLeft, MapPin, ShoppingBag, Store } from "lucide-react";
+import { AlertTriangle, ArrowLeft, Loader2, MapPin, ShoppingBag, Store, Wallet } from "lucide-react";
 import Link from "next/link";
+import { useEffect } from "react";
 
 import { AddressSelector } from "@/components/checkout/address-selector";
 import { CheckoutModeChooser } from "@/components/checkout/checkout-mode-chooser";
@@ -29,6 +30,17 @@ const SMALL_ORDER_THRESHOLD = 500;
 export default function CheckoutPage() {
   // Single hook call — guarantees stable hook count across all render paths
   const state = useCheckoutState();
+
+  // Intercept wallet payment requests from the treasury-ui iframe
+  useEffect(() => {
+    const handleMessage = (event: MessageEvent) => {
+      if (event.data?.type === "treasury:wallet_payment_request") {
+        state.handleWalletPayment();
+      }
+    };
+    window.addEventListener("message", handleMessage);
+    return () => window.removeEventListener("message", handleMessage);
+  }, [state.handleWalletPayment]);
 
   // Derive content based on state — no early returns, keeping hook count stable
   let content: React.ReactNode;
@@ -188,6 +200,32 @@ export default function CheckoutPage() {
   return (
     <SiteShell hideBottomNav hideSidebar>
       {content}
+
+      {/* Wallet payment option — shown inline when payment step is active and user has balance */}
+      {state.showPaymentModal && !state.isGuestMode && state.walletBalance !== null && state.walletBalance > 0 && (
+        <div className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-background p-4 shadow-lg sm:relative sm:bottom-auto sm:border sm:rounded-xl sm:mt-0 sm:mx-auto sm:max-w-md sm:z-auto">
+          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2">Pay with Wallet</p>
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2 text-sm">
+              <Wallet className="size-4 text-primary" />
+              <span>Balance: <span className="font-semibold">{state.walletCurrency} {state.walletBalance.toLocaleString()}</span></span>
+            </div>
+            {state.walletBalance >= state.paymentAmount ? (
+              <Button
+                size="sm"
+                onClick={state.handleWalletPayment}
+                disabled={state.walletPaymentPending}
+              >
+                {state.walletPaymentPending && <Loader2 className="mr-1 size-3 animate-spin" />}
+                Pay {state.paymentCurrency} {state.paymentAmount.toLocaleString()}
+              </Button>
+            ) : (
+              <span className="text-xs text-destructive">Insufficient balance</span>
+            )}
+          </div>
+          <p className="text-xs text-muted-foreground">or choose another payment method below</p>
+        </div>
+      )}
 
       {/* Treasury payment modal — always rendered to keep hook count stable.
           The modal internally returns null when open=false. */}

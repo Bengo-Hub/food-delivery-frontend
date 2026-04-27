@@ -7,8 +7,10 @@ import { useQuery } from "@tanstack/react-query";
 import { useAddresses } from "@/hooks/use-addresses";
 import { useCheckout, useGuestCheckout, useFeeBreakdown } from "@/hooks/use-cart-api";
 import { useApplyPromoCode } from "@/hooks/use-orders";
+import { usePaymentMethods } from "@/hooks/use-payment-methods";
 import { useZoneCheck } from "@/hooks/use-zones";
 import { api } from "@/lib/api/base";
+import { payOrderWithWallet } from "@/lib/api/orders";
 import { orgRoute } from "@/lib/routes";
 import { toast } from "@/lib/toast";
 import { useOrgSlug } from "@/providers/org-slug-provider";
@@ -78,11 +80,15 @@ export function useCheckoutState() {
     address: string;
   } | null>(null);
 
+  // Wallet payment state
+  const [walletPaymentPending, setWalletPaymentPending] = useState(false);
+
   // Queries & mutations
   const { data: addresses = [], isLoading: addressesLoading } = useAddresses();
   const checkoutMutation = useCheckout();
   const guestCheckoutMutation = useGuestCheckout();
   const applyPromo = useApplyPromoCode();
+  const { data: paymentMethodsData } = usePaymentMethods(fulfillmentMode);
 
   const selectedAddress = useMemo(
     () => addresses.find((a) => a.id === selectedAddressId) ?? null,
@@ -356,6 +362,24 @@ export function useCheckoutState() {
     toast.error(error || "Payment failed. You can try again.");
   }, []);
 
+  const handleWalletPayment = useCallback(async () => {
+    if (!orderId) return;
+    setWalletPaymentPending(true);
+    try {
+      await payOrderWithWallet(orgSlug, orderId);
+      setShowPaymentModal(false);
+      clearCart();
+      setStep("success");
+      toast.success("Payment successful!");
+    } catch (err: unknown) {
+      const msg = (err as { response?: { data?: { error?: string } }; message?: string })
+        ?.response?.data?.error ?? (err instanceof Error ? err.message : "Wallet payment failed");
+      toast.error(msg);
+    } finally {
+      setWalletPaymentPending(false);
+    }
+  }, [orderId, orgSlug, clearCart]);
+
   const handlePaymentModalClose = useCallback(
     (open: boolean) => {
       setShowPaymentModal(open);
@@ -443,5 +467,11 @@ export function useCheckoutState() {
     handlePaymentConfirmed,
     handlePaymentFailed,
     handlePaymentModalClose,
+
+    // Wallet
+    walletBalance: paymentMethodsData?.wallet?.balance ?? null,
+    walletCurrency: paymentMethodsData?.wallet?.currency ?? "KES",
+    walletPaymentPending,
+    handleWalletPayment,
   };
 }
