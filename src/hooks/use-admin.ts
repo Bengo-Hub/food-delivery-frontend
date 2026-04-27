@@ -4,7 +4,9 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import {
   cancelAdminOrder,
+  createDeliveryTask,
   deleteAdminOrder,
+  getDeliveryTask,
   createCategory,
   createMenuItem,
   deleteCategory,
@@ -20,6 +22,7 @@ import {
   type CreateCategoryRequest,
   type CreateMenuItemRequest,
 } from "@/lib/api/admin";
+import { assignRiderToTask, listAvailableRiders } from "@/lib/api/logistics";
 import { useOrgSlug } from "@/providers/org-slug-provider";
 
 // ─── Query Keys ──────────────────────────────────────────────────────
@@ -88,6 +91,37 @@ export function useDeleteAdminOrder() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (orderId: string) => deleteAdminOrder(slug, orderId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: adminKeys.orders() });
+    },
+  });
+}
+
+// ─── Rider Assignment ────────────────────────────────────────────────
+
+export function useAvailableRiders(enabled = false) {
+  const slug = useOrgSlug();
+  return useQuery({
+    queryKey: ["logistics", "riders", slug],
+    queryFn: () => listAvailableRiders(slug),
+    enabled: !!slug && enabled,
+    staleTime: 30_000,
+  });
+}
+
+export function useAssignRider() {
+  const slug = useOrgSlug();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ orderId, fleetMemberId }: { orderId: string; fleetMemberId: string }) => {
+      // Get or create the delivery task to get the logistics task ID
+      let task = await getDeliveryTask(slug, orderId);
+      if (!task?.logistics_task_id) {
+        task = await createDeliveryTask(slug, orderId);
+      }
+      if (!task?.logistics_task_id) throw new Error("Could not create delivery task");
+      await assignRiderToTask(slug, task.logistics_task_id, fleetMemberId);
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: adminKeys.orders() });
     },

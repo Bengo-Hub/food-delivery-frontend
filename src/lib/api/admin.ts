@@ -197,6 +197,33 @@ export async function deleteAdminOrder(slug: string, orderId: string): Promise<v
   await api.delete(`${slug}/admin/orders/${orderId}`);
 }
 
+export interface DeliveryTaskAssignment {
+  id: string;
+  order_id: string;
+  logistics_task_id: string;
+  status: string;
+}
+
+export async function createDeliveryTask(
+  slug: string,
+  orderId: string,
+): Promise<DeliveryTaskAssignment> {
+  const res = await api.post(`${slug}/orders/${orderId}/delivery/create-task`, {});
+  return res.data;
+}
+
+export async function getDeliveryTask(
+  slug: string,
+  orderId: string,
+): Promise<DeliveryTaskAssignment | null> {
+  try {
+    const res = await api.get(`${slug}/orders/${orderId}/delivery/task`);
+    return res.data;
+  } catch {
+    return null;
+  }
+}
+
 // ─── Catalog API ────────────────────────────────────────────────────
 
 export async function listCategories(

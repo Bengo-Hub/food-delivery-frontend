@@ -3,11 +3,13 @@
 import {
   CheckCircle2,
   ChefHat,
+  ChevronDown,
   Clock,
   Loader2,
   Package,
   Search,
   Truck,
+  UserCheck,
   XCircle,
 } from "lucide-react";
 import { useCallback, useState } from "react";
@@ -20,7 +22,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Pagination } from "@/components/ui/pagination";
-import { useAdminOrders, useUpdateOrderStatus, useDeleteAdminOrder } from "@/hooks/use-admin";
+import { useAdminOrders, useAssignRider, useAvailableRiders, useUpdateOrderStatus, useDeleteAdminOrder } from "@/hooks/use-admin";
 import { toast } from "@/lib/toast";
 import type { AdminOrder } from "@/lib/api/admin";
 
@@ -98,6 +100,7 @@ export default function StaffDashboardPage() {
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
+  const [riderPickerOrderId, setRiderPickerOrderId] = useState<string | null>(null);
 
   const limit = 50;
   const filters = {
@@ -110,6 +113,8 @@ export default function StaffDashboardPage() {
   const { data, isLoading } = useAdminOrders(filters);
   const updateStatus = useUpdateOrderStatus();
   const deleteOrder = useDeleteAdminOrder();
+  const assignRider = useAssignRider();
+  const { data: availableRiders = [], isLoading: ridersLoading } = useAvailableRiders(riderPickerOrderId !== null);
 
   const orders = data?.orders ?? [];
   const total = data?.total ?? 0;
@@ -130,6 +135,19 @@ export default function StaffDashboardPage() {
       }
     },
     [updateStatus],
+  );
+
+  const handleAssignRider = useCallback(
+    async (orderId: string, fleetMemberId: string) => {
+      try {
+        await assignRider.mutateAsync({ orderId, fleetMemberId });
+        toast.success("Rider assigned successfully");
+        setRiderPickerOrderId(null);
+      } catch (err: any) {
+        toast.error(err?.response?.data?.message || err?.message || "Failed to assign rider");
+      }
+    },
+    [assignRider],
   );
 
   return (
@@ -223,7 +241,12 @@ export default function StaffDashboardPage() {
                   order={order}
                   onStatusUpdate={handleStatusUpdate}
                   onDelete={(id) => deleteOrder.mutate(id)}
-                  isUpdating={updateStatus.isPending || deleteOrder.isPending}
+                  isUpdating={updateStatus.isPending || deleteOrder.isPending || assignRider.isPending}
+                  onAssignRider={handleAssignRider}
+                  availableRiders={availableRiders}
+                  ridersLoading={ridersLoading}
+                  showRiderPicker={riderPickerOrderId === order.id}
+                  onToggleRiderPicker={(id) => setRiderPickerOrderId(riderPickerOrderId === id ? null : id)}
                 />
               ))}
             </div>
@@ -246,11 +269,21 @@ function OrderCard({
   onStatusUpdate,
   onDelete,
   isUpdating,
+  onAssignRider,
+  availableRiders,
+  ridersLoading,
+  showRiderPicker,
+  onToggleRiderPicker,
 }: {
   order: AdminOrder;
   onStatusUpdate: (orderId: string, status: string) => void;
   onDelete: (orderId: string) => void;
   isUpdating: boolean;
+  onAssignRider: (orderId: string, fleetMemberId: string) => void;
+  availableRiders: import("@/lib/api/logistics").FleetMember[];
+  ridersLoading: boolean;
+  showRiderPicker: boolean;
+  onToggleRiderPicker: (orderId: string) => void;
 }) {
   const actions = STATUS_ACTIONS[order.status] ?? [];
   const createdDate = new Date(order.createdAt);
@@ -326,37 +359,76 @@ function OrderCard({
             )}
           </div>
 
-          {actions.length > 0 && (
-            <div className="flex gap-2">
-              {actions.map((action) => (
-                <Button
-                  key={action.next}
-                  size="sm"
-                  variant={action.variant}
-                  disabled={isUpdating}
-                  onClick={() => onStatusUpdate(order.id, action.next)}
-                >
-                  {isUpdating ? (
-                    <Loader2 className="mr-1 size-3 animate-spin" />
-                  ) : null}
-                  {action.label}
-                </Button>
-              ))}
+          <div className="flex gap-2 flex-wrap justify-end">
+            {actions.map((action) => (
               <Button
+                key={action.next}
                 size="sm"
-                variant="ghost"
-                className="text-destructive hover:bg-destructive/10"
+                variant={action.variant}
                 disabled={isUpdating}
-                onClick={() => {
-                  if (window.confirm(`Delete order #${order.orderNumber}? This cannot be undone.`)) {
-                    onDelete(order.id);
-                  }
-                }}
+                onClick={() => onStatusUpdate(order.id, action.next)}
               >
-                Delete
+                {isUpdating ? <Loader2 className="mr-1 size-3 animate-spin" /> : null}
+                {action.label}
               </Button>
-            </div>
-          )}
+            ))}
+
+            {/* Assign Rider button: delivery orders at "ready" status */}
+            {order.status === "ready" && order.fulfillmentType === "delivery" && (
+              <div className="relative">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  disabled={isUpdating}
+                  onClick={() => onToggleRiderPicker(order.id)}
+                  className="gap-1.5"
+                >
+                  <UserCheck className="size-3.5" />
+                  Assign Rider
+                  <ChevronDown className="size-3" />
+                </Button>
+                {showRiderPicker && (
+                  <div className="absolute right-0 top-full z-50 mt-1 w-56 rounded-lg border border-border bg-background shadow-lg">
+                    {ridersLoading ? (
+                      <div className="flex items-center gap-2 px-3 py-2 text-sm text-muted-foreground">
+                        <Loader2 className="size-3 animate-spin" /> Loading riders…
+                      </div>
+                    ) : availableRiders.length === 0 ? (
+                      <p className="px-3 py-2 text-sm text-muted-foreground">No available riders</p>
+                    ) : (
+                      availableRiders.map((rider) => {
+                        const name = rider.edges?.user?.full_name || rider.edges?.user?.email || rider.id;
+                        return (
+                          <button
+                            key={rider.id}
+                            className="flex w-full items-center gap-2 px-3 py-2 text-sm hover:bg-muted text-left"
+                            onClick={() => onAssignRider(order.id, rider.id)}
+                          >
+                            <UserCheck className="size-3.5 text-muted-foreground shrink-0" />
+                            <span className="truncate">{name}</span>
+                          </button>
+                        );
+                      })
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+
+            <Button
+              size="sm"
+              variant="ghost"
+              className="text-destructive hover:bg-destructive/10"
+              disabled={isUpdating}
+              onClick={() => {
+                if (window.confirm(`Delete order #${order.orderNumber}? This cannot be undone.`)) {
+                  onDelete(order.id);
+                }
+              }}
+            >
+              Delete
+            </Button>
+          </div>
         </div>
       </CardContent>
     </Card>
