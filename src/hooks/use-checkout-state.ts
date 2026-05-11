@@ -339,18 +339,15 @@ export function useCheckoutState() {
 
   const handlePaymentConfirmed = useCallback(
     async (_result: PaymentResult) => {
-      // Set success immediately so handlePaymentModalClose (triggered by
-      // setShowPaymentModal(false) below) cannot revert to "review".
       setStep("success");
       clearCart();
       setShowPaymentModal(false);
-      // Fire-and-forget order status verification.
       const orderUrl = isGuestMode
-        ? `${orgSlug}/orders/guest/${orderId}?session_id=${sessionId}`
-        : `${orgSlug}/orders/${orderId}`;
-      api.get(orderUrl).catch(() => null);
+        ? `${orgRoute(orgSlug, `/orders/guest/${orderId}`)}?session_id=${sessionId}`
+        : orgRoute(orgSlug, `/orders/${orderId}`);
+      router.push(orderUrl);
     },
-    [clearCart, orgSlug, orderId, isGuestMode, sessionId],
+    [clearCart, orgSlug, orderId, isGuestMode, sessionId, router],
   );
 
   const handlePaymentFailed = useCallback((error: string) => {
@@ -379,10 +376,20 @@ export function useCheckoutState() {
     (open: boolean) => {
       setShowPaymentModal(open);
       if (!open && step === "payment") {
-        setStep("review");
+        if (orderId) {
+          // Order was created — clear cart and redirect to order page
+          // so the user can track or complete payment there.
+          clearCart();
+          const orderUrl = isGuestMode
+            ? `${orgRoute(orgSlug, `/orders/guest/${orderId}`)}?session_id=${sessionId}`
+            : orgRoute(orgSlug, `/orders/${orderId}`);
+          router.push(orderUrl);
+        } else {
+          setStep("review");
+        }
       }
     },
-    [step],
+    [step, orderId, isGuestMode, orgSlug, sessionId, router, clearCart],
   );
 
   return {

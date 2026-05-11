@@ -10,6 +10,7 @@ const config: Config = {
     "./src/components/**/*.{ts,tsx}",
     "./src/providers/**/*.{ts,tsx}",
     "./src/hooks/**/*.{ts,tsx}",
+    "./node_modules/@bengo-hub/shared-ui-lib/dist/**/*.{js,cjs}",
   ],
   darkMode: "class",
   theme: {
