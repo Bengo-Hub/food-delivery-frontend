@@ -339,21 +339,16 @@ export function useCheckoutState() {
 
   const handlePaymentConfirmed = useCallback(
     async (_result: PaymentResult) => {
-      // The treasury-ui iframe only fires treasury:payment_confirmed after the
-      // gateway (Paystack, M-Pesa, COD, etc.) has verified the payment on its
-      // end.  Trusting that event is correct — we should not block the success
-      // flow on a secondary order-status poll that may lag behind.
-      try {
-        const orderUrl = isGuestMode
-          ? `${orgSlug}/orders/guest/${orderId}?session_id=${sessionId}`
-          : `${orgSlug}/orders/${orderId}`;
-        // Fire-and-forget verification; we proceed to success regardless.
-        await api.get(orderUrl).catch(() => null);
-      } finally {
-        setShowPaymentModal(false);
-        clearCart();
-        setStep("success");
-      }
+      // Set success immediately so handlePaymentModalClose (triggered by
+      // setShowPaymentModal(false) below) cannot revert to "review".
+      setStep("success");
+      clearCart();
+      setShowPaymentModal(false);
+      // Fire-and-forget order status verification.
+      const orderUrl = isGuestMode
+        ? `${orgSlug}/orders/guest/${orderId}?session_id=${sessionId}`
+        : `${orgSlug}/orders/${orderId}`;
+      api.get(orderUrl).catch(() => null);
     },
     [clearCart, orgSlug, orderId, isGuestMode, sessionId],
   );

@@ -12,8 +12,8 @@ importers:
         specifier: github:Bengo-Hub/maps#v0.2.6
         version: https://codeload.github.com/Bengo-Hub/maps/tar.gz/13e38cca552ea0e31f7f65ec278bf96b82dfe8c4(maplibre-gl@5.21.0)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
       '@bengo-hub/shared-ui-lib':
-        specifier: github:Bengo-Hub/shared-ui-lib#v0.1.3
-        version: https://codeload.github.com/Bengo-Hub/shared-ui-lib/tar.gz/d91b158296e5fccd52fd23af753d65799fe156ef(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
+        specifier: github:Bengo-Hub/shared-ui-lib#v0.1.4
+        version: https://codeload.github.com/Bengo-Hub/shared-ui-lib/tar.gz/eabe5ade7f562a98b06e601eeb6449c425423108(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
       '@hookform/resolvers':
         specifier: ^3.10.0
         version: 3.10.0(react-hook-form@7.71.1(react@19.0.0))
@@ -820,8 +820,8 @@ packages:
       react: '>=18.0.0'
       react-dom: '>=18.0.0'
 
-  '@bengo-hub/shared-ui-lib@https://codeload.github.com/Bengo-Hub/shared-ui-lib/tar.gz/d91b158296e5fccd52fd23af753d65799fe156ef':
-    resolution: {tarball: https://codeload.github.com/Bengo-Hub/shared-ui-lib/tar.gz/d91b158296e5fccd52fd23af753d65799fe156ef}
+  '@bengo-hub/shared-ui-lib@https://codeload.github.com/Bengo-Hub/shared-ui-lib/tar.gz/eabe5ade7f562a98b06e601eeb6449c425423108':
+    resolution: {tarball: https://codeload.github.com/Bengo-Hub/shared-ui-lib/tar.gz/eabe5ade7f562a98b06e601eeb6449c425423108}
     version: 0.1.1
     peerDependencies:
       react: '>=18.0.0'
@@ -7073,7 +7073,7 @@ snapshots:
       react: 19.0.0
       react-dom: 19.0.0(react@19.0.0)
 
-  '@bengo-hub/shared-ui-lib@https://codeload.github.com/Bengo-Hub/shared-ui-lib/tar.gz/d91b158296e5fccd52fd23af753d65799fe156ef(react-dom@19.0.0(react@19.0.0))(react@19.0.0)':
+  '@bengo-hub/shared-ui-lib@https://codeload.github.com/Bengo-Hub/shared-ui-lib/tar.gz/eabe5ade7f562a98b06e601eeb6449c425423108(react-dom@19.0.0(react@19.0.0))(react@19.0.0)':
     dependencies:
       react: 19.0.0
       react-dom: 19.0.0(react@19.0.0)
