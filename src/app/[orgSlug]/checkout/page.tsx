@@ -239,6 +239,8 @@ export default function CheckoutPage() {
         amount={state.paymentAmount}
         currency={state.paymentCurrency}
         description={`Order ${state.orderId ?? ""}`}
+        referenceId={state.orderId ?? ""}
+        referenceType="order"
         onPaymentConfirmed={state.handlePaymentConfirmed}
         onPaymentFailed={state.handlePaymentFailed}
       />
