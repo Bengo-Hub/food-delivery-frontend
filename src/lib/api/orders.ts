@@ -77,6 +77,11 @@ export async function getOrder(tenantSlug: string, orderId: string): Promise<Ord
   return res.data;
 }
 
+export async function getGuestOrder(tenantSlug: string, orderId: string, sessionId: string): Promise<Order> {
+  const res = await api.get(`${tenantSlug}/orders/guest/${orderId}`, { params: { session_id: sessionId } });
+  return res.data;
+}
+
 export async function listOrders(
   tenantSlug: string,
   params?: { status?: string; limit?: number; offset?: number },
