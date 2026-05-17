@@ -73,9 +73,11 @@ log_info "Running Trivy scan"
 trivy fs . --exit-code "$TRIVY_ECODE" --format table || true
 
 log_info "Building Docker image (with production API URLs for Next.js build-time env)"
+# NPM_TOKEN is passed as a BuildKit secret (not ARG) to avoid leaking it into image layers.
 # NEXT_PUBLIC_* are baked at build time; without these the app would call localhost and cause CORS/network errors in production.
+export NPM_TOKEN="${GH_PAT:-${NPM_TOKEN:-}}"
 DOCKER_BUILDKIT=1 docker build . -t "${IMAGE_REPO}:${GIT_COMMIT_ID}" \
-  --build-arg NPM_TOKEN="${GH_PAT:-${NPM_TOKEN:-}}" \
+  --secret id=NPM_TOKEN,env=NPM_TOKEN \
   --build-arg NEXT_PUBLIC_API_URL="${NEXT_PUBLIC_API_URL:-https://orderingapi.codevertexitsolutions.com/api/v1}" \
   --build-arg NEXT_PUBLIC_SSO_URL="${NEXT_PUBLIC_SSO_URL:-https://sso.codevertexitsolutions.com}" \
   --build-arg NEXT_PUBLIC_CAFE_WEBSITE_URL="${NEXT_PUBLIC_CAFE_WEBSITE_URL:-https://theurbanloftcafe.com}" \

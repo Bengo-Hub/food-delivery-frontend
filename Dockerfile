@@ -4,9 +4,10 @@ FROM node:20-alpine AS deps
 WORKDIR /app
 RUN apk add --no-cache libc6-compat git
 RUN npm install -g pnpm
-ARG NPM_TOKEN
 COPY package.json pnpm-lock.yaml* .npmrc* ./
-RUN NPM_TOKEN=${NPM_TOKEN} pnpm install --frozen-lockfile
+RUN --mount=type=secret,id=NPM_TOKEN \
+    NPM_TOKEN=$(cat /run/secrets/NPM_TOKEN 2>/dev/null || echo "") \
+    pnpm install --frozen-lockfile
 
 FROM node:20-alpine AS builder
 WORKDIR /app
