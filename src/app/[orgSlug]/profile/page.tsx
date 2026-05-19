@@ -8,9 +8,10 @@ import {
   BanknoteIcon,
   ChevronRight,
   CrownIcon,
-  KeyRoundIcon,
+  ExternalLinkIcon,
   Loader2,
   Settings2Icon,
+  ShieldCheckIcon,
   TicketIcon,
   UserCircle2Icon,
   WalletIcon,
@@ -23,11 +24,15 @@ import { SiteShell } from "@/components/layout/site-shell";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { userHasRole } from "@/lib/auth/permissions";
 import { useWalletBalance } from "@/hooks/use-wallet";
 import type { OrderSummary } from "@/lib/auth/types";
 import { orgRoute } from "@/lib/routes";
 import { useOrgSlug } from "@/providers/org-slug-provider";
 import { useAuthStore } from "@/store/auth";
+
+const SSO_PROFILE_URL =
+  process.env.NEXT_PUBLIC_AUTH_UI_URL || "https://accounts.codevertexitsolutions.com";
 
 export default function ProfilePage() {
   const user = useAuthStore((state) => state.user);
@@ -42,6 +47,8 @@ export default function ProfilePage() {
     }
   }, [user, status, initialize]);
 
+  const isStaffOrAdmin = user ? userHasRole(user, ["staff", "admin", "superuser"]) : false;
+
   const loyaltySummary = useMemo(() => {
     if (!user) return null;
     return {
@@ -52,7 +59,7 @@ export default function ProfilePage() {
   }, [user]);
 
   return (
-    <RequireAuth roles={["customer"]}>
+    <RequireAuth>
       <SiteShell>
         <div className="mx-auto flex w-full max-w-6xl flex-col gap-4 px-4 py-4 sm:gap-6 sm:py-8 md:py-12">
           <div className="flex flex-wrap items-start justify-between gap-3 sm:gap-4">
@@ -62,37 +69,58 @@ export default function ProfilePage() {
                 Account & preferences
               </h1>
               <p className="text-sm text-muted-foreground">
-                Manage your profile, security, delivery defaults, and loyalty benefits.
+                {isStaffOrAdmin
+                  ? "Your account details and security settings."
+                  : "Manage your profile, delivery defaults, and loyalty benefits."}
               </p>
             </div>
-            <AuthorizationGate permissions={["orders:view"]}>
-              <Button variant="outline" onClick={() => void refreshOrders()}>
-                Refresh latest orders
-              </Button>
-            </AuthorizationGate>
+            {!isStaffOrAdmin && (
+              <AuthorizationGate permissions={["orders:view"]}>
+                <Button variant="outline" onClick={() => void refreshOrders()}>
+                  Refresh latest orders
+                </Button>
+              </AuthorizationGate>
+            )}
           </div>
 
-          {/* Payment & Wallet section */}
-          <PaymentWalletCard />
+          {/* SSO Security management card — replaces local 2FA */}
+          <SSOSecurityCard />
 
-          <div className="grid gap-6 md:grid-cols-2">
-            <AuthorizationGate permissions={["profile:update"]}>
-              <ProfileCard />
-            </AuthorizationGate>
-            <SecurityCard />
-          </div>
+          {!isStaffOrAdmin && (
+            <>
+              {/* Payment & Wallet section — customers only */}
+              <PaymentWalletCard />
 
-          <div className="grid gap-6 lg:grid-cols-3">
-            <AuthorizationGate permissions={["preferences:update"]}>
-              <PreferencesCard />
-            </AuthorizationGate>
-            <AuthorizationGate permissions={["loyalty:view"]}>
-              <LoyaltyCard summary={loyaltySummary} />
-            </AuthorizationGate>
-            <AuthorizationGate permissions={["orders:view"]}>
-              <OrdersCard orders={orders} />
-            </AuthorizationGate>
-          </div>
+              <div className="grid gap-6 md:grid-cols-2">
+                <AuthorizationGate permissions={["profile:update"]}>
+                  <ProfileCard />
+                </AuthorizationGate>
+                <AuthorizationGate permissions={["preferences:update"]}>
+                  <PreferencesCard />
+                </AuthorizationGate>
+              </div>
+
+              <div className="grid gap-6 lg:grid-cols-2">
+                <AuthorizationGate permissions={["loyalty:view"]}>
+                  <LoyaltyCard summary={loyaltySummary} />
+                </AuthorizationGate>
+                <AuthorizationGate permissions={["orders:view"]}>
+                  <OrdersCard orders={orders} />
+                </AuthorizationGate>
+              </div>
+            </>
+          )}
+
+          {isStaffOrAdmin && (
+            <div className="grid gap-6 md:grid-cols-2">
+              <AuthorizationGate permissions={["profile:update"]}>
+                <ProfileCard />
+              </AuthorizationGate>
+              <AuthorizationGate permissions={["preferences:update"]}>
+                <PreferencesCard />
+              </AuthorizationGate>
+            </div>
+          )}
         </div>
       </SiteShell>
     </RequireAuth>
@@ -160,55 +188,35 @@ function ProfileCard() {
   );
 }
 
-function SecurityCard() {
-  const user = useAuthStore((state) => state.user);
-  const updateSecurity = useAuthStore((state) => state.updateSecurity);
-  const [twoFactorEnabled, setTwoFactorEnabled] = useState(user?.twoFactorEnabled ?? false);
-
-  useEffect(() => {
-    setTwoFactorEnabled(user?.twoFactorEnabled ?? false);
-  }, [user?.twoFactorEnabled]);
-
-  const toggleTwoFactor = async () => {
-    if (twoFactorEnabled) {
-      await updateSecurity({ disableTwoFactor: true });
-      setTwoFactorEnabled(false);
-    } else {
-      await updateSecurity({ enableTwoFactor: true });
-      setTwoFactorEnabled(true);
-    }
-  };
-
+function SSOSecurityCard() {
   return (
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2 text-lg">
-          <KeyRoundIcon className="size-5 text-brand-emphasis" aria-hidden />
+          <ShieldCheckIcon className="size-5 text-brand-emphasis" aria-hidden />
           Security & access
         </CardTitle>
       </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="rounded-xl border border-border bg-muted/30 p-4">
-          <p className="font-medium text-foreground">Two-factor authentication</p>
-          <p className="text-sm text-muted-foreground">
-            Protect your account with an additional code when signing in.
-          </p>
-          <Button
-            variant={twoFactorEnabled ? "outline" : "default"}
-            className="mt-3"
-            onClick={() => void toggleTwoFactor()}
+      <CardContent>
+        <div className="rounded-xl border border-border bg-muted/30 p-4 flex items-start justify-between gap-4">
+          <div>
+            <p className="font-medium text-foreground">Password, 2FA & recovery codes</p>
+            <p className="text-sm text-muted-foreground mt-1">
+              Security settings including two-factor authentication and backup codes are managed
+              through your central identity account.
+            </p>
+          </div>
+          <a
+            href={`${SSO_PROFILE_URL}/dashboard/profile`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="shrink-0"
           >
-            {twoFactorEnabled ? "Disable 2FA" : "Enable 2FA"}
-          </Button>
-        </div>
-        <div className="rounded-xl border border-border bg-muted/30 p-4">
-          <p className="font-medium text-foreground">Backup and recovery</p>
-          <p className="text-sm text-muted-foreground">
-            Download backup codes to regain access if you lose your device.
-          </p>
-          <Button variant="outline" className="mt-3" disabled={!twoFactorEnabled}>
-            Download recovery codes
-          </Button>
+            <Button variant="outline" size="sm" className="gap-1.5 whitespace-nowrap">
+              Manage security
+              <ExternalLinkIcon className="size-3.5" />
+            </Button>
+          </a>
         </div>
       </CardContent>
     </Card>

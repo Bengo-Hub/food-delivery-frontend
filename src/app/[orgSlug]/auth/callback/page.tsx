@@ -53,8 +53,8 @@ function AuthCallbackContent() {
         ? sessionStorage.getItem("sso_return_to") ?? orgRoute(orgSlug, "/")
         : orgRoute(orgSlug, "/");
 
-      // Check if profile needs completion — preserve return destination via query param
-      if (!user.phone) {
+      // Check if profile needs completion — skip for privileged roles (they use SSO profile page)
+      if (!user.phone && !userHasRole(user, ["staff", "admin", "superuser", "member"])) {
         const profileUrl = orgRoute(orgSlug, "/profile");
         const dest = returnTo !== orgRoute(orgSlug, "/")
           ? `${profileUrl}?next=${encodeURIComponent(returnTo)}`
