@@ -1,11 +1,12 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import {
   getLoyaltyAccount,
   getLoyaltyTransactions,
   getTierBenefits,
+  registerLoyaltyAccount,
 } from "@/lib/api/loyalty";
 import { useOrgSlug } from "@/providers/org-slug-provider";
 
@@ -41,5 +42,16 @@ export function useTierBenefits() {
     queryKey: loyaltyKeys.tierBenefits(),
     queryFn: () => getTierBenefits(slug),
     staleTime: 30 * 60_000,
+  });
+}
+
+export function useRegisterLoyalty() {
+  const slug = useOrgSlug();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: () => registerLoyaltyAccount(slug),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: loyaltyKeys.account() });
+    },
   });
 }

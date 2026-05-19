@@ -77,3 +77,8 @@ export async function getTierBenefits(tenantSlug: string): Promise<TierBenefitsR
   const res = await api.get(`${tenantSlug}/loyalty/tier-benefits`);
   return res.data;
 }
+
+export async function registerLoyaltyAccount(tenantSlug: string): Promise<LoyaltyAccount> {
+  const res = await api.post(`${tenantSlug}/loyalty/account`);
+  return res.data;
+}

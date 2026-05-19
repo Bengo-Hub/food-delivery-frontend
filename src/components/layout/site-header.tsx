@@ -27,6 +27,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { brand } from "@/config/brand";
 import { useOutlets } from "@/hooks/use-catalog";
+import { userHasRole } from "@/lib/auth/permissions";
 import { getShortLocationName } from "@/lib/geocoding";
 import { orgRoute } from "@/lib/routes";
 import { useOrgSlug } from "@/providers/org-slug-provider";
@@ -373,7 +374,7 @@ export function SiteHeader({ onMenuClick }: SiteHeaderProps) {
           {user ? (
             <div className="hidden items-center gap-1 sm:flex">
               <Button variant="ghost" size="sm" asChild>
-                <Link href={orgRoute(orgSlug, "/dashboard/customer")}>
+                <Link href={orgRoute(orgSlug, userHasRole(user, ["staff", "admin", "superuser", "member"]) ? "/dashboard/staff" : "/dashboard/customer")}>
                   <LayoutDashboard className="size-4" />
                   <span className="hidden lg:inline">Dashboard</span>
                 </Link>
