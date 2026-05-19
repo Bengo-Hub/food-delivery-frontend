@@ -23,6 +23,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useOrders } from "@/hooks/use-orders";
 import { useLoyaltyAccount, useLoyaltyTransactions, useRegisterLoyalty } from "@/hooks/use-loyalty";
+import { useSubscription } from "@/hooks/use-subscription";
 import { useWalletBalance } from "@/hooks/use-wallet";
 import { formatDateTime } from "@/lib/datetime";
 import { orgRoute } from "@/lib/routes";
@@ -59,6 +60,10 @@ function tierProgressToNext(tier: string, lifetimePoints: number): { nextTier: s
 export default function CustomerDashboardPage() {
   const orgSlug = useOrgSlug();
   const user = useAuthStore((state) => state.user);
+  const { hasFeature, isPlatformOwner } = useSubscription();
+  const hasLoyalty = isPlatformOwner || hasFeature("loyalty_program");
+  const hasWallet = isPlatformOwner || hasFeature("wallet");
+
   const { data: ordersData, isLoading: ordersLoading } = useOrders({ limit: 5 });
   const { data: loyaltyAccount, isLoading: loyaltyLoading, error: loyaltyError } = useLoyaltyAccount();
   const { data: txData, isLoading: txLoading } = useLoyaltyTransactions({ limit: 5 });
@@ -110,20 +115,24 @@ export default function CustomerDashboardPage() {
               deltaValue=""
               icon={<UtensilsIcon className="size-4 text-brand-emphasis" />}
             />
-            <MetricCard
-              title="Loyalty Points"
-              value={loyaltyAccount?.balancePoints ?? user?.loyaltyPoints ?? 0}
-              deltaLabel="Tier"
-              deltaValue={loyaltyAccount ? loyaltyAccount.tier : "—"}
-              icon={<CrownIcon className="size-4 text-brand-emphasis" />}
-            />
-            <MetricCard
-              title="Wallet Balance"
-              value={walletLoading ? "…" : `${walletData?.currency ?? "KES"} ${(walletData?.balance ?? 0).toLocaleString()}`}
-              deltaLabel="Available"
-              deltaValue=""
-              icon={<WalletIcon className="size-4 text-brand-emphasis" />}
-            />
+            {hasLoyalty && (
+              <MetricCard
+                title="Loyalty Points"
+                value={loyaltyAccount?.balancePoints ?? user?.loyaltyPoints ?? 0}
+                deltaLabel="Tier"
+                deltaValue={loyaltyAccount ? loyaltyAccount.tier : "—"}
+                icon={<CrownIcon className="size-4 text-brand-emphasis" />}
+              />
+            )}
+            {hasWallet && (
+              <MetricCard
+                title="Wallet Balance"
+                value={walletLoading ? "…" : `${walletData?.currency ?? "KES"} ${(walletData?.balance ?? 0).toLocaleString()}`}
+                deltaLabel="Available"
+                deltaValue=""
+                icon={<WalletIcon className="size-4 text-brand-emphasis" />}
+              />
+            )}
             <MetricCard
               title="Coupons Available"
               value={user?.availableCoupons ?? 0}
@@ -135,6 +144,34 @@ export default function CustomerDashboardPage() {
 
           <div className="grid gap-6 lg:grid-cols-2">
             {/* Loyalty Program */}
+            {!hasLoyalty ? (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2 text-lg">
+                    <StarIcon className="size-5 text-brand-emphasis" />
+                    Loyalty Program
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex flex-col items-center gap-4 py-6 text-center">
+                    <div className="flex size-16 items-center justify-center rounded-full bg-muted">
+                      <SparklesIcon className="size-8 text-muted-foreground" />
+                    </div>
+                    <div>
+                      <p className="font-semibold text-foreground">Loyalty Program</p>
+                      <p className="mt-1 text-sm text-muted-foreground">
+                        Upgrade your subscription to unlock loyalty rewards, tier benefits, and more.
+                      </p>
+                    </div>
+                    <Button variant="outline" size="sm" asChild>
+                      <a href={`${process.env.NEXT_PUBLIC_SUBSCRIPTIONS_UI_URL ?? "https://pricing.codevertexitsolutions.com"}/plans`} target="_blank" rel="noopener noreferrer">
+                        View Plans
+                      </a>
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            ) : (
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-lg">
@@ -274,8 +311,37 @@ export default function CustomerDashboardPage() {
                 )}
               </CardContent>
             </Card>
+            )} {/* end hasLoyalty conditional */}
 
             {/* Wallet */}
+            {!hasWallet ? (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2 text-lg">
+                    <WalletIcon className="size-5 text-brand-emphasis" />
+                    Wallet
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex flex-col items-center gap-4 py-6 text-center">
+                    <div className="flex size-16 items-center justify-center rounded-full bg-muted">
+                      <WalletIcon className="size-8 text-muted-foreground" />
+                    </div>
+                    <div>
+                      <p className="font-semibold text-foreground">Wallet</p>
+                      <p className="mt-1 text-sm text-muted-foreground">
+                        Upgrade your subscription to enable wallet payments and top-ups.
+                      </p>
+                    </div>
+                    <Button variant="outline" size="sm" asChild>
+                      <a href={`${process.env.NEXT_PUBLIC_SUBSCRIPTIONS_UI_URL ?? "https://pricing.codevertexitsolutions.com"}/plans`} target="_blank" rel="noopener noreferrer">
+                        View Plans
+                      </a>
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            ) : (
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-lg">
@@ -323,10 +389,11 @@ export default function CustomerDashboardPage() {
                 )}
               </CardContent>
             </Card>
+            )} {/* end hasWallet conditional */}
           </div>
 
           {/* Recent Loyalty Transactions */}
-          {loyaltyAccount && (
+          {hasLoyalty && loyaltyAccount && (
             <Card>
               <CardHeader>
                 <div className="flex items-center justify-between">

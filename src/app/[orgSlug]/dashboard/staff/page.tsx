@@ -17,6 +17,7 @@ import { useCallback, useState } from "react";
 import { RequireAuth } from "@/components/auth/require-auth";
 import { MetricCard } from "@/components/dashboard/metric-card";
 import { SiteShell } from "@/components/layout/site-shell";
+import { SubscriptionBanner } from "@/components/subscription/subscription-banner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -153,6 +154,7 @@ export default function StaffDashboardPage() {
   return (
     <RequireAuth roles={["staff", "admin", "superuser", "member"]} roleOperator="or">
       <SiteShell>
+        <SubscriptionBanner />
         <div className="mx-auto w-full max-w-6xl px-4 py-6">
           {/* Header */}
           <header className="mb-6">

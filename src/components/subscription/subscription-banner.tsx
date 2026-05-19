@@ -1,13 +1,15 @@
 "use client";
 
 import { AlertTriangle, ArrowRight, Clock, RefreshCw, X, Zap } from "lucide-react";
-import Link from "next/link";
 import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { useSubscription } from "@/hooks/use-subscription";
 
-const UPGRADE_URL = "/subscription/upgrade";
+const SUBSCRIPTIONS_UI_URL =
+  (typeof process !== "undefined" && process.env?.NEXT_PUBLIC_SUBSCRIPTIONS_UI_URL) ||
+  "https://pricing.codevertexitsolutions.com";
+const UPGRADE_URL = `${SUBSCRIPTIONS_UI_URL}/plans`;
 
 function formatDate(d: Date | null | string | undefined): string {
   if (!d) return "";
@@ -154,10 +156,10 @@ function Banner({
         {icon}
         <p className="flex-1 text-sm">{message}</p>
         <Button variant="outline" size="sm" className="shrink-0 gap-1 text-xs" asChild>
-          <Link href={actionHref}>
+          <a href={actionHref} target="_blank" rel="noopener noreferrer">
             {actionLabel}
             <ArrowRight className="size-3" />
-          </Link>
+          </a>
         </Button>
         {onDismiss && (
           <button
@@ -192,10 +194,10 @@ function BlockingOverlay({ plan }: { plan: string }) {
         </p>
       </div>
       <Button size="lg" className="gap-2" asChild>
-        <Link href={UPGRADE_URL}>
+        <a href={UPGRADE_URL} target="_blank" rel="noopener noreferrer">
           <Zap className="size-4" />
           Upgrade now
-        </Link>
+        </a>
       </Button>
     </div>
   );

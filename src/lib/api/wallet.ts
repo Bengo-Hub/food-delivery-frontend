@@ -12,7 +12,8 @@ const TREASURY_API_URL =
 const treasuryAuthApi = axios.create({
   baseURL: TREASURY_API_URL.endsWith("/") ? TREASURY_API_URL : `${TREASURY_API_URL}/`,
   headers: { "Content-Type": "application/json" },
-  withCredentials: true,
+  // withCredentials intentionally omitted — auth via Bearer token, not cookies.
+  // Keeping it false simplifies CORS (server doesn't need Allow-Credentials: true).
 });
 
 // Import the shared token getter registered by auth setup (same getter used by the ordering api client).
@@ -38,6 +39,28 @@ treasuryAuthApi.interceptors.request.use((config) => {
 });
 
 // ─── Types ───────────────────────────────────────────────────────────
+
+export interface WalletTopUpReference {
+  wallet_id: string;
+  amount: number;
+  currency: string;
+  reference_type: string;
+  reference_id: string;
+  message?: string;
+}
+
+export interface PaymentIntentResponse {
+  id: string;
+  status: string;
+  amount: number;
+  currency: string;
+  reference_id: string;
+  reference_type: string;
+  authorization_url?: string;
+  initiate_url?: string;
+  access_code?: string;
+  paystack_reference?: string;
+}
 
 export interface WalletBalance {
   balance: number;
@@ -110,4 +133,56 @@ export async function getWalletTransactions(
   );
 
   return { transactions, total: data.total ?? transactions.length };
+}
+
+/**
+ * Initiates a wallet top-up via the specified payment method.
+ * Step 1: Creates a top-up reference via POST /wallets/me/top-up
+ * Step 2: Creates a payment intent via POST /payments/intents
+ * Returns the redirect URL (if applicable) and the intent ID.
+ */
+export async function initiateWalletTopUp(
+  amount: number,
+  currency: string = "KES",
+  customerEmail?: string,
+  paymentMethod: string = "paystack",
+): Promise<{ authorizationUrl?: string; intentId: string; status: string }> {
+  const tenantId =
+    typeof window !== "undefined" ? localStorage.getItem("tenantId") : null;
+
+  const walletPath = tenantId
+    ? `api/v1/${tenantId}/wallets/me/top-up`
+    : `api/v1/me/wallets/me/top-up`;
+
+  const topUpRes = await treasuryAuthApi.post<WalletTopUpReference>(walletPath, {
+    amount,
+    currency,
+  });
+  const { reference_id, reference_type, currency: resolvedCurrency } = topUpRes.data;
+
+  const intentPath = tenantId
+    ? `api/v1/${tenantId}/payments/intents`
+    : `api/v1/me/payments/intents`;
+
+  const intentRes = await treasuryAuthApi.post<PaymentIntentResponse>(intentPath, {
+    reference_id,
+    reference_type,
+    payment_method: paymentMethod,
+    currency: resolvedCurrency ?? currency,
+    amount,
+    customer_email: customerEmail,
+    description: `Wallet top-up — ${resolvedCurrency ?? currency} ${amount.toLocaleString()}`,
+    source_service: "ordering",
+  });
+
+  const authUrl =
+    intentRes.data.authorization_url ||
+    intentRes.data.initiate_url;
+
+  const result: { authorizationUrl?: string; intentId: string; status: string } = {
+    intentId: intentRes.data.id,
+    status: intentRes.data.status,
+  };
+  if (authUrl) result.authorizationUrl = authUrl;
+  return result;
 }
