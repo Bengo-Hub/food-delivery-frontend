@@ -7,9 +7,10 @@ import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import { ThemeProvider } from "next-themes";
 
 import { useMe } from "@/hooks/use-me";
-import { setOn401 } from "@/lib/api/base";
+import { attachOutletIdGetter, setOn401 } from "@/lib/api/base";
 import { createQueryClient } from "@/lib/query-client";
 import { useAuthStore } from "@/store/auth";
+import { useOutletFilterStore } from "@/store/outlet-filter";
 
 import type { QueryClient } from "@tanstack/react-query";
 
@@ -36,6 +37,25 @@ export function AppProviders({ children }: PropsWithChildren) {
   useEffect(() => {
     initializeAuth();
   }, [initializeAuth]);
+
+  // Attach outlet ID getter so the API interceptor always sends X-Outlet-ID
+  // when a staff/admin user has a selected outlet in the store.
+  useEffect(() => {
+    attachOutletIdGetter(() => useOutletFilterStore.getState().outletIdHeader());
+  }, []);
+
+  // Rehydrate outlet from localStorage on mount (for page refreshes)
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const stored = localStorage.getItem('ordering-selected-outlet-id');
+    if (stored && !useOutletFilterStore.getState().selectedOutlet) {
+      useOutletFilterStore.getState().selectOutlet({
+        id: stored,
+        code: '',
+        name: '',
+      });
+    }
+  }, []);
 
   useEffect(() => {
     // On 401 from backend API calls, only fire after token refresh has failed

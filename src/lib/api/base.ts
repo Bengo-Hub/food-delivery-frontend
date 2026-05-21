@@ -15,6 +15,13 @@ export const api = axios.create({
   withCredentials: true,
 });
 
+let outletIdGetter: () => string | null = () => null;
+
+/** Register a getter that returns the current outlet ID (e.g. from outlet-filter store). */
+export function attachOutletIdGetter(getter: () => string | null) {
+  outletIdGetter = getter;
+}
+
 api.interceptors.request.use((config) => {
   const token = accessTokenGetter();
   if (token) {
@@ -34,6 +41,11 @@ api.interceptors.request.use((config) => {
     const tenantSlug = localStorage.getItem("tenantSlug");
     if (tenantSlug) {
       config.headers["X-Tenant-Slug"] = tenantSlug;
+    }
+    // Attach outlet ID if set (for staff/admin context-scoped requests)
+    const outletId = outletIdGetter() || localStorage.getItem("ordering-selected-outlet-id");
+    if (outletId) {
+      config.headers["X-Outlet-ID"] = outletId;
     }
   }
 

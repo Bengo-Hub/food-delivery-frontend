@@ -20,6 +20,7 @@ import {
 import { CartDrawer } from "@/components/cart/cart-drawer";
 import { DiningModeToggle } from "@/components/layout/dining-mode-toggle";
 import { LocationDialog } from "@/components/layout/location-dialog";
+import { OutletFilter } from "@/components/layout/outlet-filter";
 import { ThemeToggle } from "@/components/layout/theme-toggle";
 import { UserMenuDrawer } from "@/components/layout/user-menu-drawer";
 import { Button } from "@/components/ui/button";
@@ -353,6 +354,9 @@ export function SiteHeader({ onMenuClick }: SiteHeaderProps) {
           >
             <Search className="size-5" />
           </button>
+
+          {/* Outlet filter for staff/admin — hidden from customers */}
+          <OutletFilter className="hidden md:flex" />
 
           <ThemeToggle />
 

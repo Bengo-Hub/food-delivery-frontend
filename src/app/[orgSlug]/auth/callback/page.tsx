@@ -11,6 +11,8 @@ import { consumeState } from "@/lib/auth/pkce";
 import { orgRoute } from "@/lib/routes";
 import { useOrgSlug } from "@/providers/org-slug-provider";
 import { useAuthStore } from "@/store/auth";
+import { useOutletFilterStore } from "@/store/outlet-filter";
+import { ORDERING_SELECTED_OUTLET_KEY } from "@/app/[orgSlug]/auth/select-outlet/page";
 
 function AuthCallbackContent() {
   const router = useRouter();
@@ -52,6 +54,43 @@ function AuthCallbackContent() {
       const returnTo = typeof window !== "undefined"
         ? sessionStorage.getItem("sso_return_to") ?? orgRoute(orgSlug, "/")
         : orgRoute(orgSlug, "/");
+
+      // --- Outlet context setup ---
+      // Only applies to staff/admin users who need outlet context for backend calls.
+      if (
+        userHasRole(user, ["staff", "admin", "superuser"]) &&
+        !userHasRole(user, ["customer", "member"])
+      ) {
+        const storedOutlet = typeof window !== "undefined"
+          ? localStorage.getItem(ORDERING_SELECTED_OUTLET_KEY)
+          : null;
+
+        if (!storedOutlet) {
+          // Check for JWT outlet_id (non-HQ users auto-preselect)
+          const jwtOutletId = (user as any)?.outlet_id || (user as any)?.outletId;
+          const isHqUser = (user as any)?.is_hq_user || (user as any)?.isHqUser;
+
+          if (jwtOutletId && !isHqUser) {
+            // Auto-preselect from JWT — no selector needed
+            useOutletFilterStore.getState().selectOutlet({
+              id: jwtOutletId,
+              code: (user as any)?.outlet_code ?? '',
+              name: (user as any)?.outlet_code ?? '',
+              useCase: (user as any)?.outlet_use_case,
+            });
+            localStorage.setItem(ORDERING_SELECTED_OUTLET_KEY, jwtOutletId);
+          } else if (isHqUser) {
+            // HQ user: redirect to outlet selector before proceeding
+            sessionStorage.removeItem("sso_return_to");
+            const next = returnTo !== orgRoute(orgSlug, "/")
+              ? `?returnTo=${encodeURIComponent(returnTo)}`
+              : '';
+            router.replace(orgRoute(orgSlug, `/auth/select-outlet${next}`));
+            return;
+          }
+        }
+      }
+      // --- End outlet context setup ---
 
       // Check if profile needs completion — skip for privileged roles (they use SSO profile page)
       if (!user.phone && !userHasRole(user, ["staff", "admin", "superuser", "member"])) {
