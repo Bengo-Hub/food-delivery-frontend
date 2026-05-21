@@ -5,8 +5,8 @@ import { Download, Share, X } from "lucide-react";
 import Image from "next/image";
 
 import { brand } from "@/config/brand";
-import { useBrandConfig } from "@/hooks/use-brand";
 import { cn } from "@/lib/utils";
+import { useTenantBranding } from "@/providers/branding-provider";
 
 interface BeforeInstallPromptEvent extends Event {
   prompt(): Promise<void>;
@@ -44,10 +44,10 @@ export function PWAInstallPrompt() {
   const [showIOSGuide, setShowIOSGuide] = useState(false);
   const promptRef = useRef<BeforeInstallPromptEvent | null>(null);
 
-  // Tenant branding with fallback to static config
-  const { data: brandConfig } = useBrandConfig();
-  const appName = brandConfig?.shortName || brand.shortName;
-  const appLogo = brandConfig?.logoUrl || brand.assets.logo || "/images/logo/logo.jpg";
+  // Tenant branding from auth-service (same source as POS install prompt)
+  const { tenant } = useTenantBranding();
+  const appName = tenant?.orgName ? `${tenant.orgName} Ordering` : brand.shortName;
+  const appLogo = tenant?.logoUrl || brand.assets.logo || "/images/logo/logo.jpg";
 
   useEffect(() => {
     // Don't show if already installed

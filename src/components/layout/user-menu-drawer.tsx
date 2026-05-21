@@ -107,7 +107,7 @@ export function UserMenuDrawer({ open, onOpenChange }: UserMenuDrawerProps) {
     {
       icon: CreditCard,
       label: "Wallet",
-      href: "/wallet",
+      href: "/profile/wallet",
     },
     {
       icon: HelpCircle,
