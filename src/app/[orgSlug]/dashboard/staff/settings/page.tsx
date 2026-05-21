@@ -5,9 +5,12 @@ import {
   Bell,
   Check,
   CreditCard,
+  Globe,
+  Link2,
   Loader2,
   Package,
   Plus,
+  Save,
   Settings,
   Smartphone,
   Mail,
@@ -24,6 +27,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "@/lib/toast";
+import { api } from "@/lib/api/base";
 import { treasuryApi, notificationsApi, subscriptionsApi } from "@/lib/api/platform-services";
 
 // ── Types ────────────────────────────────────────────────────────────────────
@@ -69,7 +73,7 @@ interface Addon {
   is_active?: boolean;
 }
 
-type ActiveTab = "payments" | "notifications" | "subscription";
+type ActiveTab = "payments" | "notifications" | "subscription" | "integrations";
 
 // ── App brand summary (from GET /api/v1/{tenant}/config) ──────────────────────
 
@@ -116,6 +120,7 @@ export default function TenantSettingsPage() {
     { key: "payments", label: "Payments", icon: CreditCard },
     { key: "notifications", label: "Notifications", icon: Bell },
     { key: "subscription", label: "Add-ons", icon: Package },
+    { key: "integrations", label: "Integrations", icon: Link2 },
   ];
 
   return (
@@ -159,6 +164,7 @@ export default function TenantSettingsPage() {
           {activeTab === "payments" && <PaymentSettingsTab tenantSlug={tenantSlug} />}
           {activeTab === "notifications" && <NotificationSettingsTab tenantSlug={tenantSlug} />}
           {activeTab === "subscription" && <SubscriptionAddonsTab tenantSlug={tenantSlug} />}
+          {activeTab === "integrations" && <IntegrationsTab />}
         </div>
       </SiteShell>
     </RequireAuth>
@@ -645,6 +651,107 @@ function SubscriptionAddonsTab({ tenantSlug }: { tenantSlug: string }) {
               )}
             </div>
           )}
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+// ── Integrations Settings ────────────────────────────────────────────────────
+
+const AUTH_API_URL_DEFAULT = process.env.NEXT_PUBLIC_AUTH_API_URL || 'https://sso.codevertexitsolutions.com';
+const ORDERING_API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://orderingapi.codevertexitsolutions.com';
+
+function IntegrationsTab() {
+  const [authApiUrl, setAuthApiUrl] = useState(AUTH_API_URL_DEFAULT);
+  const [allowedOrigins, setAllowedOrigins] = useState('');
+  const [testStatus, setTestStatus] = useState<'idle' | 'loading' | 'ok' | 'fail'>('idle');
+  const [saving, setSaving] = useState(false);
+
+  const testAuthConnection = async () => {
+    setTestStatus('loading');
+    try {
+      const res = await fetch(`${authApiUrl}/healthz`);
+      setTestStatus(res.ok ? 'ok' : 'fail');
+    } catch {
+      setTestStatus('fail');
+    }
+  };
+
+  const handleSave = async () => {
+    if (!allowedOrigins.trim()) { toast.info('No changes to save'); return; }
+    setSaving(true);
+    try {
+      await api.put('/api/v1/admin/config/allowed_origins', {
+        config_value: allowedOrigins,
+        config_type: 'string',
+      });
+      toast.success('Integrations settings saved');
+    } catch {
+      toast.error('Failed to save integrations settings');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="space-y-6">
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-base">
+            <Link2 className="size-4 text-primary" />
+            S2S Auth
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="space-y-2">
+            <Label>Auth-API URL</Label>
+            <div className="flex gap-3">
+              <Input
+                value={authApiUrl}
+                onChange={(e) => setAuthApiUrl(e.target.value)}
+                className="flex-1"
+              />
+              <Button
+                type="button"
+                size="sm"
+                onClick={testAuthConnection}
+                disabled={testStatus === 'loading'}
+              >
+                {testStatus === 'loading' ? <Loader2 className="size-3.5 animate-spin" /> : 'Test'}
+              </Button>
+            </div>
+            {testStatus === 'ok' && <p className="text-xs text-green-600">Connection successful</p>}
+            {testStatus === 'fail' && <p className="text-xs text-destructive">Connection failed</p>}
+          </div>
+          <div className="space-y-2">
+            <Label>Ordering API URL (this service)</Label>
+            <Input value={ORDERING_API_URL} readOnly className="opacity-60 cursor-not-allowed" />
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-base">
+            <Globe className="size-4 text-primary" />
+            CORS
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="space-y-2">
+            <Label>Allowed Origins</Label>
+            <Input
+              placeholder="https://app.example.com, https://admin.example.com"
+              value={allowedOrigins}
+              onChange={(e) => setAllowedOrigins(e.target.value)}
+            />
+            <p className="text-xs text-muted-foreground">Comma-separated list of allowed CORS origins.</p>
+          </div>
+          <Button size="sm" onClick={handleSave} disabled={saving} className="gap-2">
+            {saving ? <Loader2 className="size-3.5 animate-spin" /> : <Save className="size-3.5" />}
+            {saving ? 'Saving...' : 'Save'}
+          </Button>
         </CardContent>
       </Card>
     </div>
