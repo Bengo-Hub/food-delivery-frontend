@@ -87,7 +87,7 @@ export async function listOrders(
   params?: { status?: string; limit?: number; offset?: number },
 ): Promise<{ orders: Order[]; total: number }> {
   const res = await api.get(`${tenantSlug}/orders`, { params });
-  return res.data;
+  return { orders: res.data.data ?? [], total: res.data.total ?? 0 };
 }
 
 export async function cancelOrder(tenantSlug: string, orderId: string, reason: string): Promise<void> {

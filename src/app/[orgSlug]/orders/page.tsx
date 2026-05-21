@@ -86,28 +86,32 @@ export default function OrdersPage() {
     router.push(orgRoute(orgSlug, "/cart"));
   };
 
-  const statusFilter =
-    tab === "active"
-      ? "active"
-      : tab === "completed"
-        ? "delivered"
-        : tab === "cancelled"
-          ? "cancelled"
-          : undefined;
+  // "active" is not a real backend status — fetch all and filter client-side.
+  // "completed" maps to both "delivered" and "completed" statuses.
+  const backendStatus =
+    tab === "cancelled" ? "cancelled" : undefined;
 
   const filters: { status?: string; limit?: number } = { limit: 50 };
-  if (statusFilter) filters.status = statusFilter;
+  if (backendStatus) filters.status = backendStatus;
 
   const { data, isLoading } = useOrders(filters);
 
   const allOrders = data?.orders ?? [];
 
+  // Client-side tab filtering
+  const tabFilteredOrders =
+    tab === "active"
+      ? allOrders.filter((o) => ACTIVE_STATUSES.includes(o.status))
+      : tab === "completed"
+        ? allOrders.filter((o) => ["delivered", "completed"].includes(o.status))
+        : allOrders;
+
   // Client-side search filtering on order number
   const orders = search.trim()
-    ? allOrders.filter((o) =>
+    ? tabFilteredOrders.filter((o) =>
         o.orderNumber.toLowerCase().includes(search.trim().toLowerCase()),
       )
-    : allOrders;
+    : tabFilteredOrders;
 
   // Summary counts from the full list
   const activeCount = allOrders.filter((o) => ACTIVE_STATUSES.includes(o.status)).length;

@@ -287,7 +287,14 @@ function OrderCard({
   showRiderPicker: boolean;
   onToggleRiderPicker: (orderId: string) => void;
 }) {
-  const actions = STATUS_ACTIONS[order.status] ?? [];
+  const isDeliveryOrder = order.fulfillmentType === "delivery";
+  const rawActions = STATUS_ACTIONS[order.status] ?? [];
+  // For delivery orders at "ready" status, suppress the direct "Hand to Rider" status push —
+  // the proper path is "Assign Rider" which creates a logistics task and triggers the NATS flow
+  // that transitions the order to out_for_delivery automatically.
+  const actions = isDeliveryOrder
+    ? rawActions.filter((a) => a.next !== "out_for_delivery")
+    : rawActions;
   const createdDate = new Date(order.createdAt);
   const minutesAgo = Math.round((Date.now() - createdDate.getTime()) / 60_000);
   const timeLabel =
