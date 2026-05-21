@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 
 import { useAuthStore } from "@/store/auth";
 import { useSubscriptionStore } from "@/store/subscription";
@@ -115,6 +115,51 @@ export function useSubscription() {
         setSubscriptionInfo({ status: "none", planCode: "", planName: "", features: [], limits: {} } as any),
       );
   }, [status, session?.accessToken, user, subscriptionInfo, setSubscriptionInfo, tenantSlug, isPlatformOwner]);
+
+  // Refresh subscription on app resume after 5+ minutes away
+  const lastHiddenAt = useRef<number | null>(null);
+  useEffect(() => {
+    if (typeof document === "undefined") return;
+    const REFRESH_AFTER_MS = 5 * 60 * 1000;
+
+    const onVisibility = () => {
+      if (document.visibilityState === "hidden") {
+        lastHiddenAt.current = Date.now();
+        return;
+      }
+      if (document.visibilityState === "visible" && lastHiddenAt.current !== null) {
+        const awayMs = Date.now() - lastHiddenAt.current;
+        lastHiddenAt.current = null;
+        if (awayMs >= REFRESH_AFTER_MS) {
+          const token = useAuthStore.getState().session?.accessToken;
+          const u = useAuthStore.getState().user;
+          const tenantId = (u as Record<string, unknown> | null)?.tenant_id as string | undefined;
+          const slug = (u as Record<string, unknown> | null)?.tenant_slug as string | undefined;
+          if (token && tenantId && slug) {
+            fetchSubscriptionInfo(tenantId, slug, token)
+              .then((info) => {
+                if (!info) return;
+                useAuthStore.getState().setSubscriptionInfo(info as unknown as Record<string, unknown>);
+                useSubscriptionStore.getState().setFromRaw(
+                  {
+                    plan: info.planCode,
+                    status: info.status,
+                    expiresAt: info.currentPeriodEnd ?? info.trialEndsAt ?? null,
+                    features: info.features,
+                    limits: info.limits,
+                  },
+                  slug,
+                );
+              })
+              .catch(() => {});
+          }
+        }
+      }
+    };
+
+    document.addEventListener("visibilitychange", onVisibility);
+    return () => document.removeEventListener("visibilitychange", onVisibility);
+  }, []);
 
   const info = subscriptionInfo as SubscriptionInfo | null | undefined;
   const subStatus = info?.status ?? null;
