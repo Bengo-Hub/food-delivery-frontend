@@ -141,10 +141,13 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       return;
     }
 
-    // Optimistically set authenticated if we have user and session from persist
+    // Hydrate from storage if user profile exists and token hasn't expired (60s buffer).
     if (user && session) {
-      set({ status: "authenticated" });
-      return;
+      const expiresAt = session.expiresAt ? new Date(session.expiresAt).getTime() : 0;
+      if (expiresAt && Date.now() < expiresAt - 60_000) {
+        set({ status: "authenticated" });
+        return;
+      }
     }
 
     // Fetch profile from SSO (not backend — avoids 401 during JIT sync)

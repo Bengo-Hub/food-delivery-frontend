@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useParams } from "next/navigation";
 import { Download, Share, X } from "lucide-react";
 import Image from "next/image";
 
@@ -14,8 +15,8 @@ interface BeforeInstallPromptEvent extends Event {
 }
 
 const DISMISS_KEY = "pwa-install-dismissed";
-const DISMISS_DURATION = 30 * 60 * 1000; // 30 minutes — re-prompt if not installed
-const RE_PROMPT_INTERVAL = 30 * 60 * 1000; // 30 minutes
+const DISMISS_DURATION = 24 * 60 * 60 * 1000; // 24 hours
+const RE_PROMPT_INTERVAL = 24 * 60 * 60 * 1000; // 24 hours
 
 function isIOS(): boolean {
   if (typeof window === "undefined") return false;
@@ -43,9 +44,26 @@ export function PWAInstallPrompt() {
   const [showBanner, setShowBanner] = useState(false);
   const [showIOSGuide, setShowIOSGuide] = useState(false);
   const promptRef = useRef<BeforeInstallPromptEvent | null>(null);
+  const params = useParams();
+  const orgSlug = params?.orgSlug as string | undefined;
 
   // Tenant branding from auth-service (same source as POS install prompt)
   const { tenant } = useTenantBranding();
+
+  // Ensure the browser uses the tenant-specific manifest (with correct start_url and logo)
+  useEffect(() => {
+    if (!orgSlug) return;
+    const href = `/${orgSlug}/manifest.webmanifest`;
+    let link = document.querySelector<HTMLLinkElement>('link[rel="manifest"]');
+    if (!link) {
+      link = document.createElement('link');
+      link.rel = 'manifest';
+      document.head.appendChild(link);
+    }
+    if (link.href !== new URL(href, window.location.href).href) {
+      link.href = href;
+    }
+  }, [orgSlug]);
   const appName = tenant?.orgName ? `${tenant.orgName} Ordering` : brand.shortName;
   const appLogo = tenant?.logoUrl || brand.assets.logo || "/images/logo/logo.jpg";
 

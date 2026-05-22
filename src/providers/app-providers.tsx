@@ -15,6 +15,7 @@ import { useOutletFilterStore } from "@/store/outlet-filter";
 import type { QueryClient } from "@tanstack/react-query";
 
 import { TenantBrandingProvider } from "./branding-provider";
+import { PWAUpdateBanner } from "@/components/pwa/pwa-update-banner";
 
 /** Syncs GET /auth/me (useMe) result into auth store so roles/permissions stay current. */
 function AuthSync() {
@@ -75,6 +76,7 @@ export function AppProviders({ children }: PropsWithChildren) {
     <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
       <QueryClientProvider client={queryClient}>
         <TenantBrandingProvider>
+          <PWAUpdateBanner />
           <AuthSync />
           {children}
           {showDevtools ? (
