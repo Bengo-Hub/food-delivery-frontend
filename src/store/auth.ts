@@ -56,6 +56,7 @@ interface AuthState {
   updatePreferences: (input: PreferencesUpdateInput) => Promise<void>;
   updateSecurity: (input: SecurityUpdateInput) => Promise<void>;
   refreshOrders: () => Promise<void>;
+  hydrateFromWebAuthn: (tokens: { accessToken: string; refreshToken: string; expiresIn: number }, tenantSlug?: string) => Promise<void>;
   /** Subscription info loaded lazily after auth — never blocks login. */
   subscriptionInfo: Record<string, unknown> | null | undefined;
   setSubscriptionInfo: (info: Record<string, unknown> | null) => void;
@@ -126,6 +127,40 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   lastAuthenticatedAt: null,
   subscriptionInfo: undefined,
   setSubscriptionInfo: (info) => set({ subscriptionInfo: info }),
+
+  hydrateFromWebAuthn: async (tokens, tenantSlug) => {
+    set({ status: "syncing", error: null });
+    try {
+      const session: SessionTokens = {
+        accessToken: tokens.accessToken,
+        refreshToken: tokens.refreshToken,
+        expiresAt: new Date(Date.now() + tokens.expiresIn * 1000).toISOString(),
+        sessionId: "",
+      };
+      persistAuthState({ session, user: null });
+      set({ session });
+
+      if (tenantSlug && typeof window !== "undefined") {
+        localStorage.setItem("tenantSlug", tenantSlug);
+      }
+
+      const ssoResponse = await fetchProfileFromSSO(session.accessToken);
+      const payload: AuthResponse = {
+        session: { ...session, sessionId: ssoResponse.session?.sessionId ?? "" },
+        user: ssoResponse.user,
+      };
+      if (ssoResponse.tenant_id != null) payload.tenant_id = ssoResponse.tenant_id;
+      if (ssoResponse.tenant_slug != null) payload.tenant_slug = ssoResponse.tenant_slug;
+      applyAuthResponse(set, payload);
+      if (typeof window !== "undefined" && payload.user?.email) {
+        localStorage.setItem("sso_last_email", payload.user.email);
+      }
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Biometric sign-in failed";
+      set({ status: "error", error: message });
+      throw error;
+    }
+  },
 
   syncFromProfile: (response) => {
     applyAuthResponse(set, response);
@@ -272,6 +307,9 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         if (ssoResponse.tenant_id != null) payload.tenant_id = ssoResponse.tenant_id;
         if (ssoResponse.tenant_slug != null) payload.tenant_slug = ssoResponse.tenant_slug;
         applyAuthResponse(set, payload);
+        if (typeof window !== "undefined" && payload.user?.email) {
+          localStorage.setItem("sso_last_email", payload.user.email);
+        }
         toast.success("Welcome back!");
       } catch (ssoErr) {
         // SSO /me failed — set error state so callback page shows retry button.
