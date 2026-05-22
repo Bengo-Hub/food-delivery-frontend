@@ -317,12 +317,29 @@ export function useCheckoutState() {
       }
 
       setOrderId(result.orderId);
-      setPaymentIntentId(result.paymentIntentId);
-      setInitiateUrl(result.initiateUrl);
       setPaymentAmount(result.amount);
       setPaymentCurrency(result.currency || "KES");
-      setStep("payment");
-      setShowPaymentModal(true);
+
+      if (result.paymentError) {
+        // Treasury unavailable — order was created but payment intent failed
+        setStep("review");
+        setOrderError(result.paymentError);
+        toast.error(`Order #${result.orderNumber || result.orderId.slice(0, 8)} created but payment gateway is unavailable. Please retry.`);
+        const orderUrl = isGuestMode
+          ? `${orgRoute(orgSlug, `/orders/guest/${result.orderId}`)}?session_id=${sessionId}`
+          : orgRoute(orgSlug, `/orders/${result.orderId}`);
+        router.push(orderUrl);
+      } else if (!result.paymentIntentId) {
+        // COD, wallet-only or zero-amount — no payment modal needed
+        clearCart();
+        setStep("success");
+      } else {
+        // Online payment — show treasury payment modal
+        setPaymentIntentId(result.paymentIntentId);
+        setInitiateUrl(result.initiateUrl);
+        setStep("payment");
+        setShowPaymentModal(true);
+      }
     } catch (error: unknown) {
       setStep("review");
       const message =
@@ -334,7 +351,7 @@ export function useCheckoutState() {
     isGuestMode, guestEmail, guestPhone, guestName, guestDeliveryLocation,
     fulfillmentMode, selectedAddressId, addresses, isOutsideDeliveryZone, scheduledTime,
     items, sessionId, deliveryNotes, promoCode, orderNotes, requestUtensils,
-    checkoutMutation, guestCheckoutMutation,
+    checkoutMutation, guestCheckoutMutation, orgSlug, router, clearCart,
   ]);
 
   const handlePaymentConfirmed = useCallback(

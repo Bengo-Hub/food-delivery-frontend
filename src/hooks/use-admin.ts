@@ -199,8 +199,8 @@ export function useUpdateMenuItem() {
   const slug = useOrgSlug();
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, data }: { id: string; data: Partial<CreateMenuItemRequest & { isAvailable: boolean }> }) =>
-      updateMenuItem(slug, id, data),
+    mutationFn: ({ sku, data }: { sku: string; data: Partial<CreateMenuItemRequest & { isAvailable: boolean }> }) =>
+      updateMenuItem(slug, sku, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: adminKeys.menuItems() });
     },
@@ -211,7 +211,7 @@ export function useDeleteMenuItem() {
   const slug = useOrgSlug();
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (id: string) => deleteMenuItem(slug, id),
+    mutationFn: (sku: string) => deleteMenuItem(slug, sku),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: adminKeys.menuItems() });
     },

@@ -70,18 +70,26 @@ export interface Category {
 }
 
 export interface MenuItem {
+  /** Inventory SKU — used as the key for all override operations */
+  sku: string;
+  /** Alias for sku, kept for backwards compatibility with list renders */
   id: string;
-  categoryId: string;
+  inventoryId?: string | undefined;
+  categoryId?: string | undefined;
+  categoryName?: string | undefined;
   name: string;
   slug: string;
-  description?: string;
+  description?: string | undefined;
   price: number;
-  imageUrl?: string;
+  basePrice?: number | undefined;
+  currency?: string | undefined;
+  imageUrl?: string | undefined;
   isAvailable: boolean;
-  preparationTime?: number;
-  calories?: number;
-  variants?: MenuItemVariant[];
-  dietaryTags?: string[];
+  isFeatured?: boolean | undefined;
+  preparationTime?: number | undefined;
+  displayOrder?: number | undefined;
+  variants?: MenuItemVariant[] | undefined;
+  dietaryTags?: string[] | undefined;
   createdAt: string;
   updatedAt: string;
 }
@@ -102,15 +110,20 @@ export interface CreateCategoryRequest {
   isActive?: boolean;
 }
 
+/** Override-based create/update request for the proxy catalog model */
 export interface CreateMenuItemRequest {
-  categoryId: string;
-  name: string;
-  description?: string;
-  price: number;
-  imageUrl?: string | null | undefined;
-  isAvailable?: boolean;
-  preparationTime?: number;
-  calories?: number;
+  /** Inventory SKU of the item to add to this tenant's menu */
+  sku: string;
+  /** Outlet ID — required for creating a new override */
+  outletId?: string | undefined;
+  basePrice: number;
+  currency?: string | undefined;
+  isAvailable?: boolean | undefined;
+  isFeatured?: boolean | undefined;
+  imageUrlOverride?: string | undefined;
+  leadTimeMinutes?: number | undefined;
+  displayOrder?: number | undefined;
+  displaySection?: string | undefined;
 }
 
 // ─── Admin Order API ────────────────────────────────────────────────
@@ -252,28 +265,73 @@ export async function deleteCategory(slug: string, id: string): Promise<void> {
   await api.delete(`${slug}/catalog/categories/${id}`);
 }
 
+function normalizeMenuItem(raw: Record<string, unknown>): MenuItem {
+  const sku = (raw.sku ?? raw.inventorySku ?? raw.inventory_sku ?? "") as string;
+  return {
+    sku,
+    id: sku,
+    inventoryId: (raw.inventoryId ?? raw.inventory_id ?? "") as string,
+    categoryId: (raw.categoryId ?? raw.category_id ?? "") as string,
+    categoryName: (raw.categoryName ?? raw.category_name ?? "") as string,
+    name: (raw.name ?? "") as string,
+    slug: sku,
+    description: (raw.description ?? "") as string,
+    price: (raw.basePrice ?? raw.base_price ?? raw.price ?? 0) as number,
+    basePrice: (raw.basePrice ?? raw.base_price ?? raw.price ?? 0) as number,
+    currency: (raw.currency ?? "KES") as string,
+    imageUrl: (raw.imageUrl ?? raw.imageUrlOverride ?? raw.image_url ?? "") as string,
+    isAvailable: (raw.isAvailable ?? raw.is_available ?? true) as boolean,
+    isFeatured: (raw.isFeatured ?? raw.is_featured ?? false) as boolean,
+    preparationTime: (raw.leadTimeMinutes ?? raw.preparationTime ?? undefined) as number | undefined,
+    displayOrder: (raw.displayOrder ?? 0) as number,
+    createdAt: (raw.createdAt ?? raw.created_at ?? "") as string,
+    updatedAt: (raw.updatedAt ?? raw.updated_at ?? "") as string,
+  };
+}
+
 export async function listMenuItems(
   slug: string,
   params?: { categoryId?: string; isAvailable?: boolean; search?: string },
 ): Promise<MenuItem[]> {
   const res = await api.get(`${slug}/catalog/admin/items`, { params });
-  return res.data;
+  const data = res.data?.data ?? res.data ?? [];
+  return (Array.isArray(data) ? data : []).map(normalizeMenuItem);
 }
 
 export async function createMenuItem(slug: string, data: CreateMenuItemRequest): Promise<MenuItem> {
-  const res = await api.post(`${slug}/catalog/items`, data);
-  return res.data;
+  const body: Record<string, unknown> = {
+    sku: data.sku,
+    basePrice: data.basePrice,
+  };
+  if (data.outletId) body.outletId = data.outletId;
+  if (data.currency) body.currency = data.currency;
+  if (data.isAvailable !== undefined) body.isAvailable = data.isAvailable;
+  if (data.isFeatured !== undefined) body.isFeatured = data.isFeatured;
+  if (data.imageUrlOverride) body.imageUrlOverride = data.imageUrlOverride;
+  if (data.leadTimeMinutes !== undefined) body.leadTimeMinutes = data.leadTimeMinutes;
+  if (data.displayOrder !== undefined) body.displayOrder = data.displayOrder;
+  if (data.displaySection) body.displaySection = data.displaySection;
+  const res = await api.post(`${slug}/catalog/overrides`, body);
+  return normalizeMenuItem(res.data as Record<string, unknown>);
 }
 
 export async function updateMenuItem(
   slug: string,
-  id: string,
+  sku: string,
   data: Partial<CreateMenuItemRequest & { isAvailable: boolean }>,
 ): Promise<MenuItem> {
-  const res = await api.put(`${slug}/catalog/items/${id}`, data);
-  return res.data;
+  const body: Record<string, unknown> = {};
+  if (data.basePrice !== undefined) body.basePrice = data.basePrice;
+  if (data.isAvailable !== undefined) body.isAvailable = data.isAvailable;
+  if (data.isFeatured !== undefined) body.isFeatured = data.isFeatured;
+  if (data.imageUrlOverride) body.imageUrlOverride = data.imageUrlOverride;
+  if (data.leadTimeMinutes !== undefined) body.leadTimeMinutes = data.leadTimeMinutes;
+  if (data.displayOrder !== undefined) body.displayOrder = data.displayOrder;
+  if (data.displaySection) body.displaySection = data.displaySection;
+  const res = await api.put(`${slug}/catalog/overrides/${sku}`, body);
+  return normalizeMenuItem(res.data as Record<string, unknown>);
 }
 
-export async function deleteMenuItem(slug: string, id: string): Promise<void> {
-  await api.delete(`${slug}/catalog/items/${id}`);
+export async function deleteMenuItem(slug: string, sku: string): Promise<void> {
+  await api.delete(`${slug}/catalog/overrides/${sku}`);
 }

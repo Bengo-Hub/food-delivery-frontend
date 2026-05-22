@@ -44,19 +44,19 @@ export default function MenuManagementPage() {
   const toggleAvailability = useUpdateMenuItem();
   const deleteItem = useDeleteMenuItem();
 
-  const handleToggleAvailability = async (id: string, current: boolean) => {
+  const handleToggleAvailability = async (sku: string, current: boolean) => {
     try {
-      await toggleAvailability.mutateAsync({ id, data: { isAvailable: !current } });
+      await toggleAvailability.mutateAsync({ sku, data: { isAvailable: !current } });
       toast.success(current ? "Item marked unavailable" : "Item marked available");
     } catch {
       toast.error("Failed to update item availability");
     }
   };
 
-  const handleDeleteItem = async (id: string, name: string) => {
+  const handleDeleteItem = async (sku: string, name: string) => {
     if (!confirm(`Delete "${name}"? This cannot be undone.`)) return;
     try {
-      await deleteItem.mutateAsync(id);
+      await deleteItem.mutateAsync(sku);
       toast.success("Item deleted");
     } catch {
       toast.error("Failed to delete item");
@@ -207,7 +207,7 @@ export default function MenuManagementPage() {
                           size="icon"
                           className="size-8"
                           onClick={() =>
-                            handleToggleAvailability(item.id, item.isAvailable)
+                            handleToggleAvailability(item.sku, item.isAvailable)
                           }
                           title={item.isAvailable ? "Mark unavailable" : "Mark available"}
                         >
@@ -230,7 +230,7 @@ export default function MenuManagementPage() {
                           variant="ghost"
                           size="icon"
                           className="size-8 text-destructive"
-                          onClick={() => handleDeleteItem(item.id, item.name)}
+                          onClick={() => handleDeleteItem(item.sku, item.name)}
                           title="Delete"
                         >
                           <Trash2 className="size-3.5" />
@@ -311,110 +311,79 @@ function AddCategoryForm({ onClose }: { onClose: () => void }) {
 }
 
 function AddItemForm({
-  categories,
   onClose,
 }: {
   categories: { id: string; name: string }[];
   onClose: () => void;
 }) {
-  const [name, setName] = useState("");
-  const [categoryId, setCategoryId] = useState(categories[0]?.id ?? "");
+  const [sku, setSku] = useState("");
   const [price, setPrice] = useState("");
-  const [description, setDescription] = useState("");
   const [imageUrl, setImageUrl] = useState("");
   const createItem = useCreateMenuItem();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name.trim() || !categoryId || !price) return;
+    if (!sku.trim() || !price) return;
     try {
-      const itemPayload: Parameters<typeof createItem.mutateAsync>[0] = {
-        categoryId,
-        name: name.trim(),
-        price: Number(price),
-        imageUrl: imageUrl || undefined,
-      };
-      if (description.trim()) itemPayload.description = description.trim();
-      await createItem.mutateAsync(itemPayload);
-      toast.success("Catalog item created");
+      await createItem.mutateAsync({
+        sku: sku.trim(),
+        basePrice: Number(price),
+        isAvailable: true,
+        imageUrlOverride: imageUrl || undefined,
+      });
+      toast.success("Item added to menu");
       onClose();
     } catch {
-      toast.error("Failed to create catalog item");
+      toast.error("Failed to add item — check the SKU is valid in inventory");
     }
   };
 
   return (
     <Card className="mb-4">
       <CardContent className="pt-4">
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="flex flex-wrap items-end gap-3">
-            <div className="w-40 flex-shrink-0">
-              <ImageUpload
-                label="Item Photo"
-                value={imageUrl}
-                onChange={setImageUrl}
-              />
-            </div>
-            <div className="flex-1 min-w-[200px]">
-              <label className="mb-1 block text-xs font-medium text-muted-foreground">
-                Item Name
-              </label>
-              <Input
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="e.g., Grilled Chicken"
-                required
-              />
-            </div>
-            <div className="w-40">
-              <label className="mb-1 block text-xs font-medium text-muted-foreground">
-                Category
-              </label>
-              <select
-                value={categoryId}
-                onChange={(e) => setCategoryId(e.target.value)}
-                className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm"
-                required
-              >
-                {categories.map((cat) => (
-                  <option key={cat.id} value={cat.id}>
-                    {cat.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className="w-28">
-              <label className="mb-1 block text-xs font-medium text-muted-foreground">
-                Price (KES)
-              </label>
-              <Input
-                type="number"
-                min="0"
-                step="1"
-                value={price}
-                onChange={(e) => setPrice(e.target.value)}
-                placeholder="850"
-                required
-              />
-            </div>
-            <div className="flex-1 min-w-[200px]">
-              <label className="mb-1 block text-xs font-medium text-muted-foreground">
-                Description
-              </label>
-              <Input
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                placeholder="Optional"
-              />
-            </div>
-            <Button type="submit" size="sm" disabled={createItem.isPending}>
-              {createItem.isPending ? <Loader2 className="mr-1 size-3 animate-spin" /> : null}
-              Add
-            </Button>
-            <Button type="button" variant="ghost" size="sm" onClick={onClose}>
-              Cancel
-            </Button>
+        <p className="mb-3 text-xs text-muted-foreground">
+          Items are sourced from inventory. Enter the inventory SKU to add it to your menu.
+        </p>
+        <form onSubmit={handleSubmit} className="flex flex-wrap items-end gap-3">
+          <div className="flex-1 min-w-[160px]">
+            <label className="mb-1 block text-xs font-medium text-muted-foreground">
+              Inventory SKU
+            </label>
+            <Input
+              value={sku}
+              onChange={(e) => setSku(e.target.value)}
+              placeholder="e.g., ITEM-001"
+              required
+            />
           </div>
+          <div className="w-28">
+            <label className="mb-1 block text-xs font-medium text-muted-foreground">
+              Price (KES)
+            </label>
+            <Input
+              type="number"
+              min="0"
+              step="1"
+              value={price}
+              onChange={(e) => setPrice(e.target.value)}
+              placeholder="850"
+              required
+            />
+          </div>
+          <div className="w-40 flex-shrink-0">
+            <ImageUpload
+              label="Image Override"
+              value={imageUrl}
+              onChange={setImageUrl}
+            />
+          </div>
+          <Button type="submit" size="sm" disabled={createItem.isPending}>
+            {createItem.isPending ? <Loader2 className="mr-1 size-3 animate-spin" /> : null}
+            Add
+          </Button>
+          <Button type="button" variant="ghost" size="sm" onClick={onClose}>
+            Cancel
+          </Button>
         </form>
       </CardContent>
     </Card>
@@ -423,32 +392,25 @@ function AddItemForm({
 
 function EditItemForm({
   item,
-  categories,
   onClose,
 }: {
-  item: any;
+  item: import("@/lib/api/admin").MenuItem;
   categories: { id: string; name: string }[];
   onClose: () => void;
 }) {
-  const [name, setName] = useState(item.name);
-  const [categoryId, setCategoryId] = useState(item.categoryId);
-  const [price, setPrice] = useState(item.price.toString());
-  const [description, setDescription] = useState(item.description || "");
+  const [price, setPrice] = useState((item.basePrice ?? item.price).toString());
   const [imageUrl, setImageUrl] = useState(item.imageUrl || "");
   const updateItem = useUpdateMenuItem();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name.trim() || !categoryId || !price) return;
+    if (!price) return;
     try {
       await updateItem.mutateAsync({
-        id: item.id,
+        sku: item.sku,
         data: {
-          categoryId,
-          name: name.trim(),
-          price: Number(price),
-          description: description.trim() || undefined,
-          imageUrl: imageUrl || undefined,
+          basePrice: Number(price),
+          imageUrlOverride: imageUrl || undefined,
         },
       });
       toast.success("Catalog item updated");
@@ -461,75 +423,38 @@ function EditItemForm({
   return (
     <Card className="mb-4 border-primary/20 bg-primary/5 shadow-md">
       <CardContent className="pt-4">
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="flex flex-wrap items-end gap-3">
-            <div className="w-40 flex-shrink-0">
-              <ImageUpload
-                label="Item Photo"
-                value={imageUrl}
-                onChange={setImageUrl}
-              />
-            </div>
-            <div className="flex-1 min-w-[200px]">
-              <label className="mb-1 block text-xs font-medium text-muted-foreground">
-                Item Name
-              </label>
-              <Input
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="e.g., Grilled Chicken"
-                required
-              />
-            </div>
-            <div className="w-40">
-              <label className="mb-1 block text-xs font-medium text-muted-foreground">
-                Category
-              </label>
-              <select
-                value={categoryId}
-                onChange={(e) => setCategoryId(e.target.value)}
-                className="flex h-9 w-full rounded-md border border-input bg-background/50 px-3 py-1 text-sm"
-                required
-              >
-                {categories.map((cat) => (
-                  <option key={cat.id} value={cat.id}>
-                    {cat.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className="w-28">
-              <label className="mb-1 block text-xs font-medium text-muted-foreground">
-                Price (KES)
-              </label>
-              <Input
-                type="number"
-                min="0"
-                step="1"
-                value={price}
-                onChange={(e) => setPrice(e.target.value)}
-                placeholder="850"
-                required
-              />
-            </div>
-            <div className="flex-1 min-w-[200px]">
-              <label className="mb-1 block text-xs font-medium text-muted-foreground">
-                Description
-              </label>
-              <Input
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                placeholder="Optional"
-              />
-            </div>
-            <Button type="submit" size="sm" disabled={updateItem.isPending}>
-              {updateItem.isPending ? <Loader2 className="mr-1 size-3 animate-spin" /> : null}
-              Update
-            </Button>
-            <Button type="button" variant="ghost" size="sm" onClick={onClose}>
-              Cancel
-            </Button>
+        <p className="mb-3 text-xs text-muted-foreground">
+          Editing override for <strong>{item.name}</strong> (SKU: {item.sku})
+        </p>
+        <form onSubmit={handleSubmit} className="flex flex-wrap items-end gap-3">
+          <div className="w-40 flex-shrink-0">
+            <ImageUpload
+              label="Image Override"
+              value={imageUrl}
+              onChange={setImageUrl}
+            />
           </div>
+          <div className="w-28">
+            <label className="mb-1 block text-xs font-medium text-muted-foreground">
+              Price (KES)
+            </label>
+            <Input
+              type="number"
+              min="0"
+              step="1"
+              value={price}
+              onChange={(e) => setPrice(e.target.value)}
+              placeholder="850"
+              required
+            />
+          </div>
+          <Button type="submit" size="sm" disabled={updateItem.isPending}>
+            {updateItem.isPending ? <Loader2 className="mr-1 size-3 animate-spin" /> : null}
+            Update
+          </Button>
+          <Button type="button" variant="ghost" size="sm" onClick={onClose}>
+            Cancel
+          </Button>
         </form>
       </CardContent>
     </Card>
