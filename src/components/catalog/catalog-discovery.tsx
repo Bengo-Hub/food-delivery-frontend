@@ -7,6 +7,7 @@ import {
   FilterIcon,
   Heart,
   SearchIcon,
+  ShieldAlert,
   ShoppingCart as ShoppingCartIcon,
   SproutIcon,
   WheatIcon
@@ -223,7 +224,7 @@ export function MenuDiscovery({
     [activeCategoryId, activeOutletId, search, activeDietary, favoriteOnly],
   );
 
-  const { data: menuData, isPending } = useCatalogItems(orgSlug, filters, page, MENU_PAGE_SIZE);
+  const { data: menuData, isPending, error: itemsError } = useCatalogItems(orgSlug, filters, page, MENU_PAGE_SIZE);
   const apiItems = menuData?.data ?? [];
   const totalPages = menuData?.meta?.totalPages ?? 1;
   const total = menuData?.meta?.total ?? 0;
@@ -297,6 +298,24 @@ export function MenuDiscovery({
     }
     // Whitelist action intentionally no-op here; reserved for future feature flags.
   }, [initialItemId, initialAction, menuItems]);
+
+  const isSubscriptionError =
+    (itemsError as any)?.response?.status === 402 ||
+    (itemsError as any)?.response?.data?.code === 'subscription_inactive';
+
+  if (isSubscriptionError) {
+    return (
+      <section className="border-t border-border bg-card py-8 sm:py-12 md:py-16">
+        <div className="mx-auto flex w-full max-w-6xl flex-col items-center justify-center gap-4 px-4 py-20 text-center">
+          <ShieldAlert className="size-12 text-muted-foreground" aria-hidden />
+          <h2 className="text-xl font-semibold text-foreground">Menu Temporarily Unavailable</h2>
+          <p className="max-w-sm text-sm text-muted-foreground">
+            This menu is currently unavailable. Please check back later or contact the venue directly.
+          </p>
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section className="border-t border-border bg-card py-8 sm:py-12 md:py-16">
