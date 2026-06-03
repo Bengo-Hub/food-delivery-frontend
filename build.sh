@@ -83,7 +83,7 @@ DOCKER_BUILDKIT=1 docker build . -t "${IMAGE_REPO}:${GIT_COMMIT_ID}" \
   --build-arg NEXT_PUBLIC_CAFE_WEBSITE_URL="${NEXT_PUBLIC_CAFE_WEBSITE_URL:-https://theurbanloftcafe.com}" \
   --build-arg NEXT_PUBLIC_LOGISTICS_UI_URL="${NEXT_PUBLIC_LOGISTICS_UI_URL:-https://logistics.codevertexitsolutions.com}" \
   --build-arg NEXT_PUBLIC_NOTIFICATIONS_API_URL="${NEXT_PUBLIC_NOTIFICATIONS_API_URL:-https://notificationsapi.codevertexitsolutions.com}" \
-  --build-arg NEXT_PUBLIC_TREASURY_API_URL="${NEXT_PUBLIC_TREASURY_API_URL:-https://treasuryapi.codevertexitsolutions.com}"
+  --build-arg NEXT_PUBLIC_TREASURY_API_URL="${NEXT_PUBLIC_TREASURY_API_URL:-https://booksapi.codevertexitsolutions.com}"
 log_success "Docker build complete"
 
 if [[ ${DEPLOY} != "true" ]]; then
