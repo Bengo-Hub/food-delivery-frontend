@@ -249,4 +249,4 @@
 ## Runtime Ports & Environments
 
 - **Local development:** consume backend at `http://localhost:4000`, treasury at `http://localhost:4001`, and notifications at `http://localhost:4002` when running services locally.
-- **Cloud deployment:** all backend ingress endpoints terminate on port **4000**, so the frontend uses public DNS (e.g. `https://cafeapi.codevertexitsolutions.com`) without port suffixes.
+- **Cloud deployment:** all backend ingress endpoints terminate on port **4000**, so the frontend uses public DNS (e.g. `https://orderingapi.codevertexitsolutions.com`) without port suffixes.
