@@ -272,6 +272,7 @@ export function useCheckoutState() {
             quantity: item.quantity,
             unitPrice: item.price,
             totalPrice: item.total,
+            ...(item.metadata ? { metadata: item.metadata } : {}),
           })),
         };
         if (guestEmail.trim()) guestPayload.contactEmail = guestEmail.trim();
@@ -300,6 +301,7 @@ export function useCheckoutState() {
             quantity: item.quantity,
             unitPrice: item.price,
             totalPrice: item.total,
+            ...(item.metadata ? { metadata: item.metadata } : {}),
           })),
           idempotencyKey,
         };

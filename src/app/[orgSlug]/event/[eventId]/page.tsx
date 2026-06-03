@@ -81,6 +81,8 @@ export default function PublicEventPage() {
         quantity: n,
         inventorySku: event.sku,
         notes: `Event ticket · ${tier.name}`,
+        // Carried through cart → guest checkout → order item → issuance consumer (tier accuracy).
+        metadata: { is_ticket: true, tier_id: tier.tier_id, tier_name: tier.name, event_item_id: event.id },
         ...(event.image_url ? { image: event.image_url } : {}),
       });
     }

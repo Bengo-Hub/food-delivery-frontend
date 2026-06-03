@@ -24,6 +24,7 @@ export interface CheckoutRequest {
     quantity: number;
     unitPrice: number;
     totalPrice: number;
+    metadata?: Record<string, unknown>;
   }[];
   deliveryAddressId?: string;
   deliveryNotes?: string;
@@ -94,6 +95,7 @@ export interface GuestCheckoutRequest {
     quantity: number;
     unitPrice: number;
     totalPrice: number;
+    metadata?: Record<string, unknown>;
   }[];
   fulfillmentType: "delivery" | "pickup" | "schedule";
   deliveryAddress?: string;

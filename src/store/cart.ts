@@ -20,6 +20,7 @@ export type CartItem = {
   notes?: string;
   image?: string;
   inventorySku?: string;
+  metadata?: Record<string, unknown>; // per-line metadata (e.g. event ticket tier_id/is_ticket)
 };
 
 interface CartState {
@@ -39,6 +40,7 @@ interface CartState {
     notes?: string;
     image?: string;
     inventorySku?: string;
+    metadata?: Record<string, unknown>;
   }) => void;
   removeItem: (id: string) => void;
   updateQuantity: (id: string, quantity: number) => void;
@@ -56,7 +58,7 @@ export const useCartStore = create<CartState>()(
       sessionId: typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(36).slice(2)}`,
       requestUtensils: false,
       orderNotes: "",
-      addItem: ({ id, name, price, outletId, outletName, quantity = 1, modifiers, notes, image, inventorySku }) => {
+      addItem: ({ id, name, price, outletId, outletName, quantity = 1, modifiers, notes, image, inventorySku, metadata }) => {
         const items = get().items;
         const existing = items.find((i) => i.id === id);
         if (existing) {
@@ -81,6 +83,7 @@ export const useCartStore = create<CartState>()(
             ...(notes && { notes }),
             ...(image && { image }),
             ...(inventorySku && { inventorySku }),
+            ...(metadata && { metadata }),
           };
           set({ items: [...items, newItem], updatedAt: Date.now() });
         }
