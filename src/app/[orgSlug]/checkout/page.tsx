@@ -1,6 +1,6 @@
 "use client";
 
-import { AlertTriangle, ArrowLeft, Loader2, MapPin, ShoppingBag, Store, Wallet } from "lucide-react";
+import { AlertTriangle, ArrowLeft, Loader2, MapPin, ShoppingBag, Store, Ticket, Wallet } from "lucide-react";
 import Link from "next/link";
 import { useEffect } from "react";
 
@@ -98,57 +98,74 @@ export default function CheckoutPage() {
             />
           )}
 
-          {/* 1. LOCATION — Address selector for delivery/schedule, outlet selector for pickup */}
-          {state.fulfillmentMode !== "pickup" ? (
-            <AddressSelector
-              addresses={state.addresses}
-              selectedId={state.selectedAddressId}
-              onSelect={state.setSelectedAddressId}
-              onGuestLocationSelect={state.setGuestDeliveryLocation}
-              guestAddress={state.guestDeliveryLocation}
-              onAddNew={() => {/* handled inside modal */}}
-              isGuest={state.isGuestMode}
-              scheduledTime={state.scheduledTime}
-              onSchedule={state.handleScheduleSelect}
-            />
-          ) : state.outlets.length > 0 ? (
-            <PickupOutletSelector
-              outlets={state.outlets}
-              selectedId={state.selectedPickupOutletId ?? state.outletId}
-              onSelect={state.setSelectedPickupOutletId}
-            />
-          ) : null}
-
-          {/* Zone validation error */}
-          {state.isOutsideDeliveryZone && (
-            <div className="flex items-start gap-3 rounded-xl border border-destructive/50 bg-destructive/10 p-4 text-sm text-destructive">
-              <AlertTriangle className="mt-0.5 size-5 shrink-0" />
+          {/* Event tickets need no delivery/pickup/fees — show a short note instead. */}
+          {state.isTicketOnly && (
+            <div className="flex items-start gap-3 rounded-xl border border-primary/30 bg-primary/5 p-4 text-sm">
+              <Ticket className="mt-0.5 size-5 shrink-0 text-primary" />
               <div>
-                <p className="font-medium">We don&apos;t deliver to this address</p>
+                <p className="font-medium">Event tickets</p>
                 <p className="mt-1 text-muted-foreground">
-                  The selected address is outside our delivery area. Please choose a different address.
+                  Your tickets (with QR codes) are emailed to you right after payment — no delivery or pickup needed.
                 </p>
               </div>
             </div>
           )}
 
-          {/* 2. FULFILLMENT — Delivery / Pickup / Schedule toggle */}
-          <FulfillmentToggle
-            mode={state.fulfillmentMode}
-            onModeChange={state.handleFulfillmentChange}
-            deliveryTotal={state.zoneResult?.delivery_fee ?? state.feeBreakdown?.delivery_fee ?? 0}
-            pickupTotal={0}
-            estimatedTime={state.estimatedTime}
-          />
+          {!state.isTicketOnly && (
+            <>
+              {/* 1. LOCATION — Address selector for delivery/schedule, outlet selector for pickup */}
+              {state.fulfillmentMode !== "pickup" ? (
+                <AddressSelector
+                  addresses={state.addresses}
+                  selectedId={state.selectedAddressId}
+                  onSelect={state.setSelectedAddressId}
+                  onGuestLocationSelect={state.setGuestDeliveryLocation}
+                  guestAddress={state.guestDeliveryLocation}
+                  onAddNew={() => {/* handled inside modal */}}
+                  isGuest={state.isGuestMode}
+                  scheduledTime={state.scheduledTime}
+                  onSchedule={state.handleScheduleSelect}
+                />
+              ) : state.outlets.length > 0 ? (
+                <PickupOutletSelector
+                  outlets={state.outlets}
+                  selectedId={state.selectedPickupOutletId ?? state.outletId}
+                  onSelect={state.setSelectedPickupOutletId}
+                />
+              ) : null}
 
-          {/* Schedule picker */}
-          {state.fulfillmentMode === "schedule" && (
-            <SchedulePicker onSchedule={state.handleScheduleSelect} />
-          )}
+              {/* Zone validation error */}
+              {state.isOutsideDeliveryZone && (
+                <div className="flex items-start gap-3 rounded-xl border border-destructive/50 bg-destructive/10 p-4 text-sm text-destructive">
+                  <AlertTriangle className="mt-0.5 size-5 shrink-0" />
+                  <div>
+                    <p className="font-medium">We don&apos;t deliver to this address</p>
+                    <p className="mt-1 text-muted-foreground">
+                      The selected address is outside our delivery area. Please choose a different address.
+                    </p>
+                  </div>
+                </div>
+              )}
 
-          {/* Delivery notes (delivery/schedule only) */}
-          {state.fulfillmentMode !== "pickup" && (
-            <DeliveryNotesSection value={state.deliveryNotes} onChange={state.setDeliveryNotes} />
+              {/* 2. FULFILLMENT — Delivery / Pickup / Schedule toggle */}
+              <FulfillmentToggle
+                mode={state.fulfillmentMode}
+                onModeChange={state.handleFulfillmentChange}
+                deliveryTotal={state.zoneResult?.delivery_fee ?? state.feeBreakdown?.delivery_fee ?? 0}
+                pickupTotal={0}
+                estimatedTime={state.estimatedTime}
+              />
+
+              {/* Schedule picker */}
+              {state.fulfillmentMode === "schedule" && (
+                <SchedulePicker onSchedule={state.handleScheduleSelect} />
+              )}
+
+              {/* Delivery notes (delivery/schedule only) */}
+              {state.fulfillmentMode !== "pickup" && (
+                <DeliveryNotesSection value={state.deliveryNotes} onChange={state.setDeliveryNotes} />
+              )}
+            </>
           )}
 
           {/* 3. ORDER — Items summary */}
@@ -189,7 +206,7 @@ export default function CheckoutPage() {
           <SlideToConfirm
             onConfirm={state.handlePlaceOrder}
             loading={state.isPlacingOrder}
-            disabled={state.fulfillmentMode !== "pickup" && !state.hasDeliveryAddress}
+            disabled={!state.isTicketOnly && state.fulfillmentMode !== "pickup" && !state.hasDeliveryAddress}
             total={state.grandTotal}
           />
         </div>

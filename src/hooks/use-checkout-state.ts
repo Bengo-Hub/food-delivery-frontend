@@ -43,6 +43,13 @@ export function useCheckoutState() {
   const scheduledTime = useDiningModeStore((s) => s.scheduledTime);
   const setScheduledTime = useDiningModeStore((s) => s.setScheduledTime);
 
+  // Event tickets check out on their own (no delivery/pickup/fees/preferences). A cart is
+  // ticket-only when every line carries metadata.is_ticket (enforced by the cart mixing guard).
+  const isTicketOnly = useMemo(
+    () => items.length > 0 && items.every((i) => (i.metadata as { is_ticket?: boolean } | undefined)?.is_ticket === true),
+    [items],
+  );
+
   // Step & fulfillment
   const [step, setStep] = useState<CheckoutStep>("review");
   const [fulfillmentMode, setFulfillmentMode] = useState<FulfillmentMode>(
@@ -129,7 +136,20 @@ export function useCheckoutState() {
 
   // Use backend fee breakdown when available and non-zero; otherwise compute locally
   const feeBreakdown: import("@/lib/api/cart-api").FeeBreakdown | undefined =
-    remoteFees && remoteFees.item_total > 0
+    isTicketOnly && cartSubtotal > 0
+      ? {
+          item_total: cartSubtotal,
+          discount,
+          packaging_fee: 0,
+          subtotal: cartSubtotal - discount,
+          small_order_fee: 0,
+          service_fee: 0,
+          delivery_fee: 0,
+          delivery_discount: 0,
+          tax_total: 0,
+          grand_total: cartSubtotal - discount,
+        }
+      : remoteFees && remoteFees.item_total > 0
       ? remoteFees
       : cartSubtotal > 0
         ? {
@@ -234,18 +254,24 @@ export function useCheckoutState() {
       }
     }
 
-    if (fulfillmentMode !== "pickup" && !selectedAddressId && addresses.length > 0) {
-      toast.error("Please select a delivery address");
-      return;
+    // Delivery/pickup/schedule validations don't apply to ticket-only carts.
+    if (!isTicketOnly) {
+      if (fulfillmentMode !== "pickup" && !selectedAddressId && addresses.length > 0) {
+        toast.error("Please select a delivery address");
+        return;
+      }
+      if (isOutsideDeliveryZone) {
+        toast.error("We don't deliver to the selected address. Please choose a different address.");
+        return;
+      }
+      if (fulfillmentMode === "schedule" && !scheduledTime) {
+        toast.error("Please select a scheduled time");
+        return;
+      }
     }
-    if (isOutsideDeliveryZone) {
-      toast.error("We don't deliver to the selected address. Please choose a different address.");
-      return;
-    }
-    if (fulfillmentMode === "schedule" && !scheduledTime) {
-      toast.error("Please select a scheduled time");
-      return;
-    }
+
+    // Tickets have no fulfillment — send pickup so no delivery address/fee is required.
+    const effectiveFulfillment: FulfillmentMode = isTicketOnly ? "pickup" : fulfillmentMode;
 
     setStep("processing");
     setOrderError(null);
@@ -264,7 +290,7 @@ export function useCheckoutState() {
         const guestPayload: Parameters<typeof guestCheckoutMutation.mutateAsync>[0] = {
           outletId: checkoutOutletId,
           sessionId,
-          fulfillmentType: fulfillmentMode,
+          fulfillmentType: effectiveFulfillment,
           idempotencyKey,
           items: items.map((item) => ({
             inventorySku: item.inventorySku || item.id,
@@ -294,7 +320,7 @@ export function useCheckoutState() {
       } else {
         const payload: Parameters<typeof checkoutMutation.mutateAsync>[0] = {
           outletId: checkoutOutletId,
-          fulfillmentType: fulfillmentMode,
+          fulfillmentType: effectiveFulfillment,
           items: items.map((item) => ({
             inventorySku: item.inventorySku || item.id,
             name: item.name,
@@ -352,7 +378,7 @@ export function useCheckoutState() {
   }, [
     isGuestMode, guestEmail, guestPhone, guestName, guestDeliveryLocation,
     fulfillmentMode, selectedAddressId, addresses, isOutsideDeliveryZone, scheduledTime,
-    items, sessionId, deliveryNotes, promoCode, orderNotes, requestUtensils,
+    items, sessionId, deliveryNotes, promoCode, orderNotes, requestUtensils, isTicketOnly,
     checkoutMutation, guestCheckoutMutation, orgSlug, router, clearCart,
   ]);
 
@@ -422,6 +448,7 @@ export function useCheckoutState() {
 
     // Fulfillment
     fulfillmentMode,
+    isTicketOnly,
     estimatedTime,
     scheduledTime,
     handleFulfillmentChange,

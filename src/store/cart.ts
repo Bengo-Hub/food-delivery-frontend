@@ -1,8 +1,12 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
+import { toast } from "sonner";
 
 /** Maximum cart age in milliseconds (24 hours). */
 const CART_MAX_AGE_MS = 24 * 60 * 60 * 1000;
+
+/** A line is an event ticket when its metadata carries is_ticket=true. */
+const isTicketLine = (metadata?: Record<string, unknown>): boolean => metadata?.is_ticket === true;
 
 export type CartItem = {
   id: string;
@@ -46,6 +50,7 @@ interface CartState {
   updateQuantity: (id: string, quantity: number) => void;
   clear: () => void;
   subtotal: () => number;
+  isTicketOnly: () => boolean;
   setRequestUtensils: (val: boolean) => void;
   setOrderNotes: (notes: string) => void;
 }
@@ -60,6 +65,18 @@ export const useCartStore = create<CartState>()(
       orderNotes: "",
       addItem: ({ id, name, price, outletId, outletName, quantity = 1, modifiers, notes, image, inventorySku, metadata }) => {
         const items = get().items;
+        // Tickets must be purchased on their own — block mixing event tickets with food/menu items.
+        const addingTicket = isTicketLine(metadata);
+        const cartHasTickets = items.some((i) => isTicketLine(i.metadata));
+        const cartHasFood = items.some((i) => !isTicketLine(i.metadata));
+        if (items.length > 0 && ((addingTicket && cartHasFood) || (!addingTicket && cartHasTickets))) {
+          toast.error(
+            addingTicket
+              ? "Finish or clear your current order before buying event tickets — tickets are purchased separately."
+              : "Your cart has event tickets. Tickets are purchased separately from food & menu items.",
+          );
+          return;
+        }
         const existing = items.find((i) => i.id === id);
         if (existing) {
           set({
@@ -95,6 +112,10 @@ export const useCartStore = create<CartState>()(
         })),
       clear: () => set({ items: [], requestUtensils: false, orderNotes: "" }),
       subtotal: () => get().items.reduce((s, i) => s + i.total, 0),
+      isTicketOnly: () => {
+        const items = get().items;
+        return items.length > 0 && items.every((i) => isTicketLine(i.metadata));
+      },
       setRequestUtensils: (val) => set({ requestUtensils: val }),
       setOrderNotes: (notes) => set({ orderNotes: notes }),
     }),

@@ -34,12 +34,15 @@ export default function CartPage() {
 
   const cartSubtotal = subtotal();
 
+  // Event tickets are bought on their own — no delivery/pickup, fees, or utensils.
+  const ticketOnly = items.length > 0 && items.every((i) => (i.metadata as { is_ticket?: boolean } | undefined)?.is_ticket === true);
+
   // Fetch fee breakdown from backend using the first item's outlet and current dining mode
   const outletId = items[0]?.outletId ?? null;
   const { data: feeData } = useFeeBreakdown(outletId, diningMode);
   const deliveryFee = feeData?.delivery_fee ?? 0;
-  const serviceFee = feeData?.service_fee ?? 0;
-  const total = feeData?.grand_total ?? cartSubtotal + deliveryFee + serviceFee;
+  const serviceFee = ticketOnly ? 0 : (feeData?.service_fee ?? 0);
+  const total = ticketOnly ? cartSubtotal : (feeData?.grand_total ?? cartSubtotal + deliveryFee + serviceFee);
 
   if (items.length === 0) {
     return (
@@ -194,7 +197,8 @@ export default function CartPage() {
           </CardContent>
         </Card>
 
-        {/* Order preferences */}
+        {/* Order preferences — not applicable to event tickets */}
+        {!ticketOnly && (
         <Card className="mb-4">
           <CardHeader>
             <CardTitle className="text-base">Order Preferences</CardTitle>
@@ -229,6 +233,7 @@ export default function CartPage() {
             </div>
           </CardContent>
         </Card>
+        )}
 
         {/* Order summary / fee breakdown */}
         <Card className="mb-6">
@@ -240,7 +245,7 @@ export default function CartPage() {
               <span className="text-muted-foreground">Subtotal</span>
               <span>{formatCurrency(cartSubtotal)}</span>
             </div>
-            {diningMode === "delivery" && (
+            {!ticketOnly && diningMode === "delivery" && (
               <div className="flex justify-between">
                 <span className="text-muted-foreground">
                   Delivery fee
@@ -248,10 +253,12 @@ export default function CartPage() {
                 <span>{deliveryFee === 0 ? <span className="text-green-600">Free</span> : formatCurrency(deliveryFee)}</span>
               </div>
             )}
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">Service fee</span>
-              <span>{formatCurrency(serviceFee)}</span>
-            </div>
+            {!ticketOnly && (
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Service fee</span>
+                <span>{formatCurrency(serviceFee)}</span>
+              </div>
+            )}
             <div className="flex justify-between border-t pt-2 font-semibold">
               <span>Total</span>
               <span>{formatCurrency(total)}</span>
