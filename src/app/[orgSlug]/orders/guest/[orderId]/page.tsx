@@ -10,17 +10,18 @@ import {
   Loader2,
   MapPin,
   Package,
+  Star,
 } from "lucide-react";
 import Link from "next/link";
 import { useParams, useSearchParams } from "next/navigation";
-import { Suspense } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { Suspense, useEffect, useRef, useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { SiteShell } from "@/components/layout/site-shell";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { getGuestOrder } from "@/lib/api/orders";
+import { getGuestOrder, rateGuestOrder, type Order } from "@/lib/api/orders";
 import { formatDateTime } from "@/lib/datetime";
 import { orgRoute } from "@/lib/routes";
 import { cn } from "@/lib/utils";
@@ -46,33 +47,224 @@ function statusVariant(status: string): "default" | "soft" | "outline" {
   return "soft";
 }
 
+function StarSelector({
+  value,
+  onChange,
+  label,
+  idPrefix,
+}: {
+  value: number;
+  onChange: (v: number) => void;
+  label: string;
+  idPrefix: string;
+}) {
+  const [hover, setHover] = useState(0);
+  return (
+    <div className="flex flex-col gap-1.5">
+      <span className="text-sm font-medium text-foreground">{label}</span>
+      <div className="flex items-center gap-1" role="radiogroup" aria-label={label}>
+        {[1, 2, 3, 4, 5].map((n) => {
+          const active = (hover || value) >= n;
+          return (
+            <button
+              key={`${idPrefix}-${n}`}
+              type="button"
+              role="radio"
+              aria-checked={value === n}
+              aria-label={`${n} star${n > 1 ? "s" : ""}`}
+              onClick={() => onChange(n)}
+              onMouseEnter={() => setHover(n)}
+              onMouseLeave={() => setHover(0)}
+              onFocus={() => setHover(n)}
+              onBlur={() => setHover(0)}
+              className="rounded p-0.5 transition-transform hover:scale-110 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-emphasis/40"
+            >
+              <Star
+                className={cn(
+                  "size-7",
+                  active ? "text-amber-400 fill-amber-400" : "text-muted-foreground",
+                )}
+              />
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function StarRow({ rating }: { rating: number }) {
+  return (
+    <div className="flex items-center gap-1">
+      {[1, 2, 3, 4, 5].map((n) => (
+        <Star
+          key={n}
+          className={cn(
+            "size-6",
+            rating >= n ? "text-amber-400 fill-amber-400" : "text-muted-foreground",
+          )}
+        />
+      ))}
+    </div>
+  );
+}
+
+function RateOrderCard({
+  order,
+  orgSlug,
+  orderId,
+  queryKey,
+  autoOpen,
+}: {
+  order: Order;
+  orgSlug: string;
+  orderId: string;
+  queryKey: (string | undefined)[];
+  autoOpen: boolean;
+}) {
+  const queryClient = useQueryClient();
+  const cardRef = useRef<HTMLDivElement>(null);
+  const [rating, setRating] = useState(0);
+  const [comment, setComment] = useState("");
+  const [riderRating, setRiderRating] = useState(0);
+  const [riderComment, setRiderComment] = useState("");
+  const [submitted, setSubmitted] = useState(false);
+
+  const hasRider = !!order.riderName || !!order.deliveryAddress;
+  const alreadyRated = order.rating != null && order.rating > 0;
+
+  useEffect(() => {
+    if (autoOpen && !alreadyRated) {
+      cardRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+  }, [autoOpen, alreadyRated]);
+
+  const mutation = useMutation({
+    mutationFn: () => {
+      const body: { rating: number; comment?: string; riderRating?: number; riderComment?: string } = {
+        rating,
+      };
+      const trimmedComment = comment.trim();
+      if (trimmedComment) body.comment = trimmedComment;
+      if (hasRider && riderRating > 0) {
+        body.riderRating = riderRating;
+        const trimmedRiderComment = riderComment.trim();
+        if (trimmedRiderComment) body.riderComment = trimmedRiderComment;
+      }
+      return rateGuestOrder(orgSlug, orderId, body);
+    },
+    onSuccess: () => {
+      setSubmitted(true);
+      void queryClient.invalidateQueries({ queryKey });
+    },
+  });
+
+  if (alreadyRated) {
+    return (
+      <Card ref={cardRef}>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base">Your Rating</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-2">
+          <p className="text-sm text-muted-foreground">You rated this order</p>
+          <StarRow rating={order.rating ?? 0} />
+          {order.ratingComment && (
+            <p className="text-sm text-foreground">&ldquo;{order.ratingComment}&rdquo;</p>
+          )}
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (submitted) {
+    return (
+      <Card ref={cardRef}>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base">Thank you!</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-sm text-muted-foreground">
+            Thanks for rating your order. We appreciate your feedback.
+          </p>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  const errMessage =
+    mutation.error instanceof Error ? mutation.error.message : "Something went wrong. Please try again.";
+
+  return (
+    <Card ref={cardRef} className={cn(autoOpen && "ring-2 ring-brand-emphasis/40")}>
+      <CardHeader className="pb-3">
+        <CardTitle className="text-base">Rate your order</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <StarSelector
+          value={rating}
+          onChange={setRating}
+          label="How was your order?"
+          idPrefix="order"
+        />
+        <textarea
+          value={comment}
+          onChange={(e) => setComment(e.target.value)}
+          placeholder="Tell us more (optional)"
+          rows={2}
+          className="w-full resize-none rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-emphasis/40"
+        />
+
+        {hasRider && (
+          <>
+            <StarSelector
+              value={riderRating}
+              onChange={setRiderRating}
+              label="Rate your rider"
+              idPrefix="rider"
+            />
+            <textarea
+              value={riderComment}
+              onChange={(e) => setRiderComment(e.target.value)}
+              placeholder="How was the delivery? (optional)"
+              rows={2}
+              className="w-full resize-none rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-emphasis/40"
+            />
+          </>
+        )}
+
+        {mutation.isError && <p className="text-sm text-destructive">{errMessage}</p>}
+
+        <Button
+          type="button"
+          onClick={() => mutation.mutate()}
+          disabled={rating < 1 || mutation.isPending}
+          className="gap-2"
+        >
+          {mutation.isPending && <Loader2 className="size-4 animate-spin" />}
+          Submit Rating
+        </Button>
+      </CardContent>
+    </Card>
+  );
+}
+
 function GuestOrderContent() {
   const orgSlug = useOrgSlug();
   const params = useParams<{ orderId: string }>();
   const searchParams = useSearchParams();
   const orderId = params.orderId;
   const sessionId = searchParams.get("session_id") ?? "";
+  const autoOpenRating = searchParams.get("rate") === "1";
 
   const { data: order, isLoading, isError } = useQuery({
     queryKey: ["guest-order", orderId, sessionId],
     queryFn: () => getGuestOrder(orgSlug, orderId, sessionId),
-    enabled: !!orderId && !!sessionId,
+    enabled: !!orderId,
     staleTime: 30_000,
     retry: 1,
   });
 
   const currentStep = order ? timelineIndex(order.status) : -1;
-
-  if (!sessionId) {
-    return (
-      <div className="flex flex-col items-center justify-center py-20 gap-4 text-center">
-        <p className="text-muted-foreground">Invalid order link. Session ID is missing.</p>
-        <Button asChild variant="outline">
-          <Link href={orgRoute(orgSlug, "/")}>Go Home</Link>
-        </Button>
-      </div>
-    );
-  }
 
   if (isLoading) {
     return (
@@ -268,6 +460,17 @@ function GuestOrderContent() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Rating */}
+      {["delivered", "completed"].includes(order.status) && (
+        <RateOrderCard
+          order={order}
+          orgSlug={orgSlug}
+          orderId={orderId}
+          queryKey={["guest-order", orderId, sessionId]}
+          autoOpen={autoOpenRating}
+        />
+      )}
 
       {/* Actions */}
       <div className="flex flex-col gap-3 sm:flex-row">

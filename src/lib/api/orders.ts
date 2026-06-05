@@ -77,8 +77,9 @@ export async function getOrder(tenantSlug: string, orderId: string): Promise<Ord
   return res.data;
 }
 
-export async function getGuestOrder(tenantSlug: string, orderId: string, sessionId: string): Promise<Order> {
-  const res = await api.get(`${tenantSlug}/orders/guest/${orderId}`, { params: { session_id: sessionId } });
+export async function getGuestOrder(tenantSlug: string, orderId: string, sessionId?: string): Promise<Order> {
+  const params = sessionId ? { session_id: sessionId } : undefined;
+  const res = await api.get(`${tenantSlug}/orders/guest/${orderId}`, { params });
   return res.data;
 }
 
@@ -101,6 +102,15 @@ export async function rateOrder(
   comment: string,
 ): Promise<Order> {
   const res = await api.post(`${tenantSlug}/orders/${orderId}/rate`, { rating, comment });
+  return res.data;
+}
+
+export async function rateGuestOrder(
+  tenantSlug: string,
+  orderId: string,
+  body: { rating: number; comment?: string; riderRating?: number; riderComment?: string },
+): Promise<Order> {
+  const res = await api.post(`${tenantSlug}/orders/guest/${orderId}/rate`, body);
   return res.data;
 }
 
