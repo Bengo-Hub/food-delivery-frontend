@@ -48,24 +48,15 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "@/lib/toast";
-import { api } from "@/lib/api/base";
-import { treasuryApi, notificationsApi, subscriptionsApi } from "@/lib/api/platform-services";
+import { notificationsApi, subscriptionsApi } from "@/lib/api/platform-services";
+import {
+  useAvailableGateways,
+  useDeactivateGateway,
+  useSelectGateway,
+  useSelectedGateways,
+} from "@/hooks/use-gateways";
 
 // ── Types ────────────────────────────────────────────────────────────────────
-
-interface AvailableGateway {
-  id: string;
-  gateway_type: string;
-  name: string;
-  transaction_fee_type: string;
-  transaction_fee_percentage: number;
-  transaction_fee_fixed: number;
-}
-
-interface SelectedGateway {
-  gateway_type: string;
-  name: string;
-}
 
 interface AvailableProvider {
   id: string;
@@ -201,40 +192,40 @@ export default function TenantSettingsPage() {
 
 // ── Payment Settings ─────────────────────────────────────────────────────────
 
-function PaymentSettingsTab({ tenantSlug }: { tenantSlug: string }) {
-  const [available, setAvailable] = useState<AvailableGateway[]>([]);
-  const [selected, setSelected] = useState<SelectedGateway | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isSelecting, setIsSelecting] = useState<string | null>(null);
+function PaymentSettingsTab({ tenantSlug: _tenantSlug }: { tenantSlug: string }) {
+  const { data: available = [], isLoading: availableLoading } = useAvailableGateways();
+  const { data: selected = [], isLoading: selectedLoading } = useSelectedGateways();
+  const selectGateway = useSelectGateway();
+  const deactivateGateway = useDeactivateGateway();
 
-  const fetchData = useCallback(async () => {
-    try {
-      const [avRes, selRes] = await Promise.allSettled([
-        treasuryApi.get(`/api/v1/${tenantSlug}/gateways/available`),
-        treasuryApi.get(`/api/v1/${tenantSlug}/gateways/selected`),
-      ]);
-      if (avRes.status === "fulfilled") setAvailable(avRes.value.data || []);
-      if (selRes.status === "fulfilled") setSelected(selRes.value.data || null);
-    } catch {
-      // Silently handle - gateways may not be configured yet
-    } finally {
-      setIsLoading(false);
-    }
-  }, [tenantSlug]);
+  // Track which gateway row has a mutation in flight (for per-row spinners).
+  const [pendingType, setPendingType] = useState<string | null>(null);
 
-  useEffect(() => { fetchData(); }, [fetchData]);
+  const isLoading = availableLoading || selectedLoading;
 
-  const handleSelect = async (gatewayType: string) => {
-    setIsSelecting(gatewayType);
-    try {
-      await treasuryApi.post(`/api/v1/${tenantSlug}/gateways/select/${gatewayType}`);
-      toast.success("Payment gateway updated");
-      fetchData();
-    } catch {
-      toast.error("Failed to select gateway");
-    } finally {
-      setIsSelecting(null);
-    }
+  // Map enabled gateways by type for quick lookup of active/primary state.
+  const selectedByType = new Map(selected.map((g) => [g.gateway_type, g]));
+  const primary = selected.find((g) => g.is_primary && g.is_active);
+
+  const handleEnable = (gatewayType: string) => {
+    setPendingType(gatewayType);
+    selectGateway.mutate(
+      { gatewayType },
+      {
+        onSuccess: () => toast.success("Payment gateway enabled"),
+        onError: () => toast.error("Failed to enable gateway"),
+        onSettled: () => setPendingType(null),
+      },
+    );
+  };
+
+  const handleDisable = (gatewayType: string) => {
+    setPendingType(gatewayType);
+    deactivateGateway.mutate(gatewayType, {
+      onSuccess: () => toast.success("Payment gateway disabled"),
+      onError: () => toast.error("Failed to disable gateway"),
+      onSettled: () => setPendingType(null),
+    });
   };
 
   if (isLoading) {
@@ -255,12 +246,12 @@ function PaymentSettingsTab({ tenantSlug }: { tenantSlug: string }) {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          {selected && (
+          {primary && (
             <div className="mb-6 rounded-lg border border-primary/20 bg-primary/5 p-4">
-              <p className="text-sm font-medium text-muted-foreground">Currently using</p>
-              <p className="text-lg font-bold">{selected.name}</p>
+              <p className="text-sm font-medium text-muted-foreground">Primary gateway</p>
+              <p className="text-lg font-bold">{primary.name}</p>
               <Badge variant="default" className="mt-1">
-                {selected.gateway_type.replace(/_/g, " ")}
+                {primary.gateway_type.replace(/_/g, " ")}
               </Badge>
             </div>
           )}
@@ -274,39 +265,60 @@ function PaymentSettingsTab({ tenantSlug }: { tenantSlug: string }) {
             </div>
           ) : (
             <div className="space-y-3">
-              <p className="text-sm text-muted-foreground mb-3">Select a payment gateway for your organization:</p>
+              <p className="text-sm text-muted-foreground mb-3">Enable payment gateways for your organization:</p>
               {available.map((gw) => {
-                const isSelected = selected?.gateway_type === gw.gateway_type;
+                const sel = selectedByType.get(gw.gateway_type);
+                const isEnabled = !!sel?.is_active;
+                const isPrimary = !!sel?.is_primary && isEnabled;
+                const isPending = pendingType === gw.gateway_type;
                 return (
                   <div
-                    key={gw.id}
+                    key={gw.gateway_type}
                     className={`flex items-center justify-between rounded-lg border p-4 transition-colors ${
-                      isSelected ? "border-primary bg-primary/5" : "border-border hover:border-muted-foreground/30"
+                      isEnabled ? "border-primary bg-primary/5" : "border-border hover:border-muted-foreground/30"
                     }`}
                   >
                     <div>
-                      <p className="font-medium">{gw.name}</p>
+                      <p className="font-medium flex items-center gap-2">
+                        {gw.name}
+                        {isPrimary && (
+                          <Badge variant="default" className="text-[10px]">
+                            <Check className="size-3 mr-1" /> Primary
+                          </Badge>
+                        )}
+                      </p>
                       <p className="text-xs text-muted-foreground">
                         {gw.gateway_type.replace(/_/g, " ")}
-                        {gw.transaction_fee_percentage > 0 && ` · ${gw.transaction_fee_percentage}% fee`}
-                        {gw.transaction_fee_fixed > 0 && ` + KES ${gw.transaction_fee_fixed}`}
+                        {gw.transaction_fee_type && ` · ${gw.transaction_fee_type.replace(/_/g, " ")} fee`}
+                        {gw.supports_stk_push && " · STK push"}
                       </p>
                     </div>
-                    {isSelected ? (
-                      <Badge variant="default">
-                        <Check className="size-3 mr-1" /> Selected
-                      </Badge>
+                    {isEnabled ? (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="text-destructive hover:text-destructive"
+                        disabled={isPending}
+                        onClick={() => handleDisable(gw.gateway_type)}
+                      >
+                        {isPending ? (
+                          <Loader2 className="size-3 animate-spin mr-1" />
+                        ) : (
+                          <X className="size-3 mr-1" />
+                        )}
+                        Disable
+                      </Button>
                     ) : (
                       <Button
                         size="sm"
                         variant="outline"
-                        disabled={isSelecting === gw.gateway_type}
-                        onClick={() => handleSelect(gw.gateway_type)}
+                        disabled={isPending}
+                        onClick={() => handleEnable(gw.gateway_type)}
                       >
-                        {isSelecting === gw.gateway_type ? (
+                        {isPending ? (
                           <Loader2 className="size-3 animate-spin mr-1" />
                         ) : null}
-                        Select
+                        Enable
                       </Button>
                     )}
                   </div>
