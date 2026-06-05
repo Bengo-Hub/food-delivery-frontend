@@ -18,6 +18,7 @@ import { Suspense, useEffect, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { SiteShell } from "@/components/layout/site-shell";
+import { TreasuryPaymentModal } from "@/components/checkout/treasury-payment-modal";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -39,6 +40,13 @@ const ORDER_TIMELINE = [
 function timelineIndex(status: string): number {
   const idx = ORDER_TIMELINE.findIndex((s) => s.key === status);
   return idx === -1 ? -1 : idx;
+}
+
+const TREASURY_API_URL =
+  process.env.NEXT_PUBLIC_TREASURY_API_URL || "http://localhost:4201";
+
+function isCodMethod(method?: string): boolean {
+  return /cash|cod|on_delivery/i.test(method ?? "");
 }
 
 function statusVariant(status: string): "default" | "soft" | "outline" {
@@ -252,17 +260,51 @@ function GuestOrderContent() {
   const orgSlug = useOrgSlug();
   const params = useParams<{ orderId: string }>();
   const searchParams = useSearchParams();
+  const queryClient = useQueryClient();
   const orderId = params.orderId;
   const sessionId = searchParams.get("session_id") ?? "";
   const autoOpenRating = searchParams.get("rate") === "1";
+  const autoOpenPay = searchParams.get("pay") === "1";
 
+  const queryKey = ["guest-order", orderId, sessionId];
   const { data: order, isLoading, isError } = useQuery({
-    queryKey: ["guest-order", orderId, sessionId],
+    queryKey,
     queryFn: () => getGuestOrder(orgSlug, orderId, sessionId),
     enabled: !!orderId,
     staleTime: 30_000,
     retry: 1,
   });
+
+  // "Payable" = a pending, unpaid, non-cash/COD order that has a payment intent
+  // we can drive through the treasury pay flow (Paystack / M-Pesa).
+  const isPayable =
+    !!order &&
+    order.status === "pending" &&
+    order.paymentStatus !== "paid" &&
+    order.paymentStatus !== "completed" &&
+    !isCodMethod(order.paymentMethod) &&
+    !!order.paymentIntentId;
+
+  const [payOpen, setPayOpen] = useState(false);
+
+  // Auto-open the Pay Now modal when the email deep-link carries ?pay=1.
+  useEffect(() => {
+    if (autoOpenPay && isPayable) setPayOpen(true);
+  }, [autoOpenPay, isPayable]);
+
+  // Construct the treasury initiate URL — same shape the backend embeds in the
+  // checkout result: {treasuryApi}/api/v1/pay/{tenant}/intents/{intentId}/initiate.
+  // The treasury pay route accepts either the tenant UUID or slug; prefer the
+  // order's tenantId (matches the backend exactly) and fall back to orgSlug.
+  const payTenant = order?.tenantId || orgSlug;
+  const initiateUrl =
+    order?.paymentIntentId
+      ? `${TREASURY_API_URL}/api/v1/pay/${encodeURIComponent(payTenant)}/intents/${order.paymentIntentId}/initiate`
+      : "";
+
+  const refetchOrder = () => {
+    void queryClient.invalidateQueries({ queryKey });
+  };
 
   const currentStep = order ? timelineIndex(order.status) : -1;
 
@@ -319,6 +361,20 @@ function GuestOrderContent() {
           </div>
         </div>
       ) : null}
+
+      {/* Pay Now — prepaid (Paystack / M-Pesa) orders that are still awaiting payment
+          can be completed right here, no login required. */}
+      {isPayable && (
+        <Button
+          type="button"
+          size="lg"
+          className="w-full gap-2"
+          onClick={() => setPayOpen(true)}
+        >
+          <CreditCard className="size-5" />
+          Pay Now — {order.currency ?? "KES"} {order.grandTotal.toLocaleString()}
+        </Button>
+      )}
 
       {/* Header */}
       <header className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
@@ -512,6 +568,28 @@ function GuestOrderContent() {
           </Button>
         )}
       </div>
+
+      {/* Treasury payment modal for paying a pending prepaid order from this page. */}
+      <TreasuryPaymentModal
+        open={payOpen}
+        onOpenChange={(open) => {
+          setPayOpen(open);
+          // On close (success or cancel) refetch so the page reflects the new status.
+          if (!open) refetchOrder();
+        }}
+        paymentIntentId={order.paymentIntentId ?? ""}
+        initiateUrl={initiateUrl}
+        tenantSlug={orgSlug}
+        amount={order.grandTotal}
+        currency={order.currency ?? "KES"}
+        description={`Order ${order.orderNumber}`}
+        referenceId={order.id}
+        referenceType="order"
+        onPaymentConfirmed={() => {
+          setPayOpen(false);
+          refetchOrder();
+        }}
+      />
     </div>
   );
 }

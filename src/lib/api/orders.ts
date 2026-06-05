@@ -26,8 +26,10 @@ export interface CreateOrderRequest {
 
 export interface Order {
   id: string;
+  tenantId?: string;
   orderNumber: string;
   status: string;
+  paymentIntentId?: string;
   items: OrderItem[];
   subtotal: number;
   deliveryFee: number;
