@@ -18,6 +18,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { api } from "@/lib/api/base";
+import { updateServiceConfig } from "@/lib/api/settings";
 import {
   listZones,
   createZone,
@@ -76,8 +77,16 @@ export default function DeliveryZonesPage() {
 
   const saveFeeConfig = useMutation({
     mutationFn: async () => {
+      // Persist via the tenant service-config store under the "fee_config" key.
+      // The backend (UpsertTenantSetting) parses the {tenant} path segment as a
+      // UUID, so we pass the tenant UUID (localStorage "tenantId") rather than slug.
+      const tenantId =
+        typeof window !== "undefined" ? localStorage.getItem("tenantId") : null;
+      if (!tenantId) {
+        throw new Error("Missing tenant ID — please sign in again.");
+      }
       const existing = tenantConfig?.features?.fee_config ?? {};
-      await api.put(`${slug}/admin/config/fees`, {
+      await updateServiceConfig(tenantId, "fee_config", {
         ...existing,
         delivery_fee_base: parseFloat(baseFee) || 100,
         delivery_fee_per_km: parseFloat(perKmRate) || 30,

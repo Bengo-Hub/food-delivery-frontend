@@ -664,9 +664,7 @@ const ORDERING_API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://orderingapi
 
 function IntegrationsTab() {
   const [authApiUrl, setAuthApiUrl] = useState(AUTH_API_URL_DEFAULT);
-  const [allowedOrigins, setAllowedOrigins] = useState('');
   const [testStatus, setTestStatus] = useState<'idle' | 'loading' | 'ok' | 'fail'>('idle');
-  const [saving, setSaving] = useState(false);
 
   const testAuthConnection = async () => {
     setTestStatus('loading');
@@ -678,21 +676,11 @@ function IntegrationsTab() {
     }
   };
 
-  const handleSave = async () => {
-    if (!allowedOrigins.trim()) { toast.info('No changes to save'); return; }
-    setSaving(true);
-    try {
-      await api.put('/api/v1/admin/config/allowed_origins', {
-        config_value: allowedOrigins,
-        config_type: 'string',
-      });
-      toast.success('Integrations settings saved');
-    } catch {
-      toast.error('Failed to save integrations settings');
-    } finally {
-      setSaving(false);
-    }
-  };
+  // NOTE: CORS allowed-origins is configured at deploy time via the backend's
+  // ALLOWED_ORIGINS env (router.New(..., allowedOrigins []string)), not via a
+  // runtime tenant endpoint. The previous PUT /api/v1/admin/config/allowed_origins
+  // call had no {tenant} segment and hit no real route (404), so the save control
+  // is disabled until a real endpoint exists.
 
   return (
     <div className="space-y-6">
@@ -743,15 +731,20 @@ function IntegrationsTab() {
             <Label>Allowed Origins</Label>
             <Input
               placeholder="https://app.example.com, https://admin.example.com"
-              value={allowedOrigins}
-              onChange={(e) => setAllowedOrigins(e.target.value)}
+              disabled
+              readOnly
+              className="opacity-60 cursor-not-allowed"
             />
             <p className="text-xs text-muted-foreground">Comma-separated list of allowed CORS origins.</p>
           </div>
-          <Button size="sm" onClick={handleSave} disabled={saving} className="gap-2">
-            {saving ? <Loader2 className="size-3.5 animate-spin" /> : <Save className="size-3.5" />}
-            {saving ? 'Saving...' : 'Save'}
+          <Button size="sm" disabled className="gap-2">
+            <Save className="size-3.5" />
+            Save
           </Button>
+          <p className="text-xs text-muted-foreground">
+            Editing CORS origins from the dashboard is not yet available — allowed
+            origins are configured at deploy time on the server.
+          </p>
         </CardContent>
       </Card>
     </div>

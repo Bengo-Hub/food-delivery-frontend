@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 
 import { MetricCard } from "@/components/dashboard/metric-card";
 import { SiteShell } from "@/components/layout/site-shell";
@@ -24,34 +25,8 @@ import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuthStore } from "@/store/auth";
 import { useAdminOrders } from "@/hooks/use-admin";
-import { useBaseQuery } from "@/hooks/use-base-query";
-
-/* ─── Types ──────────────────────────────────────────────────────────── */
-
-interface FeeConfig {
-  serviceFeePercent: number;
-  packagingFee: number;
-  smallOrderFee: number;
-  smallOrderThreshold: number;
-  deliveryFeeBase: number;
-}
-
-interface UseCaseConfig {
-  useCase: string;
-  outlets: { id: string; name: string; useCase: string }[];
-}
-
-interface PaymentGatewayStatus {
-  paystack: { configured: boolean; mode: string };
-  mpesa: { configured: boolean; mode: string };
-}
-
-interface DeliveryZone {
-  id: string;
-  name: string;
-  fee: number;
-  active: boolean;
-}
+import { listZones } from "@/lib/api/zones";
+import { orgRoute } from "@/lib/routes";
 
 /* ─── Page ───────────────────────────────────────────────────────────── */
 
@@ -73,29 +48,19 @@ export default function PlatformDashboardPage({
 
   const { data, isLoading } = useAdminOrders({ limit: 100 });
 
-  const { data: feeConfig } = useBaseQuery<FeeConfig>(
-    ["platform", "fees"],
-    { url: `/v1/${orgSlug}/admin/config/fees`, method: "GET" },
-    { enabled: isPlatformOwner, placeholderData: { serviceFeePercent: 0, packagingFee: 0, smallOrderFee: 0, smallOrderThreshold: 0, deliveryFeeBase: 0 } },
-  );
+  // NOTE: the fee-config, use-case and payment-gateway-status admin endpoints do
+  // not exist in ordering-backend (they previously 404'd and fell back to
+  // placeholders). Their queries have been removed; the corresponding tabs now
+  // render an explicit "not available" state until a real endpoint is built.
 
-  const { data: useCaseConfig } = useBaseQuery<UseCaseConfig>(
-    ["platform", "use-case"],
-    { url: `/v1/${orgSlug}/admin/config/use-case`, method: "GET" },
-    { enabled: isPlatformOwner, placeholderData: { useCase: "restaurant", outlets: [] } },
-  );
-
-  const { data: paymentStatus } = useBaseQuery<PaymentGatewayStatus>(
-    ["platform", "payment-status"],
-    { url: `/v1/${orgSlug}/admin/config/payment-status`, method: "GET" },
-    { enabled: isPlatformOwner, placeholderData: { paystack: { configured: false, mode: "test" }, mpesa: { configured: false, mode: "test" } } },
-  );
-
-  const { data: deliveryZones } = useBaseQuery<DeliveryZone[]>(
-    ["platform", "delivery-zones"],
-    { url: `/v1/${orgSlug}/admin/delivery-zones`, method: "GET" },
-    { enabled: isPlatformOwner, placeholderData: [] },
-  );
+  // Delivery zones: repointed to the real tenant zones endpoint
+  // GET /api/v1/{tenant}/zones (zones handler -> ListZones). Returns the tenant's
+  // active delivery zones; an empty list is the normal "none configured" state.
+  const { data: deliveryZones } = useQuery({
+    queryKey: ["platform", "delivery-zones", orgSlug],
+    queryFn: () => listZones(orgSlug),
+    enabled: isPlatformOwner,
+  });
 
   const orders = data?.orders ?? [];
   const totalOrders = data?.total ?? 0;
@@ -225,43 +190,11 @@ export default function PlatformDashboardPage({
               <CardHeader>
                 <CardTitle className="text-lg">Tenant Use-Case</CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex items-center gap-3">
-                  <span className="text-sm font-medium text-muted-foreground">Current Use-Case:</span>
-                  <Badge variant="soft" className="text-sm capitalize">
-                    {useCaseConfig?.useCase ?? "restaurant"}
-                  </Badge>
-                </div>
-                <p className="text-sm text-muted-foreground">
-                  The use-case determines menu structure, order flow, and checkout behavior for each outlet.
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0">
-                <CardTitle className="text-lg">Per-Outlet Use-Cases</CardTitle>
-              </CardHeader>
               <CardContent>
-                {(useCaseConfig?.outlets?.length ?? 0) === 0 ? (
-                  <p className="py-6 text-center text-sm text-muted-foreground">
-                    No outlets configured yet. Create outlets from the admin panel.
-                  </p>
-                ) : (
-                  <div className="divide-y">
-                    {useCaseConfig?.outlets.map((outlet) => (
-                      <div key={outlet.id} className="flex items-center justify-between py-3">
-                        <div>
-                          <p className="text-sm font-medium">{outlet.name}</p>
-                          <p className="text-xs text-muted-foreground">ID: {outlet.id}</p>
-                        </div>
-                        <Badge variant="outline" className="capitalize">
-                          {outlet.useCase}
-                        </Badge>
-                      </div>
-                    ))}
-                  </div>
-                )}
+                <p className="py-6 text-center text-sm text-muted-foreground">
+                  Use-case configuration is not available here yet — no backend
+                  endpoint exists for this view.
+                </p>
               </CardContent>
             </Card>
           </TabsContent>
@@ -273,96 +206,31 @@ export default function PlatformDashboardPage({
                 <CardTitle className="text-lg">Fee Configuration</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <div className="rounded-lg border p-4 space-y-1">
-                    <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                      Service Fee
-                    </p>
-                    <p className="text-2xl font-semibold">
-                      {feeConfig?.serviceFeePercent ?? 0}%
-                    </p>
-                  </div>
-                  <div className="rounded-lg border p-4 space-y-1">
-                    <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                      Packaging Fee
-                    </p>
-                    <p className="text-2xl font-semibold">
-                      KES {(feeConfig?.packagingFee ?? 0).toLocaleString()}
-                    </p>
-                  </div>
-                  <div className="rounded-lg border p-4 space-y-1">
-                    <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                      Small Order Fee
-                    </p>
-                    <p className="text-2xl font-semibold">
-                      KES {(feeConfig?.smallOrderFee ?? 0).toLocaleString()}
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      Applies to orders below KES {(feeConfig?.smallOrderThreshold ?? 0).toLocaleString()}
-                    </p>
-                  </div>
-                  <div className="rounded-lg border p-4 space-y-1">
-                    <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                      Delivery Fee (Base)
-                    </p>
-                    <p className="text-2xl font-semibold">
-                      KES {(feeConfig?.deliveryFeeBase ?? 0).toLocaleString()}
-                    </p>
-                  </div>
-                </div>
+                <p className="py-6 text-center text-sm text-muted-foreground">
+                  Fee configuration is not available here yet — no backend endpoint
+                  exists for this view. Manage delivery fees from the Delivery Zones
+                  admin page.
+                </p>
               </CardContent>
             </Card>
           </TabsContent>
 
           {/* ─── Payment Gateway Status Tab ────────────────────────── */}
           <TabsContent value="payments" className="space-y-6">
-            <div className="grid gap-4 sm:grid-cols-2">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2 text-lg">
-                    <CreditCard className="size-5" />
-                    Paystack
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-muted-foreground">Status</span>
-                    <Badge variant={paymentStatus?.paystack?.configured ? "default" : "outline"}>
-                      {paymentStatus?.paystack?.configured ? "Configured" : "Not Configured"}
-                    </Badge>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-muted-foreground">Mode</span>
-                    <span className="text-sm font-medium capitalize">
-                      {paymentStatus?.paystack?.mode ?? "test"}
-                    </span>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2 text-lg">
-                    <CreditCard className="size-5" />
-                    M-Pesa
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-muted-foreground">Status</span>
-                    <Badge variant={paymentStatus?.mpesa?.configured ? "default" : "outline"}>
-                      {paymentStatus?.mpesa?.configured ? "Configured" : "Not Configured"}
-                    </Badge>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-muted-foreground">Mode</span>
-                    <span className="text-sm font-medium capitalize">
-                      {paymentStatus?.mpesa?.mode ?? "test"}
-                    </span>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-lg">
+                  <CreditCard className="size-5" />
+                  Payment Gateways
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="py-6 text-center text-sm text-muted-foreground">
+                  Payment gateway status is not available here yet — no backend
+                  endpoint exists for this view.
+                </p>
+              </CardContent>
+            </Card>
           </TabsContent>
 
           {/* ─── Delivery Zones Tab ────────────────────────────────── */}
@@ -373,7 +241,9 @@ export default function PlatformDashboardPage({
                 <Button
                   size="sm"
                   variant="outline"
-                  onClick={() => router.push(`/${orgSlug}/admin/delivery-zones`)}
+                  onClick={() =>
+                    router.push(orgRoute(orgSlug, "/dashboard/staff/delivery-zones"))
+                  }
                 >
                   <MapPin className="mr-1.5 size-4" />
                   Manage Geofences
@@ -391,11 +261,11 @@ export default function PlatformDashboardPage({
                         <div>
                           <p className="text-sm font-medium">{zone.name}</p>
                           <p className="text-xs text-muted-foreground">
-                            Base fee: KES {zone.fee.toLocaleString()}
+                            Base fee: KES {zone.deliveryFee.toLocaleString()}
                           </p>
                         </div>
-                        <Badge variant={zone.active ? "default" : "outline"}>
-                          {zone.active ? "Active" : "Inactive"}
+                        <Badge variant={zone.isActive ? "default" : "outline"}>
+                          {zone.isActive ? "Active" : "Inactive"}
                         </Badge>
                       </div>
                     ))}

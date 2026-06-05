@@ -260,6 +260,13 @@ export async function listCategories(
   return res.data;
 }
 
+// TODO(catalog): category create/edit/delete is NOT served by ordering-backend.
+// It only exposes read-only category endpoints (GET /catalog/categories and
+// GET /catalog/admin/categories — see ordering-backend
+// internal/http/handlers/catalog/handler.go). Category mutations are owned by the
+// upstream inventory/catalog service. These POST/PUT/DELETE calls 404 today, so
+// their UI actions have been removed from staff/menu. Repoint these to the
+// inventory/catalog-service API once a client base for it exists.
 export async function createCategory(slug: string, data: CreateCategoryRequest): Promise<Category> {
   const res = await api.post(`${slug}/catalog/categories`, data);
   return res.data;

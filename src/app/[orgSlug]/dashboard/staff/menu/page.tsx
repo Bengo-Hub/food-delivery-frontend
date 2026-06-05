@@ -21,7 +21,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import {
   useCategories,
-  useCreateCategory,
   useCreateMenuItem,
   useDeleteMenuItem,
   useMenuItems,
@@ -34,7 +33,6 @@ export default function MenuManagementPage() {
   const [search, setSearch] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string | undefined>();
   const [showAddItem, setShowAddItem] = useState(false);
-  const [showAddCategory, setShowAddCategory] = useState(false);
 
   const { data: categories, isLoading: categoriesLoading } = useCategories();
   const menuItemParams: Parameters<typeof useMenuItems>[0] = {};
@@ -83,23 +81,17 @@ export default function MenuManagementPage() {
               </p>
             </div>
             <div className="flex gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setShowAddCategory(!showAddCategory)}
-              >
-                <Plus className="mr-1 size-3.5" /> Category
-              </Button>
+              {/* Category create/edit/delete is intentionally omitted here:
+                  categories are owned by the upstream inventory/catalog service
+                  and ordering-backend only exposes read-only category endpoints
+                  (GET /catalog/categories, GET /catalog/admin/categories).
+                  TODO: re-add category management once it is wired to the
+                  inventory/catalog service. */}
               <Button size="sm" onClick={() => setShowAddItem(!showAddItem)}>
                 <Plus className="mr-1 size-3.5" /> Item
               </Button>
             </div>
           </header>
-
-          {/* Add Category Form */}
-          {showAddCategory && (
-            <AddCategoryForm onClose={() => setShowAddCategory(false)} />
-          )}
 
           {/* Add Item Form */}
           {showAddItem && (
@@ -250,63 +242,6 @@ export default function MenuManagementPage() {
         </div>
       </SiteShell>
     </RequireAuth>
-  );
-}
-
-function AddCategoryForm({ onClose }: { onClose: () => void }) {
-  const [name, setName] = useState("");
-  const [description, setDescription] = useState("");
-  const createCategory = useCreateCategory();
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!name.trim()) return;
-    try {
-      const payload: Parameters<typeof createCategory.mutateAsync>[0] = { name: name.trim() };
-      if (description.trim()) payload.description = description.trim();
-      await createCategory.mutateAsync(payload);
-      toast.success("Category created");
-      onClose();
-    } catch {
-      toast.error("Failed to create category");
-    }
-  };
-
-  return (
-    <Card className="mb-4">
-      <CardContent className="pt-4">
-        <form onSubmit={handleSubmit} className="flex flex-wrap items-end gap-3">
-          <div className="flex-1">
-            <label className="mb-1 block text-xs font-medium text-muted-foreground">
-              Category Name
-            </label>
-            <Input
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="e.g., Main Category"
-              required
-            />
-          </div>
-          <div className="flex-1">
-            <label className="mb-1 block text-xs font-medium text-muted-foreground">
-              Description
-            </label>
-            <Input
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder="Optional description"
-            />
-          </div>
-          <Button type="submit" size="sm" disabled={createCategory.isPending}>
-            {createCategory.isPending ? <Loader2 className="mr-1 size-3 animate-spin" /> : null}
-            Add
-          </Button>
-          <Button type="button" variant="ghost" size="sm" onClick={onClose}>
-            Cancel
-          </Button>
-        </form>
-      </CardContent>
-    </Card>
   );
 }
 

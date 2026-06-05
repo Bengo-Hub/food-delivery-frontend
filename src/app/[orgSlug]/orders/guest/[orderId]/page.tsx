@@ -287,14 +287,27 @@ function GuestOrderContent() {
 
   return (
     <div className="mx-auto my-8 flex w-full max-w-2xl flex-col gap-6 px-4">
-      {/* Payment / order status banner — only claim "confirmed" when payment actually succeeded */}
+      {/* Payment / order status banner. Cash-on-delivery orders are paid on delivery, so a
+          confirmed COD order is NOT "Payment confirmed" until paymentStatus actually flips to
+          paid. Prepaid orders are paid up front (a confirmed prepaid order ⇒ paid). */}
       {order.paymentStatus === "paid" ||
-      ["confirmed", "preparing", "ready", "out_for_delivery", "delivered", "completed"].includes(order.status) ? (
+      order.paymentStatus === "completed" ||
+      (!/cash|cod|on_delivery/i.test(order.paymentMethod ?? "") &&
+        ["confirmed", "preparing", "ready", "out_for_delivery", "delivered", "completed"].includes(order.status)) ? (
         <div className="flex items-center gap-3 rounded-xl bg-green-50 border border-green-200 px-4 py-3">
           <CheckCircle2 className="size-5 text-green-600 shrink-0" />
           <div>
             <p className="text-sm font-semibold text-green-800">Payment confirmed!</p>
             <p className="text-xs text-green-700">Your order has been received and is being processed.</p>
+          </div>
+        </div>
+      ) : /cash|cod|on_delivery/i.test(order.paymentMethod ?? "") &&
+        !["cancelled", "failed"].includes(order.status) ? (
+        <div className="flex items-center gap-3 rounded-xl bg-blue-50 border border-blue-200 px-4 py-3">
+          <CreditCard className="size-5 text-blue-600 shrink-0" />
+          <div>
+            <p className="text-sm font-semibold text-blue-800">Cash on delivery</p>
+            <p className="text-xs text-blue-700">Your order has been placed. Please have payment ready when it arrives.</p>
           </div>
         </div>
       ) : order.status === "pending" ? (
