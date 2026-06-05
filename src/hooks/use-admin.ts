@@ -4,9 +4,8 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import {
   cancelAdminOrder,
-  createDeliveryTask,
+  assignOrderRider,
   deleteAdminOrder,
-  getDeliveryTask,
   createCategory,
   createMenuItem,
   deleteCategory,
@@ -22,7 +21,7 @@ import {
   type CreateCategoryRequest,
   type CreateMenuItemRequest,
 } from "@/lib/api/admin";
-import { assignRiderToTask, listAvailableRiders } from "@/lib/api/logistics";
+import { listAvailableRiders } from "@/lib/api/logistics";
 import { useOrgSlug } from "@/providers/org-slug-provider";
 
 // ─── Query Keys ──────────────────────────────────────────────────────
@@ -113,15 +112,11 @@ export function useAssignRider() {
   const slug = useOrgSlug();
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async ({ orderId, fleetMemberId }: { orderId: string; fleetMemberId: string }) => {
-      // Get or create the delivery task to get the logistics task ID
-      let task = await getDeliveryTask(slug, orderId);
-      if (!task?.logistics_task_id) {
-        task = await createDeliveryTask(slug, orderId);
-      }
-      if (!task?.logistics_task_id) throw new Error("Could not create delivery task");
-      await assignRiderToTask(slug, task.logistics_task_id, fleetMemberId);
-    },
+    // Assign via the ordering-backend canonical endpoint, which auto-creates the logistics
+    // task if missing, assigns the rider, and transitions the order to out_for_delivery —
+    // keeping order status in sync (the old direct logistics call left it stuck at "ready").
+    mutationFn: ({ orderId, fleetMemberId }: { orderId: string; fleetMemberId: string }) =>
+      assignOrderRider(slug, orderId, fleetMemberId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: adminKeys.orders() });
     },

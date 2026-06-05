@@ -237,6 +237,19 @@ export async function getDeliveryTask(
   }
 }
 
+// assignOrderRider assigns a rider via the canonical ordering-backend admin endpoint,
+// which auto-creates the logistics delivery task if missing, assigns the rider, and
+// transitions the order to out_for_delivery — keeping order status in sync. (The old
+// direct logistics /tasks/{id}/assign call did NOT, leaving the order stuck at "ready".)
+export async function assignOrderRider(
+  slug: string,
+  orderId: string,
+  riderId: string,
+): Promise<AdminOrder> {
+  const res = await api.put(`${slug}/admin/orders/${orderId}/rider`, { rider_id: riderId });
+  return res.data;
+}
+
 // ─── Catalog API ────────────────────────────────────────────────────
 
 export async function listCategories(
