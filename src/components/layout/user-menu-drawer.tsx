@@ -9,6 +9,7 @@ import {
   Home,
   Package,
   Pill,
+  RotateCcw,
   Shield,
   ShoppingCart,
   Tag,
@@ -29,7 +30,7 @@ import { cn } from "@/lib/utils";
 import { useTenantBranding } from "@/providers/branding-provider";
 import { useOrgSlug } from "@/providers/org-slug-provider";
 import { useAuthStore } from "@/store/auth";
-import { userHasRole } from "@/lib/auth/permissions";
+import { userCanAccess, userHasRole } from "@/lib/auth/permissions";
 
 interface UserMenuDrawerProps {
   open: boolean;
@@ -55,6 +56,11 @@ export function UserMenuDrawer({ open, onOpenChange }: UserMenuDrawerProps) {
     user?.roles?.includes("superuser")
   );
   const hasStaffAccess = userHasRole(user, ["staff", "admin", "superuser", "manager"]);
+  const canManageRefunds = userCanAccess(user, {
+    roles: ["admin", "superuser"],
+    permissions: ["ordering.orders.delete"],
+    permissionOperator: "or",
+  });
 
   const handleClose = () => {
     onOpenChange(false);
@@ -103,6 +109,15 @@ export function UserMenuDrawer({ open, onOpenChange }: UserMenuDrawerProps) {
           label: "Notifications",
           href: "/dashboard/staff/notifications",
         },
+        ...(canManageRefunds
+          ? [
+            {
+              icon: RotateCcw,
+              label: "Refunds",
+              href: "/dashboard/staff/refunds",
+            },
+          ]
+          : []),
       ]
       : []),
     {
