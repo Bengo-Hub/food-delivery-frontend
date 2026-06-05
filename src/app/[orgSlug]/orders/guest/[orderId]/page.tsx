@@ -287,8 +287,9 @@ function GuestOrderContent() {
 
   return (
     <div className="mx-auto my-8 flex w-full max-w-2xl flex-col gap-6 px-4">
-      {/* Payment success banner */}
-      {["pending", "confirmed", "preparing"].includes(order.status) && (
+      {/* Payment / order status banner — only claim "confirmed" when payment actually succeeded */}
+      {order.paymentStatus === "paid" ||
+      ["confirmed", "preparing", "ready", "out_for_delivery", "delivered", "completed"].includes(order.status) ? (
         <div className="flex items-center gap-3 rounded-xl bg-green-50 border border-green-200 px-4 py-3">
           <CheckCircle2 className="size-5 text-green-600 shrink-0" />
           <div>
@@ -296,7 +297,15 @@ function GuestOrderContent() {
             <p className="text-xs text-green-700">Your order has been received and is being processed.</p>
           </div>
         </div>
-      )}
+      ) : order.status === "pending" ? (
+        <div className="flex items-center gap-3 rounded-xl bg-amber-50 border border-amber-200 px-4 py-3">
+          <Clock className="size-5 text-amber-600 shrink-0" />
+          <div>
+            <p className="text-sm font-semibold text-amber-800">Awaiting payment</p>
+            <p className="text-xs text-amber-700">Your order will be confirmed once payment is completed.</p>
+          </div>
+        </div>
+      ) : null}
 
       {/* Header */}
       <header className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
