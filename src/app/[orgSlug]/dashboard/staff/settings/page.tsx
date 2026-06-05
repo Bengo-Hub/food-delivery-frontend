@@ -340,22 +340,23 @@ function NotificationSettingsTab({ tenantSlug }: { tenantSlug: string }) {
   const [branding, setBranding] = useState<Branding>({ from_email: "", from_name: "", logo_url: "" });
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [loadError, setLoadError] = useState(false);
 
   const fetchData = useCallback(async () => {
-    try {
-      const [avRes, selRes, brandRes] = await Promise.allSettled([
-        notificationsApi.get(`/api/v1/${tenantSlug}/providers/available`),
-        notificationsApi.get(`/api/v1/${tenantSlug}/providers/selected`),
-        notificationsApi.get(`/api/v1/${tenantSlug}/branding`),
-      ]);
-      if (avRes.status === "fulfilled") setAvailableProviders(avRes.value.data || []);
-      if (selRes.status === "fulfilled") setSelectedProviders(selRes.value.data || {});
-      if (brandRes.status === "fulfilled") setBranding(brandRes.value.data || branding);
-    } catch {
-      // Silently handle
-    } finally {
-      setIsLoading(false);
+    setLoadError(false);
+    const [avRes, selRes, brandRes] = await Promise.allSettled([
+      notificationsApi.get(`/api/v1/${tenantSlug}/providers/available`),
+      notificationsApi.get(`/api/v1/${tenantSlug}/providers/selected`),
+      notificationsApi.get(`/api/v1/${tenantSlug}/branding`),
+    ]);
+    if (avRes.status === "fulfilled") setAvailableProviders(avRes.value.data || []);
+    if (selRes.status === "fulfilled") setSelectedProviders(selRes.value.data || {});
+    if (brandRes.status === "fulfilled") setBranding(brandRes.value.data || branding);
+    // Surface a clear error state instead of silently degrading to empty.
+    if (avRes.status === "rejected" && selRes.status === "rejected" && brandRes.status === "rejected") {
+      setLoadError(true);
     }
+    setIsLoading(false);
   }, [tenantSlug]);
 
   useEffect(() => { fetchData(); }, [fetchData]);
@@ -408,6 +409,11 @@ function NotificationSettingsTab({ tenantSlug }: { tenantSlug: string }) {
 
   return (
     <div className="space-y-6">
+      {loadError && (
+        <div className="rounded-lg border border-destructive/40 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+          Could not load notification settings. Please retry or contact support if this persists.
+        </div>
+      )}
       {/* Provider Selection */}
       <Card>
         <CardHeader>
@@ -525,20 +531,21 @@ function SubscriptionAddonsTab({ tenantSlug }: { tenantSlug: string }) {
   const [isLoading, setIsLoading] = useState(true);
   const [subscribing, setSubscribing] = useState<string | null>(null);
   const [unsubscribing, setUnsubscribing] = useState<string | null>(null);
+  const [loadError, setLoadError] = useState(false);
 
   const fetchData = useCallback(async () => {
-    try {
-      const [avRes, actRes] = await Promise.allSettled([
-        subscriptionsApi.get(`/api/v1/${tenantSlug}/addons/available`),
-        subscriptionsApi.get(`/api/v1/${tenantSlug}/addons/active`),
-      ]);
-      if (avRes.status === "fulfilled") setAvailableAddons(avRes.value.data || []);
-      if (actRes.status === "fulfilled") setActiveAddons(actRes.value.data || []);
-    } catch {
-      // Silently handle
-    } finally {
-      setIsLoading(false);
+    setLoadError(false);
+    const [avRes, actRes] = await Promise.allSettled([
+      subscriptionsApi.get(`/api/v1/${tenantSlug}/addons/available`),
+      subscriptionsApi.get(`/api/v1/${tenantSlug}/addons/active`),
+    ]);
+    if (avRes.status === "fulfilled") setAvailableAddons(avRes.value.data || []);
+    if (actRes.status === "fulfilled") setActiveAddons(actRes.value.data || []);
+    // Surface a clear error state instead of silently degrading to empty.
+    if (avRes.status === "rejected" && actRes.status === "rejected") {
+      setLoadError(true);
     }
+    setIsLoading(false);
   }, [tenantSlug]);
 
   useEffect(() => { fetchData(); }, [fetchData]);
@@ -583,6 +590,11 @@ function SubscriptionAddonsTab({ tenantSlug }: { tenantSlug: string }) {
 
   return (
     <div className="space-y-6">
+      {loadError && (
+        <div className="rounded-lg border border-destructive/40 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+          Could not load subscription add-ons. Please retry or contact support if this persists.
+        </div>
+      )}
       {/* Active Add-ons */}
       {activeAddons.length > 0 && (
         <Card>

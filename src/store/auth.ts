@@ -2,6 +2,7 @@ import type { AxiosError } from "axios";
 import { create } from "zustand";
 
 import { attachAuthTokenGetter } from "@/lib/api/base";
+import { attachPlatformAuthTokenGetter } from "@/lib/api/platform-services";
 import {
     buildAuthorizeUrl,
     buildLogoutUrl,
@@ -393,3 +394,6 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 }));
 
 attachAuthTokenGetter(() => useAuthStore.getState().session?.accessToken ?? null);
+// Keep cross-service clients (notifications/subscriptions/treasury) authenticated
+// with the same SSO bearer token as the main api client.
+attachPlatformAuthTokenGetter(() => useAuthStore.getState().session?.accessToken ?? null);
