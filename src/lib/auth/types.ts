@@ -78,6 +78,7 @@ export type Permission =
   | "ordering.notifications.manage"
   | "ordering.notifications.manage_own"
   // Analytics
+  | "ordering.analytics.view"
   | "ordering.analytics.add"
   | "ordering.analytics.read"
   | "ordering.analytics.read_own"

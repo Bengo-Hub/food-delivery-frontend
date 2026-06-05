@@ -3,7 +3,9 @@ import {
   Car,
   CreditCard,
   ExternalLink,
+  FileLock,
   Flower,
+  Gauge,
   Heart,
   HelpCircle,
   Home,
@@ -61,6 +63,12 @@ export function UserMenuDrawer({ open, onOpenChange }: UserMenuDrawerProps) {
     permissions: ["ordering.orders.delete"],
     permissionOperator: "or",
   });
+  const canViewSla = userCanAccess(user, {
+    roles: ["admin", "superuser", "manager"],
+    permissions: ["ordering.analytics.view"],
+    permissionOperator: "or",
+  });
+  const canManageCompliance = userHasRole(user, ["admin", "superuser"]);
 
   const handleClose = () => {
     onOpenChange(false);
@@ -115,6 +123,24 @@ export function UserMenuDrawer({ open, onOpenChange }: UserMenuDrawerProps) {
               icon: RotateCcw,
               label: "Refunds",
               href: "/dashboard/staff/refunds",
+            },
+          ]
+          : []),
+        ...(canViewSla
+          ? [
+            {
+              icon: Gauge,
+              label: "SLA Performance",
+              href: "/dashboard/staff/sla",
+            },
+          ]
+          : []),
+        ...(canManageCompliance
+          ? [
+            {
+              icon: FileLock,
+              label: "Compliance",
+              href: "/dashboard/staff/compliance",
             },
           ]
           : []),
