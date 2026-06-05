@@ -8,10 +8,14 @@ import {
   Globe,
   Link2,
   Loader2,
+  Lock,
   Package,
+  Pencil,
   Plus,
   Save,
   Settings,
+  ShieldAlert,
+  SlidersHorizontal,
   Smartphone,
   Mail,
   X,
@@ -21,11 +25,28 @@ import { useParams } from "next/navigation";
 import { RequireAuth } from "@/components/auth/require-auth";
 import { SiteShell } from "@/components/layout/site-shell";
 import { useBrandConfig } from "@/hooks/use-brand";
+import {
+  useAdminServiceConfig,
+  useServiceConfig,
+  useUpdateAdminServiceConfig,
+  useUpdateServiceConfig,
+} from "@/hooks/use-service-config";
+import type { ServiceConfigItem } from "@/lib/api/settings";
+import { useAuthStore } from "@/store/auth";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { toast } from "@/lib/toast";
 import { api } from "@/lib/api/base";
 import { treasuryApi, notificationsApi, subscriptionsApi } from "@/lib/api/platform-services";
@@ -73,7 +94,12 @@ interface Addon {
   is_active?: boolean;
 }
 
-type ActiveTab = "payments" | "notifications" | "subscription" | "integrations";
+type ActiveTab =
+  | "payments"
+  | "notifications"
+  | "subscription"
+  | "integrations"
+  | "configuration";
 
 // ── App brand summary (from GET /api/v1/{tenant}/config) ──────────────────────
 
@@ -121,6 +147,7 @@ export default function TenantSettingsPage() {
     { key: "notifications", label: "Notifications", icon: Bell },
     { key: "subscription", label: "Add-ons", icon: Package },
     { key: "integrations", label: "Integrations", icon: Link2 },
+    { key: "configuration", label: "Configuration", icon: SlidersHorizontal },
   ];
 
   return (
@@ -165,6 +192,7 @@ export default function TenantSettingsPage() {
           {activeTab === "notifications" && <NotificationSettingsTab tenantSlug={tenantSlug} />}
           {activeTab === "subscription" && <SubscriptionAddonsTab tenantSlug={tenantSlug} />}
           {activeTab === "integrations" && <IntegrationsTab />}
+          {activeTab === "configuration" && <ConfigurationTab />}
         </div>
       </SiteShell>
     </RequireAuth>
@@ -747,6 +775,373 @@ function IntegrationsTab() {
           </p>
         </CardContent>
       </Card>
+    </div>
+  );
+}
+
+// ── Configuration (service-config store) ─────────────────────────────────────
+
+// Friendly fee_config field map. Keys must match the shape PUT by the
+// delivery-zones page (delivery_fee_base / delivery_fee_per_km /
+// free_delivery_minimum) so the two screens stay consistent. The remaining
+// keys extend that object; unknown keys on the stored object are preserved.
+const FEE_CONFIG_FIELDS: { key: string; label: string; hint?: string }[] = [
+  { key: "delivery_fee_base", label: "Base delivery fee (KES)" },
+  { key: "delivery_fee_per_km", label: "Per-km rate (KES)" },
+  { key: "free_delivery_minimum", label: "Free-delivery threshold (KES)" },
+  { key: "service_fee_percent", label: "Service fee (%)" },
+  { key: "packaging_fee", label: "Packaging fee (KES)" },
+  { key: "small_order_fee", label: "Small-order fee (KES)" },
+  { key: "small_order_threshold", label: "Small-order threshold (KES)" },
+];
+
+type FeeConfigShape = Record<string, unknown>;
+
+function parseFeeConfig(raw: string | undefined): FeeConfigShape {
+  if (!raw) return {};
+  try {
+    const parsed = JSON.parse(raw);
+    return parsed && typeof parsed === "object" ? (parsed as FeeConfigShape) : {};
+  } catch {
+    return {};
+  }
+}
+
+function maskValue(item: ServiceConfigItem): string {
+  if (item.isSecret) return "•••••";
+  return item.configValue ?? "";
+}
+
+/** Editable structured form for the fee_config key. */
+function FeeConfigCard({ item }: { item: ServiceConfigItem | undefined }) {
+  const update = useUpdateServiceConfig();
+  const [fields, setFields] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    const existing = parseFeeConfig(item?.configValue);
+    const next: Record<string, string> = {};
+    for (const f of FEE_CONFIG_FIELDS) {
+      const v = existing[f.key];
+      next[f.key] = v === undefined || v === null ? "" : String(v);
+    }
+    setFields(next);
+  }, [item?.configValue]);
+
+  const handleSave = () => {
+    if (!confirm("Save delivery & fee configuration?")) return;
+    // Preserve any keys we don't surface in the form.
+    const existing = parseFeeConfig(item?.configValue);
+    const value: FeeConfigShape = { ...existing };
+    for (const f of FEE_CONFIG_FIELDS) {
+      const raw = fields[f.key];
+      if (raw === "" || raw === undefined) continue;
+      const num = Number(raw);
+      value[f.key] = Number.isFinite(num) ? num : raw;
+    }
+    update.mutate(
+      { key: "fee_config", value },
+      {
+        onSettled: (_data, error) => {
+          if (error) toast.error("Failed to save fee configuration");
+          else toast.success("Fee configuration saved");
+        },
+      },
+    );
+  };
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <SlidersHorizontal className="size-5" />
+          Delivery &amp; Fees
+          {item?.isOverride && (
+            <Badge variant="soft" className="ml-1">
+              Override
+            </Badge>
+          )}
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="grid gap-4 sm:grid-cols-2">
+          {FEE_CONFIG_FIELDS.map((f) => (
+            <div key={f.key} className="space-y-2">
+              <Label htmlFor={`fee-${f.key}`}>{f.label}</Label>
+              <Input
+                id={`fee-${f.key}`}
+                type="number"
+                min="0"
+                step="any"
+                value={fields[f.key] ?? ""}
+                onChange={(e) =>
+                  setFields((prev) => ({ ...prev, [f.key]: e.target.value }))
+                }
+              />
+            </div>
+          ))}
+        </div>
+        <Button className="mt-4" onClick={handleSave} disabled={update.isPending}>
+          {update.isPending ? (
+            <Loader2 className="size-4 animate-spin mr-2" />
+          ) : (
+            <Save className="size-4 mr-2" />
+          )}
+          Save Configuration
+        </Button>
+      </CardContent>
+    </Card>
+  );
+}
+
+/** Generic edit dialog for a single (non-secret) service-config value. */
+function EditConfigDialog({
+  item,
+  open,
+  onOpenChange,
+  admin,
+}: {
+  item: ServiceConfigItem | null;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  admin: boolean;
+}) {
+  const updateTenant = useUpdateServiceConfig();
+  const updateAdmin = useUpdateAdminServiceConfig();
+  const mutation = admin ? updateAdmin : updateTenant;
+  const [value, setValue] = useState("");
+
+  useEffect(() => {
+    setValue(item?.configValue ?? "");
+  }, [item]);
+
+  if (!item) return null;
+
+  const handleSave = () => {
+    mutation.mutate(
+      { key: item.configKey, value },
+      {
+        onSettled: (_data, error) => {
+          if (error) {
+            toast.error(`Failed to update ${item.configKey}`);
+          } else {
+            toast.success(`${item.configKey} updated`);
+            onOpenChange(false);
+          }
+        },
+      },
+    );
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Edit &ldquo;{item.configKey}&rdquo;</DialogTitle>
+          <DialogDescription>
+            {admin
+              ? "Updating the platform default for this key."
+              : "Updating the tenant override for this key."}
+            {item.description ? ` ${item.description}` : ""}
+          </DialogDescription>
+        </DialogHeader>
+        <div className="space-y-2">
+          <Label htmlFor="config-value">Value ({item.configType})</Label>
+          <Textarea
+            id="config-value"
+            value={value}
+            onChange={(e) => setValue(e.target.value)}
+            rows={4}
+          />
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => onOpenChange(false)}>
+            Cancel
+          </Button>
+          <Button onClick={handleSave} disabled={mutation.isPending}>
+            {mutation.isPending ? (
+              <Loader2 className="size-4 animate-spin mr-2" />
+            ) : null}
+            Save
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+/** Table of service-config items (tenant or platform). */
+function ConfigTable({
+  items,
+  admin,
+  onEdit,
+}: {
+  items: ServiceConfigItem[];
+  admin: boolean;
+  onEdit: (item: ServiceConfigItem) => void;
+}) {
+  return (
+    <div className="divide-y rounded-lg border border-border">
+      <div className="grid grid-cols-[1fr_auto_1.5fr_auto] gap-3 bg-muted/30 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+        <span>Key</span>
+        <span>Type</span>
+        <span>Value</span>
+        <span className="sr-only">Actions</span>
+      </div>
+      {items.map((item) => (
+        <div
+          key={item.configKey}
+          className="grid grid-cols-[1fr_auto_1.5fr_auto] items-center gap-3 px-4 py-3"
+        >
+          <div className="min-w-0">
+            <p className="flex items-center gap-1.5 truncate text-sm font-medium">
+              {item.isSecret && (
+                <Lock className="size-3 shrink-0 text-muted-foreground" />
+              )}
+              {item.configKey}
+              {item.isOverride && (
+                <Badge variant="soft" className="ml-1 text-[10px]">
+                  Override
+                </Badge>
+              )}
+            </p>
+            {item.description ? (
+              <p className="truncate text-xs text-muted-foreground">
+                {item.description}
+              </p>
+            ) : null}
+          </div>
+          <Badge variant="outline" className="text-[10px]">
+            {item.configType}
+          </Badge>
+          <code className="truncate font-mono text-xs text-muted-foreground">
+            {admin ? item.configValue : maskValue(item)}
+          </code>
+          <Button
+            size="sm"
+            variant="ghost"
+            className="size-8 p-0"
+            disabled={item.isSecret && !admin}
+            onClick={() => onEdit(item)}
+            title={
+              item.isSecret && !admin
+                ? "Secret values are masked and cannot be edited here"
+                : "Override"
+            }
+          >
+            <Pencil className="size-3.5" />
+          </Button>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function ConfigurationTab() {
+  const user = useAuthStore((s) => s.user);
+  const isSuperuser = !!(
+    user?.is_platform_owner ||
+    user?.isSuperUser ||
+    user?.roles?.includes("superuser")
+  );
+
+  const { data: configs = [], isLoading } = useServiceConfig();
+  const { data: adminConfigs = [], isLoading: isAdminLoading } =
+    useAdminServiceConfig(isSuperuser);
+
+  const [editItem, setEditItem] = useState<ServiceConfigItem | null>(null);
+  const [editAdmin, setEditAdmin] = useState(false);
+  const [dialogOpen, setDialogOpen] = useState(false);
+
+  const openEdit = (item: ServiceConfigItem, admin: boolean) => {
+    setEditItem(item);
+    setEditAdmin(admin);
+    setDialogOpen(true);
+  };
+
+  const feeConfig = configs.find((c) => c.configKey === "fee_config");
+  const otherConfigs = configs.filter((c) => c.configKey !== "fee_config");
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <Loader2 className="size-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      <FeeConfigCard item={feeConfig} />
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Settings className="size-5" />
+            Service Configuration
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {otherConfigs.length === 0 ? (
+            <div className="py-8 text-center">
+              <Settings className="mx-auto mb-2 size-8 text-muted-foreground" />
+              <p className="text-sm text-muted-foreground">
+                No service configuration values yet.
+              </p>
+            </div>
+          ) : (
+            <ConfigTable
+              items={otherConfigs}
+              admin={false}
+              onEdit={(item) => openEdit(item, false)}
+            />
+          )}
+        </CardContent>
+      </Card>
+
+      {isSuperuser && (
+        <Card className="border-amber-300/60">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <ShieldAlert className="size-5 text-amber-600" />
+              Platform Defaults
+              <Badge variant="outline" className="ml-1 text-[10px]">
+                Superuser
+              </Badge>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="mb-4 text-xs text-muted-foreground">
+              Platform-wide defaults with unmasked secrets. Changes here affect
+              every tenant that has not set an override.
+            </p>
+            {isAdminLoading ? (
+              <div className="flex items-center justify-center py-10">
+                <Loader2 className="size-6 animate-spin text-primary" />
+              </div>
+            ) : adminConfigs.length === 0 ? (
+              <div className="py-8 text-center">
+                <Settings className="mx-auto mb-2 size-8 text-muted-foreground" />
+                <p className="text-sm text-muted-foreground">
+                  No platform default values.
+                </p>
+              </div>
+            ) : (
+              <ConfigTable
+                items={adminConfigs}
+                admin
+                onEdit={(item) => openEdit(item, true)}
+              />
+            )}
+          </CardContent>
+        </Card>
+      )}
+
+      <EditConfigDialog
+        item={editItem}
+        open={dialogOpen}
+        onOpenChange={setDialogOpen}
+        admin={editAdmin}
+      />
     </div>
   );
 }
