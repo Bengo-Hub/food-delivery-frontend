@@ -13,6 +13,7 @@ import {
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
+import { RequireAuth } from "@/components/auth/require-auth";
 import { SiteShell } from "@/components/layout/site-shell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -44,7 +45,7 @@ const emptyForm: FormData = {
   estimatedTimeMinutes: "30",
 };
 
-export default function DeliveryZonesPage() {
+function DeliveryZonesPageInner() {
   const slug = useOrgSlug();
   const queryClient = useQueryClient();
   const [editingZone, setEditingZone] = useState<DeliveryZone | null>(null);
@@ -412,5 +413,17 @@ export default function DeliveryZonesPage() {
         </div>
       </div>
     </SiteShell>
+  );
+}
+
+export default function DeliveryZonesPage() {
+  return (
+    <RequireAuth
+      roles={["staff", "admin", "superuser", "manager", "member"]}
+      permissions={["ordering.delivery_zones.manage"]}
+      permissionOperator="or"
+    >
+      <DeliveryZonesPageInner />
+    </RequireAuth>
   );
 }

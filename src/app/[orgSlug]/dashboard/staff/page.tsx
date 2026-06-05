@@ -15,6 +15,7 @@ import {
 import { useCallback, useState } from "react";
 
 import { RequireAuth } from "@/components/auth/require-auth";
+import { PermissionActionButton } from "@/components/auth/permission-action-button";
 import { MetricCard } from "@/components/dashboard/metric-card";
 import { SiteShell } from "@/components/layout/site-shell";
 import { SubscriptionBanner } from "@/components/subscription/subscription-banner";
@@ -385,17 +386,16 @@ function OrderCard({
             {/* Assign Rider button: delivery orders at "ready" status */}
             {order.status === "ready" && order.fulfillmentType === "delivery" && (
               <div className="relative">
-                <Button
-                  size="sm"
-                  variant="outline"
+                <PermissionActionButton
+                  permission="ordering.orders.manage"
                   disabled={isUpdating}
                   onClick={() => onToggleRiderPicker(order.id)}
-                  className="gap-1.5"
+                  className="inline-flex h-8 items-center justify-center gap-1.5 rounded-md border border-input bg-background px-3 text-sm font-medium hover:bg-accent disabled:pointer-events-none disabled:opacity-50"
                 >
                   <UserCheck className="size-3.5" />
                   Assign Rider
                   <ChevronDown className="size-3" />
-                </Button>
+                </PermissionActionButton>
                 {showRiderPicker && (
                   <div className="absolute right-0 top-full z-50 mt-1 w-56 rounded-lg border border-border bg-background shadow-lg">
                     {ridersLoading ? (
@@ -424,11 +424,10 @@ function OrderCard({
               </div>
             )}
 
-            <Button
-              size="sm"
-              variant="ghost"
-              className="text-destructive hover:bg-destructive/10"
+            <PermissionActionButton
+              permission="ordering.orders.delete"
               disabled={isUpdating}
+              className="inline-flex h-8 items-center justify-center rounded-md px-3 text-sm font-medium text-destructive hover:bg-destructive/10 disabled:pointer-events-none disabled:opacity-50"
               onClick={() => {
                 if (window.confirm(`Delete order #${order.orderNumber}? This cannot be undone.`)) {
                   onDelete(order.id);
@@ -436,7 +435,7 @@ function OrderCard({
               }}
             >
               Delete
-            </Button>
+            </PermissionActionButton>
           </div>
         </div>
       </CardContent>

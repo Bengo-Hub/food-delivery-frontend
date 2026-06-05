@@ -38,7 +38,11 @@ export default function PlatformDashboardPage({
   const orgSlug = params?.orgSlug as string;
   const router = useRouter();
   const user = useAuthStore((s) => s.user);
-  const isPlatformOwner = orgSlug === "codevertex";
+  const isPlatformOwner = !!(
+    user?.is_platform_owner ||
+    user?.isSuperUser ||
+    user?.roles?.includes("superuser")
+  );
 
   const [search, setSearch] = useState("");
 

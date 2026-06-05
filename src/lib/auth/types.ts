@@ -1,4 +1,15 @@
-export type UserRole = "customer" | "rider" | "staff" | "admin" | "superuser" | "member";
+export type UserRole =
+  | "customer"
+  | "rider"
+  | "staff"
+  | "admin"
+  | "superuser"
+  | "member"
+  | "manager"
+  | "kitchen"
+  | "cashier"
+  | "delivery_coordinator"
+  | "viewer";
 
 export type Permission =
   // New dot-prefix format (canonical)
@@ -102,6 +113,9 @@ export type Permission =
   | "ordering.support.delete"
   | "ordering.support.manage"
   | "ordering.support.manage_own"
+  // Delivery zones
+  | "ordering.delivery_zones.read"
+  | "ordering.delivery_zones.manage"
   // Config
   | "ordering.config.view"
   | "ordering.config.manage"

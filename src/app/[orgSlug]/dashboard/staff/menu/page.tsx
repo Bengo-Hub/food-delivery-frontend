@@ -65,7 +65,8 @@ export default function MenuManagementPage() {
     <RequireAuth
       roles={["staff", "admin", "superuser"]}
       roleOperator="or"
-      permissions={["catalog:view"]}
+      permissions={["ordering.catalog.manage"]}
+      permissionOperator="or"
     >
       <SiteShell>
         <div className="mx-auto w-full max-w-6xl px-4 py-6">

@@ -123,7 +123,7 @@ export default function OrdersPage() {
   ).length;
 
   return (
-    <RequireAuth roles={["customer"]}>
+    <RequireAuth roles={["customer", "member", "staff", "admin", "superuser", "manager", "cashier"]}>
       <SiteShell>
         <div className="mx-auto flex w-full max-w-3xl flex-col gap-4 px-4 py-4 sm:gap-6 sm:py-8">
           {/* Header */}

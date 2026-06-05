@@ -28,6 +28,7 @@ import { cn } from "@/lib/utils";
 import { useTenantBranding } from "@/providers/branding-provider";
 import { useOrgSlug } from "@/providers/org-slug-provider";
 import { useAuthStore } from "@/store/auth";
+import { userHasRole } from "@/lib/auth/permissions";
 
 interface UserMenuDrawerProps {
   open: boolean;
@@ -47,8 +48,12 @@ export function UserMenuDrawer({ open, onOpenChange }: UserMenuDrawerProps) {
     onOpenChange(false);
   };
 
-  const isPlatformOwner = orgSlug === 'codevertex';
-  const hasStaffAccess = user && (user as any).roles?.some((r: string) => ["staff", "admin", "superuser", "super_admin"].includes(r));
+  const isPlatformOwner = !!(
+    user?.is_platform_owner ||
+    user?.isSuperUser ||
+    user?.roles?.includes("superuser")
+  );
+  const hasStaffAccess = userHasRole(user, ["staff", "admin", "superuser", "manager"]);
 
   const handleClose = () => {
     onOpenChange(false);

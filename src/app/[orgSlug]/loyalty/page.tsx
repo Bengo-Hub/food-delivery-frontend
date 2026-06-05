@@ -78,7 +78,7 @@ export default function LoyaltyPage() {
     : 100;
 
   return (
-    <RequireAuth roles={["customer"]}>
+    <RequireAuth roles={["customer", "member", "staff", "admin", "superuser", "manager", "cashier"]}>
       <SiteShell>
         <div className="mx-auto my-8 flex w-full max-w-3xl flex-col gap-6 px-4">
           {/* Back */}
