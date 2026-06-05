@@ -1,4 +1,5 @@
 import {
+  Bell,
   Car,
   CreditCard,
   ExternalLink,
@@ -96,6 +97,11 @@ export function UserMenuDrawer({ open, onOpenChange }: UserMenuDrawerProps) {
           icon: Shield,
           label: "Roles & Permissions",
           href: "/dashboard/staff/roles",
+        },
+        {
+          icon: Bell,
+          label: "Notifications",
+          href: "/dashboard/staff/notifications",
         },
       ]
       : []),
