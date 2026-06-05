@@ -34,6 +34,8 @@ import {
   useSelectedGateways,
 } from "@/hooks/use-gateways";
 import { listZones } from "@/lib/api/zones";
+import { useUseCaseConfig } from "@/lib/api/use-case";
+import { useServiceConfig } from "@/hooks/use-service-config";
 import { orgRoute } from "@/lib/routes";
 import { toast } from "@/lib/toast";
 
@@ -199,33 +201,12 @@ export default function PlatformDashboardPage({
 
           {/* ─── Use-Case Config Tab ───────────────────────────────── */}
           <TabsContent value="use-case" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">Tenant Use-Case</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="py-6 text-center text-sm text-muted-foreground">
-                  Use-case configuration is not available here yet — no backend
-                  endpoint exists for this view.
-                </p>
-              </CardContent>
-            </Card>
+            <UseCaseTab orgSlug={orgSlug} enabled={isPlatformOwner} />
           </TabsContent>
 
           {/* ─── Fee Configuration Tab ─────────────────────────────── */}
           <TabsContent value="fees" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">Fee Configuration</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="py-6 text-center text-sm text-muted-foreground">
-                  Fee configuration is not available here yet — no backend endpoint
-                  exists for this view. Manage delivery fees from the Delivery Zones
-                  admin page.
-                </p>
-              </CardContent>
-            </Card>
+            <FeesTab />
           </TabsContent>
 
           {/* ─── Payment Gateway Status Tab ────────────────────────── */}
@@ -399,6 +380,167 @@ function PaymentGatewaysTab() {
               );
             })}
           </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+/* ─── Use-Case Config Tab ────────────────────────────────────────────── */
+//
+// Read-only view of the tenant's business use_case, the available use-cases
+// ordering supports, and each outlet's individual use_case. Data flows through
+// GET /api/v1/{slug}/admin/use-case (config.view permission).
+
+function formatUseCase(value: string): string {
+  if (!value) return "—";
+  return value.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
+function UseCaseTab({ orgSlug, enabled }: { orgSlug: string; enabled: boolean }) {
+  const { data, isLoading } = useUseCaseConfig(orgSlug, enabled);
+
+  const useCase = data?.use_case ?? "";
+  const available = data?.available_use_cases ?? [];
+  const outlets = data?.outlets ?? [];
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2 text-lg">
+          <Settings className="size-5" />
+          Tenant Use-Case
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        {isLoading ? (
+          <div className="flex items-center justify-center py-12">
+            <Loader2 className="size-8 animate-spin text-primary" />
+          </div>
+        ) : (
+          <div className="space-y-6">
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <p className="text-sm text-muted-foreground">Primary use-case</p>
+                <p className="text-base font-medium">{formatUseCase(useCase)}</p>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {available.length === 0 ? (
+                  <span className="text-sm text-muted-foreground">
+                    No use-cases available
+                  </span>
+                ) : (
+                  available.map((uc) => (
+                    <Badge
+                      key={uc}
+                      variant={uc === useCase ? "default" : "outline"}
+                    >
+                      {formatUseCase(uc)}
+                    </Badge>
+                  ))
+                )}
+              </div>
+            </div>
+
+            <div>
+              <p className="mb-2 text-sm font-medium">Outlets</p>
+              {outlets.length === 0 ? (
+                <p className="py-6 text-center text-sm text-muted-foreground">
+                  No outlets configured for this tenant.
+                </p>
+              ) : (
+                <div className="divide-y rounded-lg border">
+                  {outlets.map((o) => (
+                    <div
+                      key={o.id}
+                      className="flex items-center justify-between px-4 py-3"
+                    >
+                      <p className="text-sm font-medium">{o.name}</p>
+                      <Badge variant="outline">{formatUseCase(o.use_case)}</Badge>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+/* ─── Fee Configuration Tab ──────────────────────────────────────────── */
+//
+// Read-only view of the existing `fee_config` service-config item. Field labels
+// mirror the editable FeeConfigCard in the staff settings page so the two views
+// stay consistent. No dedicated fee endpoint — reuses the service-config store.
+
+const PLATFORM_FEE_FIELDS: { key: string; label: string }[] = [
+  { key: "delivery_fee_base", label: "Base delivery fee (KES)" },
+  { key: "delivery_fee_per_km", label: "Per-km rate (KES)" },
+  { key: "free_delivery_minimum", label: "Free-delivery threshold (KES)" },
+  { key: "service_fee_percent", label: "Service fee (%)" },
+  { key: "packaging_fee", label: "Packaging fee (KES)" },
+  { key: "small_order_fee", label: "Small-order fee (KES)" },
+  { key: "small_order_threshold", label: "Small-order threshold (KES)" },
+];
+
+function parsePlatformFeeConfig(
+  raw: string | undefined,
+): Record<string, unknown> {
+  if (!raw) return {};
+  try {
+    const parsed = JSON.parse(raw);
+    return parsed && typeof parsed === "object"
+      ? (parsed as Record<string, unknown>)
+      : {};
+  } catch {
+    return {};
+  }
+}
+
+function FeesTab() {
+  const { data: configs = [], isLoading } = useServiceConfig();
+  const feeConfig = configs.find((c) => c.configKey === "fee_config");
+  const values = parsePlatformFeeConfig(feeConfig?.configValue);
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2 text-lg">
+          <DollarSign className="size-5" />
+          Fee Configuration
+          {feeConfig?.isOverride && (
+            <Badge variant="outline" className="ml-1">
+              Override
+            </Badge>
+          )}
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        {isLoading ? (
+          <div className="flex items-center justify-center py-12">
+            <Loader2 className="size-8 animate-spin text-primary" />
+          </div>
+        ) : !feeConfig ? (
+          <p className="py-6 text-center text-sm text-muted-foreground">
+            No fee configuration set. Configure delivery &amp; fees from the
+            settings page.
+          </p>
+        ) : (
+          <dl className="grid gap-4 sm:grid-cols-2">
+            {PLATFORM_FEE_FIELDS.map((f) => {
+              const v = values[f.key];
+              const display =
+                v === undefined || v === null || v === "" ? "—" : String(v);
+              return (
+                <div key={f.key} className="space-y-1">
+                  <dt className="text-sm text-muted-foreground">{f.label}</dt>
+                  <dd className="text-base font-medium">{display}</dd>
+                </div>
+              );
+            })}
+          </dl>
         )}
       </CardContent>
     </Card>
