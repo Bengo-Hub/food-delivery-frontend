@@ -92,6 +92,11 @@ export function UserMenuDrawer({ open, onOpenChange }: UserMenuDrawerProps) {
           label: "Staff Dashboard",
           href: "/dashboard/staff",
         },
+        {
+          icon: Shield,
+          label: "Roles & Permissions",
+          href: "/dashboard/staff/roles",
+        },
       ]
       : []),
     {
