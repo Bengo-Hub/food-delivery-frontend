@@ -1,4 +1,5 @@
 import {
+  BarChart3,
   Bell,
   Car,
   CreditCard,
@@ -68,6 +69,11 @@ export function UserMenuDrawer({ open, onOpenChange }: UserMenuDrawerProps) {
     permissions: ["ordering.analytics.view"],
     permissionOperator: "or",
   });
+  const canViewAnalytics = userCanAccess(user, {
+    roles: ["admin", "superuser", "manager"],
+    permissions: ["ordering.analytics.view"],
+    permissionOperator: "or",
+  });
   const canManageCompliance = userHasRole(user, ["admin", "superuser"]);
 
   const handleClose = () => {
@@ -123,6 +129,15 @@ export function UserMenuDrawer({ open, onOpenChange }: UserMenuDrawerProps) {
               icon: RotateCcw,
               label: "Refunds",
               href: "/dashboard/staff/refunds",
+            },
+          ]
+          : []),
+        ...(canViewAnalytics
+          ? [
+            {
+              icon: BarChart3,
+              label: "Analytics",
+              href: "/dashboard/staff/analytics",
             },
           ]
           : []),
