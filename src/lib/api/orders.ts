@@ -38,6 +38,8 @@ export interface Order {
   currency: string;
   paymentMethod: string;
   paymentStatus: string;
+  /** How the order is fulfilled: "delivery" | "pickup" | "dine_in" | "scheduled". */
+  fulfillmentType?: string;
   deliveryAddress: string;
   deliveryLat?: number;
   deliveryLng?: number;

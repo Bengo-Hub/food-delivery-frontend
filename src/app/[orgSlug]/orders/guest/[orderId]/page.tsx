@@ -30,18 +30,48 @@ import { orgRoute } from "@/lib/routes";
 import { cn } from "@/lib/utils";
 import { useOrgSlug } from "@/providers/org-slug-provider";
 
-const ORDER_TIMELINE = [
-  { key: "pending", label: "Order Placed", icon: Clock },
-  { key: "confirmed", label: "Confirmed", icon: Check },
-  { key: "preparing", label: "Preparing", icon: ChefHat },
-  { key: "ready", label: "Ready", icon: Package },
-  { key: "out_for_delivery", label: "On the Way", icon: Bike },
-  { key: "delivered", label: "Delivered", icon: Check },
+type TimelineStep = {
+  /** Order statuses that map to this step. The step lights up once the order
+   *  reaches any of these statuses (or a later step's status). */
+  keys: readonly string[];
+  label: string;
+  icon: typeof Clock;
+};
+
+// Delivery flow: …→ Ready → On the Way → Delivered.
+const DELIVERY_TIMELINE: readonly TimelineStep[] = [
+  { keys: ["pending"], label: "Order Placed", icon: Clock },
+  { keys: ["confirmed"], label: "Confirmed", icon: Check },
+  { keys: ["preparing"], label: "Preparing", icon: ChefHat },
+  { keys: ["ready"], label: "Ready", icon: Package },
+  { keys: ["out_for_delivery"], label: "On the Way", icon: Bike },
+  { keys: ["delivered", "completed"], label: "Delivered", icon: Check },
 ] as const;
 
-function timelineIndex(status: string): number {
-  const idx = ORDER_TIMELINE.findIndex((s) => s.key === status);
-  return idx === -1 ? -1 : idx;
+// Pickup / dine-in flow: …→ Ready → Picked Up. No "On the Way"/"Delivered".
+const PICKUP_TIMELINE: readonly TimelineStep[] = [
+  { keys: ["pending"], label: "Order Placed", icon: Clock },
+  { keys: ["confirmed"], label: "Confirmed", icon: Check },
+  { keys: ["preparing"], label: "Preparing", icon: ChefHat },
+  { keys: ["ready"], label: "Ready", icon: Package },
+  { keys: ["completed", "delivered"], label: "Picked Up", icon: Check },
+] as const;
+
+/** Normalizes the order's fulfilment type — anything containing "deliver"
+ *  (e.g. "delivery") is a delivery flow; everything else (pickup, dine_in,
+ *  scheduled, missing) uses the pickup flow. */
+function isDeliveryFulfillment(fulfillmentType: string | undefined): boolean {
+  return /deliver/i.test(fulfillmentType ?? "");
+}
+
+function timelineFor(fulfillmentType: string | undefined): readonly TimelineStep[] {
+  return isDeliveryFulfillment(fulfillmentType) ? DELIVERY_TIMELINE : PICKUP_TIMELINE;
+}
+
+/** Maps the order's current status to its step index in the given timeline.
+ *  Returns the index of the furthest step whose keys include the status. */
+function timelineIndex(timeline: readonly TimelineStep[], status: string): number {
+  return timeline.findIndex((s) => s.keys.includes(status));
 }
 
 const TREASURY_API_URL =
@@ -333,7 +363,24 @@ function GuestOrderContent() {
     void queryClient.invalidateQueries({ queryKey });
   };
 
-  const currentStep = order ? timelineIndex(order.status) : -1;
+  // Channel-aware progress timeline: delivery orders track through
+  // "On the Way"/"Delivered"; pickup/dine-in orders end at "Picked Up".
+  const timeline = timelineFor(order?.fulfillmentType);
+  const currentStep = order ? timelineIndex(timeline, order.status) : -1;
+
+  // Which payment banner to show — derived from the actual payment state, not
+  // the order's fulfilment status. Returns null when no banner applies.
+  const paymentBanner: "paid" | "cod" | "awaiting" | null = (() => {
+    if (!order) return null;
+    const paid = order.paymentStatus === "paid" || order.paymentStatus === "completed";
+    if (paid) return "paid";
+    const isCod = /cash|cod|on_delivery/i.test(order.paymentMethod ?? "");
+    const cancelledOrFailed = ["cancelled", "failed"].includes(order.status);
+    if (isCod) return cancelledOrFailed ? null : "cod";
+    // Prepaid method, not yet paid: awaiting payment (unless cancelled/failed).
+    if (cancelledOrFailed) return null;
+    return "awaiting";
+  })();
 
   if (isLoading) {
     return (
@@ -356,13 +403,13 @@ function GuestOrderContent() {
 
   return (
     <div className="mx-auto my-8 flex w-full max-w-2xl flex-col gap-6 px-4">
-      {/* Payment / order status banner. Cash-on-delivery orders are paid on delivery, so a
-          confirmed COD order is NOT "Payment confirmed" until paymentStatus actually flips to
-          paid. Prepaid orders are paid up front (a confirmed prepaid order ⇒ paid). */}
-      {order.paymentStatus === "paid" ||
-      order.paymentStatus === "completed" ||
-      (!/cash|cod|on_delivery/i.test(order.paymentMethod ?? "") &&
-        ["confirmed", "preparing", "ready", "out_for_delivery", "delivered", "completed"].includes(order.status)) ? (
+      {/* Payment banner — driven by the REAL payment state (paymentStatus + method),
+          never by the order's fulfilment status. A pending payment must never show
+          "Payment confirmed", regardless of whether the order is being prepared.
+            • paid/completed            ⇒ green  "Payment confirmed"
+            • COD / pay-on-delivery     ⇒ blue   "Cash on delivery" (until paid)
+            • prepaid + pending/unpaid  ⇒ amber  "Awaiting payment" */}
+      {paymentBanner === "paid" ? (
         <div className="flex items-center gap-3 rounded-xl bg-green-50 border border-green-200 px-4 py-3">
           <CheckCircle2 className="size-5 text-green-600 shrink-0" />
           <div>
@@ -370,16 +417,15 @@ function GuestOrderContent() {
             <p className="text-xs text-green-700">Your order has been received and is being processed.</p>
           </div>
         </div>
-      ) : /cash|cod|on_delivery/i.test(order.paymentMethod ?? "") &&
-        !["cancelled", "failed"].includes(order.status) ? (
+      ) : paymentBanner === "cod" ? (
         <div className="flex items-center gap-3 rounded-xl bg-blue-50 border border-blue-200 px-4 py-3">
           <CreditCard className="size-5 text-blue-600 shrink-0" />
           <div>
             <p className="text-sm font-semibold text-blue-800">Cash on delivery</p>
-            <p className="text-xs text-blue-700">Your order has been placed. Please have payment ready when it arrives.</p>
+            <p className="text-xs text-blue-700">Pay the rider on delivery. Please have payment ready when it arrives.</p>
           </div>
         </div>
-      ) : order.status === "pending" ? (
+      ) : paymentBanner === "awaiting" ? (
         <div className="flex items-center gap-3 rounded-xl bg-amber-50 border border-amber-200 px-4 py-3">
           <Clock className="size-5 text-amber-600 shrink-0" />
           <div>
@@ -434,12 +480,12 @@ function GuestOrderContent() {
           </CardHeader>
           <CardContent>
             <div className="flex items-center justify-between">
-              {ORDER_TIMELINE.map((step, i) => {
+              {timeline.map((step, i) => {
                 const StepIcon = step.icon;
                 const reached = i <= currentStep;
                 const isCurrent = i === currentStep;
                 return (
-                  <div key={step.key} className="flex flex-1 flex-col items-center gap-1.5">
+                  <div key={step.label} className="flex flex-1 flex-col items-center gap-1.5">
                     <div className="flex w-full items-center">
                       {i > 0 && (
                         <div className={cn("h-0.5 flex-1", reached ? "bg-brand-emphasis" : "bg-border")} />
@@ -456,7 +502,7 @@ function GuestOrderContent() {
                       >
                         <StepIcon className="size-4" />
                       </div>
-                      {i < ORDER_TIMELINE.length - 1 && (
+                      {i < timeline.length - 1 && (
                         <div className={cn("h-0.5 flex-1", i < currentStep ? "bg-brand-emphasis" : "bg-border")} />
                       )}
                     </div>
