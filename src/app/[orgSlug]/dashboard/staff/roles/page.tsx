@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Loader2, ShieldCheck, Trash2, UserPlus, Users } from "lucide-react";
 
 import { RequireAuth } from "@/components/auth/require-auth";
@@ -12,11 +12,12 @@ import {
   useRevokeRole,
   useRoles,
 } from "@/hooks/use-rbac";
+import { useUsers } from "@/hooks/use-users";
 import type { OrderingPermission, OrderingRole, UserRoleAssignment } from "@/lib/api/rbac";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
+import { Combobox, type ComboboxOption } from "@/components/ui/combobox";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -136,8 +137,9 @@ function PermissionCatalog() {
 
 // ── Assign role form ──────────────────────────────────────────────────────────
 //
-// NOTE: There is no tenant-users / team / staff API in ordering-frontend, so we
-// cannot offer a user picker. The form takes a raw user ID (UUID). The role
+// The user is chosen from a searchable combobox backed by the tenant-users
+// directory (GET /{tenant}/admin/users via useUsers). Search is debounced and
+// resolved server-side; the selected option's value is the user's id. The role
 // picker is populated from the roles endpoint.
 
 function AssignRoleForm({ roles }: { roles: OrderingRole[] }) {
@@ -145,20 +147,40 @@ function AssignRoleForm({ roles }: { roles: OrderingRole[] }) {
   const [userId, setUserId] = useState("");
   const [roleId, setRoleId] = useState("");
 
+  // Debounce the user search so we don't hit the API on every keystroke.
+  const [userSearch, setUserSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedSearch(userSearch), 250);
+    return () => clearTimeout(t);
+  }, [userSearch]);
+
+  const { data: users = [], isLoading: usersLoading } = useUsers(debouncedSearch);
+
+  const userOptions = useMemo<ComboboxOption[]>(
+    () =>
+      users.map((u) => ({
+        value: u.id,
+        label: u.name || u.email,
+        ...(u.email ? { description: u.email } : {}),
+      })),
+    [users],
+  );
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const uid = userId.trim();
-    if (!uid || !roleId) {
-      toast.error("Enter a user ID and select a role.");
+    if (!userId || !roleId) {
+      toast.error("Select a user and a role.");
       return;
     }
     assign.mutate(
-      { user_id: uid, role_id: roleId },
+      { user_id: userId, role_id: roleId },
       {
         onSuccess: () => {
           toast.success("Role assigned");
           setUserId("");
           setRoleId("");
+          setUserSearch("");
         },
         onError: () => toast.error("Failed to assign role"),
       },
@@ -168,17 +190,23 @@ function AssignRoleForm({ roles }: { roles: OrderingRole[] }) {
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <p className="text-xs text-muted-foreground">
-        No tenant-users directory is available, so enter the user&apos;s UUID
-        directly. The role list comes from this organization&apos;s ordering roles.
+        Search for a user by name or email, then choose a role from this
+        organization&apos;s ordering roles.
       </p>
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="space-y-2">
-          <Label htmlFor="assign-user-id">User ID (UUID)</Label>
-          <Input
+          <Label htmlFor="assign-user-id">User</Label>
+          <Combobox
             id="assign-user-id"
-            placeholder="00000000-0000-0000-0000-000000000000"
             value={userId}
-            onChange={(e) => setUserId(e.target.value)}
+            onChange={setUserId}
+            options={userOptions}
+            search={userSearch}
+            onSearchChange={setUserSearch}
+            loading={usersLoading}
+            placeholder="Select a user"
+            searchPlaceholder="Search by name or email…"
+            emptyMessage="No matching users."
           />
         </div>
         <div className="space-y-2">

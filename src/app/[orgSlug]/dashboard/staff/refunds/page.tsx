@@ -63,6 +63,11 @@ function formatDate(value?: string | null) {
   return Number.isNaN(d.getTime()) ? "—" : d.toLocaleString();
 }
 
+// Canonical UUID v1–v5 shape. Used to validate the pasted payment ID — there is
+// no tenant/order payments list endpoint to back a searchable picker (see the
+// helper text below), so we at least guard against malformed input.
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
 // ── Create refund form ─────────────────────────────────────────────────────────
 
 function CreateRefundForm() {
@@ -86,6 +91,10 @@ function CreateRefundForm() {
 
     if (!pid) {
       toast.error("Enter the payment ID to refund.");
+      return;
+    }
+    if (!UUID_RE.test(pid)) {
+      toast.error("Payment ID must be a valid UUID.");
       return;
     }
     if (!amount || Number.isNaN(amt) || amt <= 0) {
@@ -125,8 +134,9 @@ function CreateRefundForm() {
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <p className="text-xs text-muted-foreground">
-        Refunds are issued against a payment ID (UUID). Find the payment ID on the
-        order&apos;s payment record.
+        Refunds are issued against a payment ID (UUID). Open the order&apos;s
+        payment record (Orders → the order → Payment) and copy its Payment ID, or
+        copy the Payment ID column from the refund ledger below.
       </p>
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="space-y-2">
@@ -136,7 +146,11 @@ function CreateRefundForm() {
             placeholder="00000000-0000-0000-0000-000000000000"
             value={paymentId}
             onChange={(e) => setPaymentId(e.target.value)}
+            aria-invalid={paymentId.trim() !== "" && !UUID_RE.test(paymentId.trim())}
           />
+          {paymentId.trim() !== "" && !UUID_RE.test(paymentId.trim()) ? (
+            <p className="text-xs text-destructive">Enter a valid UUID.</p>
+          ) : null}
         </div>
         <div className="space-y-2">
           <Label htmlFor="refund-amount">Amount</Label>
