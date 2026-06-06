@@ -22,12 +22,32 @@ import type { PaymentResult } from "@/components/checkout/treasury-payment-modal
 export type FulfillmentMode = "delivery" | "pickup" | "schedule";
 export type CheckoutStep = "review" | "processing" | "payment" | "success";
 
+/**
+ * Stable identifier for a selectable checkout payment option. Several options can
+ * map to the same backend `method` (e.g. pay-now M-Pesa vs M-Pesa-on-collection
+ * both send `mpesa`), so the UI tracks the OPTION id to drive post-place behavior.
+ */
+export type CheckoutPaymentOptionId =
+  | "paystack_now"
+  | "mpesa_now"
+  | "wallet"
+  | "cod_collection"
+  | "mpesa_collection";
+
 /** A payment method the customer can select at checkout. */
 export interface CheckoutPaymentOption {
+  /** Stable option identifier; distinguishes pay-now vs pay-on-collection. */
+  id: CheckoutPaymentOptionId;
   /** Backend method key sent as `paymentMethod` (e.g. "mpesa", "paystack", "cod", "wallet"). */
   method: string;
-  /** Human-readable label shown in the selector. */
+  /** Human-readable label shown in the selector (adapts to delivery/pickup). */
   label: string;
+  /**
+   * Pay-now options open the treasury payment modal so the customer pays
+   * immediately. Pay-on-collection options place the order pending and settle
+   * later (cash at handover / staff STK / guest order page).
+   */
+  payNow: boolean;
 }
 
 const SMALL_ORDER_THRESHOLD = 500;
@@ -98,8 +118,11 @@ export function useCheckoutState() {
   // Wallet payment state
   const [walletPaymentPending, setWalletPaymentPending] = useState(false);
 
-  // Selected payment method (key sent to the backend as `paymentMethod`).
-  const [selectedMethod, setSelectedMethod] = useState<string | undefined>(undefined);
+  // Selected payment OPTION id (distinguishes pay-now vs pay-on-collection even
+  // when two options share the same backend `paymentMethod`).
+  const [selectedOptionId, setSelectedOptionId] = useState<
+    CheckoutPaymentOptionId | undefined
+  >(undefined);
 
   // Queries & mutations
   const { data: addresses = [], isLoading: addressesLoading } = useAddresses();
@@ -189,57 +212,103 @@ export function useCheckoutState() {
   const walletBalance = paymentMethodsData?.wallet?.balance ?? null;
   const walletCurrency = paymentMethodsData?.wallet?.currency ?? "KES";
 
-  // Normalize a backend gateway `type` into a label. COD and cash variants are
-  // surfaced together as a single "M-Pesa / Cash on delivery" choice.
-  const isCodGateway = (t: string) => /cash|cod|on_delivery/i.test(t);
+  // Classify backend gateway `type` values. COD / cash variants enable the
+  // pay-on-collection options; an M-Pesa STK gateway enables both pay-now M-Pesa
+  // and M-Pesa-on-collection (deferred STK at handover / guest page).
+  const isCodGateway = (t: string) => /cash|cod|on_delivery|on_pickup|on_collection/i.test(t);
+  const isMpesaGateway = (t: string) => t === "mpesa" || t === "stk" || t === "mpesa_stk";
+  const isPaystackGateway = (t: string) => t === "paystack" || t === "card";
 
   const paymentOptions = useMemo<CheckoutPaymentOption[]>(() => {
     const gateways = paymentMethodsData?.gateways ?? [];
     const opts: CheckoutPaymentOption[] = [];
+
+    // Pickup collects at the outlet; delivery (and schedule, which is delivery-like)
+    // collects at the customer's door. Labels adapt to the channel.
+    const isPickup = fulfillmentMode === "pickup";
+    const collectWord = isPickup ? "Pickup" : "Delivery";
+
+    let hasMpesa = false;
+    let hasPaystack = false;
     let hasCod = false;
 
     for (const g of gateways) {
       if (!g.enabled) continue;
       const t = g.type.toLowerCase();
-      if (t === "mpesa" || t === "stk" || t === "mpesa_stk") {
-        if (!opts.some((o) => o.method === "mpesa")) {
-          opts.push({ method: "mpesa", label: "Pay now with M-Pesa" });
-        }
-      } else if (t === "paystack" || t === "card") {
-        if (!opts.some((o) => o.method === "paystack")) {
-          opts.push({ method: "paystack", label: "Pay now with card (Paystack)" });
-        }
-      } else if (isCodGateway(t)) {
-        hasCod = true;
-      }
+      if (isMpesaGateway(t)) hasMpesa = true;
+      else if (isPaystackGateway(t)) hasPaystack = true;
+      else if (isCodGateway(t)) hasCod = true;
     }
 
-    if (hasCod && !opts.some((o) => o.method === "cod")) {
-      opts.push({ method: "cod", label: "M-Pesa / Cash on delivery" });
+    // ── Pay now ───────────────────────────────────────────────────────
+    if (hasPaystack) {
+      opts.push({
+        id: "paystack_now",
+        method: "paystack",
+        label: "Pay now — Card (Paystack)",
+        payNow: true,
+      });
+    }
+    if (hasMpesa) {
+      opts.push({
+        id: "mpesa_now",
+        method: "mpesa",
+        label: "Pay now — M-Pesa (STK)",
+        payNow: true,
+      });
     }
 
     // Wallet — authenticated users only, and only when the balance covers the order.
     if (!isGuestMode && walletBalance !== null && walletBalance >= grandTotal && grandTotal > 0) {
       opts.push({
+        id: "wallet",
         method: "wallet",
         label: `Wallet (balance ${walletCurrency} ${walletBalance.toLocaleString()})`,
+        payNow: false,
+      });
+    }
+
+    // ── Pay on collection (cash / deferred M-Pesa at handover) ─────────
+    if (hasCod) {
+      opts.push({
+        id: "cod_collection",
+        method: "cod",
+        label: `Cash on ${collectWord}`,
+        payNow: false,
+      });
+    }
+    if (hasMpesa) {
+      opts.push({
+        id: "mpesa_collection",
+        method: "mpesa",
+        label: `M-Pesa on ${collectWord}`,
+        payNow: false,
       });
     }
 
     return opts;
-  }, [paymentMethodsData, isGuestMode, walletBalance, walletCurrency, grandTotal]);
+  }, [paymentMethodsData, fulfillmentMode, isGuestMode, walletBalance, walletCurrency, grandTotal]);
+
+  // The currently selected option object (derived from the tracked id).
+  const selectedOption = useMemo(
+    () => paymentOptions.find((o) => o.id === selectedOptionId) ?? null,
+    [paymentOptions, selectedOptionId],
+  );
+  // Backend method key sent as `paymentMethod` for the current selection.
+  const selectedMethod = selectedOption?.method;
 
   // Keep a valid selection: default to the first option, and clear/repair the
-  // selection if the available options change (e.g. wallet drops off the list).
+  // selection if the available options change (e.g. wallet drops off the list,
+  // or the fulfillment channel switches so labels/ids change).
   useEffect(() => {
     if (paymentOptions.length === 0) {
-      if (selectedMethod !== undefined) setSelectedMethod(undefined);
+      if (selectedOptionId !== undefined) setSelectedOptionId(undefined);
       return;
     }
-    if (!selectedMethod || !paymentOptions.some((o) => o.method === selectedMethod)) {
-      setSelectedMethod(paymentOptions[0].method);
+    if (!selectedOptionId || !paymentOptions.some((o) => o.id === selectedOptionId)) {
+      setSelectedOptionId(paymentOptions[0].id);
     }
-  }, [paymentOptions, selectedMethod]);
+  }, [paymentOptions, selectedOptionId]);
 
   // Auto-select default address
   useEffect(() => {
@@ -442,8 +511,13 @@ export function useCheckoutState() {
       setPaymentAmount(result.amount);
       setPaymentCurrency(result.currency || "KES");
 
-      if (result.paymentError) {
-        // Treasury unavailable — order was created but payment intent failed
+      // Pay-on-collection options (cash / deferred M-Pesa at handover) place the
+      // order pending and settle later — never open the pay-now modal for them.
+      const isPayOnCollection = selectedOption != null && !selectedOption.payNow && selectedOption.method !== "wallet";
+
+      if (result.paymentError && !isPayOnCollection) {
+        // Treasury unavailable — order was created but the pay-now intent failed.
+        // (Pay-on-collection orders don't need an intent, so ignore this.)
         setStep("review");
         setOrderError(result.paymentError);
         toast.error(`Order #${result.orderNumber || result.orderId.slice(0, 8)} created but payment gateway is unavailable. Please retry.`);
@@ -451,19 +525,25 @@ export function useCheckoutState() {
           ? `${orgRoute(orgSlug, `/orders/guest/${result.orderId}`)}?session_id=${sessionId}`
           : orgRoute(orgSlug, `/orders/${result.orderId}`);
         router.push(orderUrl);
-      } else if (selectedMethod === "wallet") {
-        // Wallet method chosen (authed + balance covers total) — pay the freshly
-        // created order straight from the wallet instead of the treasury modal.
+      } else if (selectedOption?.method === "wallet") {
+        // Wallet chosen (authed + balance covers total) — pay the freshly created
+        // order straight from the wallet instead of the treasury modal.
         // Prime the modal state first so the catch-fallback can recover gracefully.
         setPaymentIntentId(result.paymentIntentId || null);
         setInitiateUrl(result.initiateUrl || null);
         await handleWalletPayment(result.orderId);
+      } else if (isPayOnCollection) {
+        // Cash on collection / M-Pesa on collection — the order is placed pending
+        // and paid at handover (cash) or via the guest order page / staff STK.
+        // No modal: treat as success.
+        clearCart();
+        setStep("success");
       } else if (!result.paymentIntentId) {
-        // COD, wallet-only or zero-amount — no payment modal needed
+        // Zero-amount or backend reports nothing to pay — no payment modal needed.
         clearCart();
         setStep("success");
       } else {
-        // Online payment — show treasury payment modal
+        // Pay now (Paystack / M-Pesa STK) — show the treasury payment modal.
         setPaymentIntentId(result.paymentIntentId);
         setInitiateUrl(result.initiateUrl);
         setStep("payment");
@@ -481,7 +561,7 @@ export function useCheckoutState() {
     fulfillmentMode, selectedAddressId, addresses, isOutsideDeliveryZone, scheduledTime,
     items, sessionId, deliveryNotes, promoCode, orderNotes, requestUtensils, isTicketOnly,
     checkoutMutation, guestCheckoutMutation, orgSlug, router, clearCart,
-    selectedMethod, handleWalletPayment,
+    selectedMethod, selectedOption, handleWalletPayment,
   ]);
 
   const handlePaymentConfirmed = useCallback(
@@ -602,8 +682,11 @@ export function useCheckoutState() {
 
     // Payment method selection
     paymentOptions,
+    selectedOptionId,
+    setSelectedOptionId,
+    selectedOption,
+    /** Derived backend method key for the current selection (mpesa/paystack/cod/wallet). */
     selectedMethod,
-    setSelectedMethod,
 
     // Wallet
     walletBalance,

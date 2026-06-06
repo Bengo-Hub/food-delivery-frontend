@@ -21,7 +21,11 @@ import {
 } from "@/components/checkout/treasury-payment-modal";
 import { SiteShell } from "@/components/layout/site-shell";
 import { Button } from "@/components/ui/button";
-import { useCheckoutState, type CheckoutPaymentOption } from "@/hooks/use-checkout-state";
+import {
+  useCheckoutState,
+  type CheckoutPaymentOption,
+  type CheckoutPaymentOptionId,
+} from "@/hooks/use-checkout-state";
 import { cn } from "@/lib/utils";
 import { orgRoute } from "@/lib/routes";
 
@@ -197,8 +201,8 @@ export default function CheckoutPage() {
           {state.paymentOptions.length > 0 && (
             <PaymentMethodSelector
               options={state.paymentOptions}
-              selected={state.selectedMethod}
-              onSelect={state.setSelectedMethod}
+              selected={state.selectedOptionId}
+              onSelect={state.setSelectedOptionId}
             />
           )}
 
@@ -278,8 +282,8 @@ export default function CheckoutPage() {
 
 interface PaymentMethodSelectorProps {
   options: CheckoutPaymentOption[];
-  selected: string | undefined;
-  onSelect: (method: string) => void;
+  selected: CheckoutPaymentOptionId | undefined;
+  onSelect: (id: CheckoutPaymentOptionId) => void;
 }
 
 function PaymentMethodSelector({ options, selected, onSelect }: PaymentMethodSelectorProps) {
@@ -291,14 +295,14 @@ function PaymentMethodSelector({ options, selected, onSelect }: PaymentMethodSel
       </div>
       <div className="space-y-2" role="radiogroup" aria-label="Payment method">
         {options.map((opt) => {
-          const isSelected = selected === opt.method;
+          const isSelected = selected === opt.id;
           return (
             <button
-              key={opt.method}
+              key={opt.id}
               type="button"
               role="radio"
               aria-checked={isSelected}
-              onClick={() => onSelect(opt.method)}
+              onClick={() => onSelect(opt.id)}
               className={cn(
                 "flex w-full items-center gap-3 rounded-xl border p-3 text-left transition-colors",
                 isSelected ? "border-primary bg-primary/5" : "border-border hover:bg-muted/50",
