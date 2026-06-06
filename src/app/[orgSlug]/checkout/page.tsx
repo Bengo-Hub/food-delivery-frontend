@@ -1,6 +1,6 @@
 "use client";
 
-import { AlertTriangle, ArrowLeft, Loader2, MapPin, ShoppingBag, Store, Ticket, Wallet } from "lucide-react";
+import { AlertTriangle, ArrowLeft, CreditCard, Loader2, MapPin, ShoppingBag, Store, Ticket, Wallet } from "lucide-react";
 import Link from "next/link";
 import { useEffect } from "react";
 
@@ -21,7 +21,7 @@ import {
 } from "@/components/checkout/treasury-payment-modal";
 import { SiteShell } from "@/components/layout/site-shell";
 import { Button } from "@/components/ui/button";
-import { useCheckoutState } from "@/hooks/use-checkout-state";
+import { useCheckoutState, type CheckoutPaymentOption } from "@/hooks/use-checkout-state";
 import { cn } from "@/lib/utils";
 import { orgRoute } from "@/lib/routes";
 
@@ -193,6 +193,15 @@ export default function CheckoutPage() {
           {/* 4. FEES — Breakdown */}
           <FeeBreakdownCard feeBreakdown={state.feeBreakdown ?? null} loading={state.feesLoading} />
 
+          {/* 5. PAYMENT METHOD — choose how to pay */}
+          {state.paymentOptions.length > 0 && (
+            <PaymentMethodSelector
+              options={state.paymentOptions}
+              selected={state.selectedMethod}
+              onSelect={state.setSelectedMethod}
+            />
+          )}
+
           {/* Error message */}
           {state.orderError && (
             <div className="rounded-xl border border-destructive/50 bg-destructive/10 p-4 text-sm text-destructive">
@@ -230,7 +239,7 @@ export default function CheckoutPage() {
             {state.walletBalance >= state.paymentAmount ? (
               <Button
                 size="sm"
-                onClick={state.handleWalletPayment}
+                onClick={() => state.handleWalletPayment()}
                 disabled={state.walletPaymentPending}
               >
                 {state.walletPaymentPending && <Loader2 className="mr-1 size-3 animate-spin" />}
@@ -262,6 +271,54 @@ export default function CheckoutPage() {
         onPaymentFailed={state.handlePaymentFailed}
       />
     </SiteShell>
+  );
+}
+
+// ─── Payment Method Selector ────────────────────────────────────────
+
+interface PaymentMethodSelectorProps {
+  options: CheckoutPaymentOption[];
+  selected: string | undefined;
+  onSelect: (method: string) => void;
+}
+
+function PaymentMethodSelector({ options, selected, onSelect }: PaymentMethodSelectorProps) {
+  return (
+    <section className="rounded-xl border border-border p-4">
+      <div className="mb-3 flex items-center gap-2 text-sm font-medium">
+        <CreditCard className="size-4 text-primary" />
+        <span>Payment Method</span>
+      </div>
+      <div className="space-y-2" role="radiogroup" aria-label="Payment method">
+        {options.map((opt) => {
+          const isSelected = selected === opt.method;
+          return (
+            <button
+              key={opt.method}
+              type="button"
+              role="radio"
+              aria-checked={isSelected}
+              onClick={() => onSelect(opt.method)}
+              className={cn(
+                "flex w-full items-center gap-3 rounded-xl border p-3 text-left transition-colors",
+                isSelected ? "border-primary bg-primary/5" : "border-border hover:bg-muted/50",
+              )}
+            >
+              <div
+                className={cn(
+                  "flex size-5 items-center justify-center rounded-full border-2",
+                  isSelected ? "border-primary" : "border-muted-foreground/40",
+                )}
+              >
+                {isSelected && <div className="size-2.5 rounded-full bg-primary" />}
+              </div>
+              <span className="min-w-0 flex-1 text-sm font-medium">{opt.label}</span>
+              {opt.method === "wallet" && <Wallet className="size-4 shrink-0 text-primary" />}
+            </button>
+          );
+        })}
+      </div>
+    </section>
   );
 }
 

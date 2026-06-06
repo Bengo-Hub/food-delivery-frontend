@@ -47,10 +47,6 @@ function timelineIndex(status: string): number {
 const TREASURY_API_URL =
   process.env.NEXT_PUBLIC_TREASURY_API_URL || "http://localhost:4201";
 
-function isCodMethod(method?: string): boolean {
-  return /cash|cod|on_delivery/i.test(method ?? "");
-}
-
 function statusVariant(status: string): "default" | "soft" | "outline" {
   if (["delivered", "completed"].includes(status)) return "default";
   if (["cancelled", "failed"].includes(status)) return "outline";
@@ -306,14 +302,14 @@ function GuestOrderContent() {
     retry: 1,
   });
 
-  // "Payable" = a pending, unpaid, non-cash/COD order that has a payment intent
-  // we can drive through the treasury pay flow (Paystack / M-Pesa).
+  // "Payable" = a pending, unpaid order that has a payment intent we can drive
+  // through the treasury pay flow (Paystack / M-Pesa). COD / pay-on-delivery
+  // orders also get a payable intent, so they can be paid early from here too.
   const isPayable =
     !!order &&
     order.status === "pending" &&
     order.paymentStatus !== "paid" &&
     order.paymentStatus !== "completed" &&
-    !isCodMethod(order.paymentMethod) &&
     !!order.paymentIntentId;
 
   const [payOpen, setPayOpen] = useState(false);

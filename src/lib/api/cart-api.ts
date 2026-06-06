@@ -36,6 +36,7 @@ export interface CheckoutRequest {
   contactEmail?: string;
   contactName?: string;
   contactPhone?: string;
+  paymentMethod?: string;
 }
 
 // ─── API Functions ───────────────────────────────────────────────────
@@ -104,6 +105,7 @@ export interface GuestCheckoutRequest {
   deliveryNotes?: string;
   scheduledAt?: string;
   idempotencyKey?: string;
+  paymentMethod?: string;
 }
 
 export async function guestCheckout(slug: string, data: GuestCheckoutRequest): Promise<CheckoutResponse> {

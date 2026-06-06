@@ -22,6 +22,14 @@ import type { PaymentResult } from "@/components/checkout/treasury-payment-modal
 export type FulfillmentMode = "delivery" | "pickup" | "schedule";
 export type CheckoutStep = "review" | "processing" | "payment" | "success";
 
+/** A payment method the customer can select at checkout. */
+export interface CheckoutPaymentOption {
+  /** Backend method key sent as `paymentMethod` (e.g. "mpesa", "paystack", "cod", "wallet"). */
+  method: string;
+  /** Human-readable label shown in the selector. */
+  label: string;
+}
+
 const SMALL_ORDER_THRESHOLD = 500;
 
 export function useCheckoutState() {
@@ -89,6 +97,9 @@ export function useCheckoutState() {
 
   // Wallet payment state
   const [walletPaymentPending, setWalletPaymentPending] = useState(false);
+
+  // Selected payment method (key sent to the backend as `paymentMethod`).
+  const [selectedMethod, setSelectedMethod] = useState<string | undefined>(undefined);
 
   // Queries & mutations
   const { data: addresses = [], isLoading: addressesLoading } = useAddresses();
@@ -174,6 +185,62 @@ export function useCheckoutState() {
 
   const isGuestMode = checkoutMode === "guest" && status !== "authenticated";
 
+  // ─── Payment method options (from the payment-methods aggregate) ───────
+  const walletBalance = paymentMethodsData?.wallet?.balance ?? null;
+  const walletCurrency = paymentMethodsData?.wallet?.currency ?? "KES";
+
+  // Normalize a backend gateway `type` into a label. COD and cash variants are
+  // surfaced together as a single "M-Pesa / Cash on delivery" choice.
+  const isCodGateway = (t: string) => /cash|cod|on_delivery/i.test(t);
+
+  const paymentOptions = useMemo<CheckoutPaymentOption[]>(() => {
+    const gateways = paymentMethodsData?.gateways ?? [];
+    const opts: CheckoutPaymentOption[] = [];
+    let hasCod = false;
+
+    for (const g of gateways) {
+      if (!g.enabled) continue;
+      const t = g.type.toLowerCase();
+      if (t === "mpesa" || t === "stk" || t === "mpesa_stk") {
+        if (!opts.some((o) => o.method === "mpesa")) {
+          opts.push({ method: "mpesa", label: "Pay now with M-Pesa" });
+        }
+      } else if (t === "paystack" || t === "card") {
+        if (!opts.some((o) => o.method === "paystack")) {
+          opts.push({ method: "paystack", label: "Pay now with card (Paystack)" });
+        }
+      } else if (isCodGateway(t)) {
+        hasCod = true;
+      }
+    }
+
+    if (hasCod && !opts.some((o) => o.method === "cod")) {
+      opts.push({ method: "cod", label: "M-Pesa / Cash on delivery" });
+    }
+
+    // Wallet — authenticated users only, and only when the balance covers the order.
+    if (!isGuestMode && walletBalance !== null && walletBalance >= grandTotal && grandTotal > 0) {
+      opts.push({
+        method: "wallet",
+        label: `Wallet (balance ${walletCurrency} ${walletBalance.toLocaleString()})`,
+      });
+    }
+
+    return opts;
+  }, [paymentMethodsData, isGuestMode, walletBalance, walletCurrency, grandTotal]);
+
+  // Keep a valid selection: default to the first option, and clear/repair the
+  // selection if the available options change (e.g. wallet drops off the list).
+  useEffect(() => {
+    if (paymentOptions.length === 0) {
+      if (selectedMethod !== undefined) setSelectedMethod(undefined);
+      return;
+    }
+    if (!selectedMethod || !paymentOptions.some((o) => o.method === selectedMethod)) {
+      setSelectedMethod(paymentOptions[0].method);
+    }
+  }, [paymentOptions, selectedMethod]);
+
   // Auto-select default address
   useEffect(() => {
     if (!selectedAddressId && addresses.length > 0) {
@@ -241,6 +308,31 @@ export function useCheckoutState() {
       toast.error("Failed to apply promo code");
     }
   }, [promoCode, cartSubtotal, applyPromo]);
+
+  const handleWalletPayment = useCallback(
+    async (explicitOrderId?: string) => {
+      const targetOrderId = explicitOrderId ?? orderId;
+      if (!targetOrderId) return;
+      setWalletPaymentPending(true);
+      try {
+        await payOrderWithWallet(orgSlug, targetOrderId);
+        setShowPaymentModal(false);
+        clearCart();
+        setStep("success");
+        toast.success("Payment successful!");
+      } catch (err: unknown) {
+        const msg = (err as { response?: { data?: { error?: string } }; message?: string })
+          ?.response?.data?.error ?? (err instanceof Error ? err.message : "Wallet payment failed");
+        toast.error(msg);
+        // Fall back to the standard payment flow so the user isn't stuck.
+        setStep("payment");
+        setShowPaymentModal(true);
+      } finally {
+        setWalletPaymentPending(false);
+      }
+    },
+    [orderId, orgSlug, clearCart],
+  );
 
   const handlePlaceOrder = useCallback(async () => {
     if (isGuestMode) {
@@ -316,6 +408,7 @@ export function useCheckoutState() {
         }
         if (deliveryNotes) guestPayload.deliveryNotes = deliveryNotes;
         if (scheduledTime) guestPayload.scheduledAt = scheduledTime.date.toISOString();
+        if (selectedMethod) guestPayload.paymentMethod = selectedMethod;
         result = await guestCheckoutMutation.mutateAsync(guestPayload);
       } else {
         const payload: Parameters<typeof checkoutMutation.mutateAsync>[0] = {
@@ -341,6 +434,7 @@ export function useCheckoutState() {
         if (orderNotes) payload.orderNotes = orderNotes;
         if (requestUtensils) payload.requestUtensils = requestUtensils;
         if (scheduledTime) payload.scheduledAt = scheduledTime.date.toISOString();
+        if (selectedMethod) payload.paymentMethod = selectedMethod;
         result = await checkoutMutation.mutateAsync(payload);
       }
 
@@ -357,6 +451,13 @@ export function useCheckoutState() {
           ? `${orgRoute(orgSlug, `/orders/guest/${result.orderId}`)}?session_id=${sessionId}`
           : orgRoute(orgSlug, `/orders/${result.orderId}`);
         router.push(orderUrl);
+      } else if (selectedMethod === "wallet") {
+        // Wallet method chosen (authed + balance covers total) — pay the freshly
+        // created order straight from the wallet instead of the treasury modal.
+        // Prime the modal state first so the catch-fallback can recover gracefully.
+        setPaymentIntentId(result.paymentIntentId || null);
+        setInitiateUrl(result.initiateUrl || null);
+        await handleWalletPayment(result.orderId);
       } else if (!result.paymentIntentId) {
         // COD, wallet-only or zero-amount — no payment modal needed
         clearCart();
@@ -380,6 +481,7 @@ export function useCheckoutState() {
     fulfillmentMode, selectedAddressId, addresses, isOutsideDeliveryZone, scheduledTime,
     items, sessionId, deliveryNotes, promoCode, orderNotes, requestUtensils, isTicketOnly,
     checkoutMutation, guestCheckoutMutation, orgSlug, router, clearCart,
+    selectedMethod, handleWalletPayment,
   ]);
 
   const handlePaymentConfirmed = useCallback(
@@ -398,24 +500,6 @@ export function useCheckoutState() {
   const handlePaymentFailed = useCallback((error: string) => {
     toast.error(error || "Payment failed. You can try again.");
   }, []);
-
-  const handleWalletPayment = useCallback(async () => {
-    if (!orderId) return;
-    setWalletPaymentPending(true);
-    try {
-      await payOrderWithWallet(orgSlug, orderId);
-      setShowPaymentModal(false);
-      clearCart();
-      setStep("success");
-      toast.success("Payment successful!");
-    } catch (err: unknown) {
-      const msg = (err as { response?: { data?: { error?: string } }; message?: string })
-        ?.response?.data?.error ?? (err instanceof Error ? err.message : "Wallet payment failed");
-      toast.error(msg);
-    } finally {
-      setWalletPaymentPending(false);
-    }
-  }, [orderId, orgSlug, clearCart]);
 
   const handlePaymentModalClose = useCallback(
     (open: boolean) => {
@@ -516,9 +600,14 @@ export function useCheckoutState() {
     handlePaymentFailed,
     handlePaymentModalClose,
 
+    // Payment method selection
+    paymentOptions,
+    selectedMethod,
+    setSelectedMethod,
+
     // Wallet
-    walletBalance: paymentMethodsData?.wallet?.balance ?? null,
-    walletCurrency: paymentMethodsData?.wallet?.currency ?? "KES",
+    walletBalance,
+    walletCurrency,
     walletPaymentPending,
     handleWalletPayment,
   };
