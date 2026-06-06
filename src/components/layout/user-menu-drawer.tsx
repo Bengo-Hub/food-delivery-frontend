@@ -10,6 +10,7 @@ import {
   Heart,
   HelpCircle,
   Home,
+  MapPin,
   Package,
   Pill,
   RotateCcw,
@@ -75,6 +76,11 @@ export function UserMenuDrawer({ open, onOpenChange }: UserMenuDrawerProps) {
     permissionOperator: "or",
   });
   const canManageCompliance = userHasRole(user, ["admin", "superuser"]);
+  const canManageIntegrations = userCanAccess(user, {
+    roles: ["admin", "superuser", "manager"],
+    permissions: ["ordering.config.manage"],
+    permissionOperator: "or",
+  });
 
   const handleClose = () => {
     onOpenChange(false);
@@ -156,6 +162,15 @@ export function UserMenuDrawer({ open, onOpenChange }: UserMenuDrawerProps) {
               icon: FileLock,
               label: "Compliance",
               href: "/dashboard/staff/compliance",
+            },
+          ]
+          : []),
+        ...(canManageIntegrations
+          ? [
+            {
+              icon: MapPin,
+              label: "Google Business",
+              href: "/dashboard/staff/integrations",
             },
           ]
           : []),
