@@ -413,12 +413,24 @@ export function useCheckoutState() {
         toast.error("Please enter a valid email address");
         return;
       }
+      // A bad phone means the rider/outlet can't reach the customer — validate the format
+      // (optional leading +, 8–15 digits, spaces/dashes allowed) when one is provided.
+      if (guestPhone.trim() && !/^\+?\d[\d\s-]{7,14}$/.test(guestPhone.trim())) {
+        toast.error("Please enter a valid phone number");
+        return;
+      }
     }
 
     // Delivery/pickup/schedule validations don't apply to ticket-only carts.
     if (!isTicketOnly) {
       if (fulfillmentMode !== "pickup" && !selectedAddressId && addresses.length > 0) {
         toast.error("Please select a delivery address");
+        return;
+      }
+      // Guest delivery: the address comes from the picked location, not a saved address —
+      // require it so a rider isn't dispatched to an empty/unknown address.
+      if (isGuestMode && fulfillmentMode !== "pickup" && !guestDeliveryLocation?.address?.trim()) {
+        toast.error("Please enter a delivery address");
         return;
       }
       if (isOutsideDeliveryZone) {
