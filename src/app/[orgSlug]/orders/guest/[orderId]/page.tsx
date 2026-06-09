@@ -421,8 +421,14 @@ function GuestOrderContent() {
         <div className="flex items-center gap-3 rounded-xl bg-blue-50 border border-blue-200 px-4 py-3">
           <CreditCard className="size-5 text-blue-600 shrink-0" />
           <div>
-            <p className="text-sm font-semibold text-blue-800">Cash on delivery</p>
-            <p className="text-xs text-blue-700">Pay the rider on delivery. Please have payment ready when it arrives.</p>
+            <p className="text-sm font-semibold text-blue-800">
+              {isDeliveryFulfillment(order.fulfillmentType) ? "Cash on delivery" : "Pay on collection"}
+            </p>
+            <p className="text-xs text-blue-700">
+              {isDeliveryFulfillment(order.fulfillmentType)
+                ? "Pay the rider on delivery. Please have payment ready when it arrives."
+                : "Pay at the counter when you collect your order. Please have payment ready."}
+            </p>
           </div>
         </div>
       ) : paymentBanner === "awaiting" ? (
