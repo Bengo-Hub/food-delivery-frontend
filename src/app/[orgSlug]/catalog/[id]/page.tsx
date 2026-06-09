@@ -20,6 +20,7 @@ import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
 import { ItemImageGallery } from "@/components/catalog/item-image-gallery";
+import { AppointmentPicker } from "@/components/catalog/appointment-picker";
 import {
   ModifierSelector,
   calculateModifierAdjustment,
@@ -66,6 +67,9 @@ export default function CatalogItemPage() {
   const [selectedOptions, setSelectedOptions] = useState<Record<string, string[]>>({});
   const [modifierSelections, setModifierSelections] = useState<Record<string, string[]>>({});
   const [isFavorite, setIsFavorite] = useState(false);
+  // SERVICE items (e.g. salon/spa) are booked for a date+time rather than just added — the
+  // selection is carried in the cart line's metadata and flows through to the order.
+  const [appointment, setAppointment] = useState<{ staffId: string | null; date: string; time: string } | null>(null);
 
   const addItem = useCartStore((state) => state.addItem);
 
@@ -120,6 +124,8 @@ export default function CatalogItemPage() {
     return validateModifierSelections(item.modifierGroups, modifierSelections);
   }, [item?.modifierGroups, modifierSelections]);
 
+  const isService = item?.itemType === "SERVICE";
+
   const handleOptionToggle = (customizationId: string, optionId: string, maxSelections: number) => {
     setSelectedOptions((prev) => {
       const current = prev[customizationId] || [];
@@ -139,6 +145,10 @@ export default function CatalogItemPage() {
     if (!item) return;
     if (!modifiersValid) {
       toast.error("Please complete all required selections");
+      return;
+    }
+    if (isService && !appointment) {
+      toast.error("Please select an appointment date and time");
       return;
     }
 
@@ -191,6 +201,16 @@ export default function CatalogItemPage() {
       quantity,
       ...(cartModifiers.length > 0 ? { modifiers: cartModifiers } : {}),
       ...(item.image ? { image: item.image } : {}),
+      ...(isService && appointment
+        ? {
+            metadata: {
+              is_service: true,
+              appointment_date: appointment.date,
+              appointment_time: appointment.time,
+              ...(appointment.staffId ? { staff_id: appointment.staffId } : {}),
+            },
+          }
+        : {}),
     });
     toast.success(`Added ${quantity} ${item.name} to cart`);
     router.back();
@@ -478,6 +498,21 @@ export default function CatalogItemPage() {
           </div>
         </div>
 
+        {/* ---------- Service appointment (SERVICE items) ---------- */}
+        {isService && (
+          <div className="mt-8">
+            <hr className="mb-8 border-border" />
+            <h2 className="mb-4 text-lg font-bold text-foreground">Choose an appointment</h2>
+            <AppointmentPicker
+              durationMinutes={item.durationMinutes ?? 30}
+              onSelect={setAppointment}
+            />
+            {!appointment && (
+              <p className="mt-3 text-sm text-muted-foreground">Select a date and time to continue.</p>
+            )}
+          </div>
+        )}
+
         {/* ---------- You might also like ---------- */}
         {relatedItems.length > 0 && (
           <div className="mt-12">
@@ -555,7 +590,7 @@ export default function CatalogItemPage() {
           {/* Add to cart CTA */}
           <Button
             onClick={handleAddToCart}
-            disabled={!item.available || !modifiersValid}
+            disabled={!item.available || !modifiersValid || (isService && !appointment)}
             size="lg"
             className="min-w-[180px] gap-2 rounded-xl text-base font-semibold shadow-lg sm:min-w-[220px]"
           >
