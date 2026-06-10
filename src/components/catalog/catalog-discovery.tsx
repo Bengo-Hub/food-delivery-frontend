@@ -351,8 +351,9 @@ export function MenuDiscovery({
           </div>
         </div>
 
-        {/* Category filters from backend */}
-        <div className="flex gap-2 overflow-x-auto pb-2 sm:flex-wrap sm:overflow-x-visible sm:pb-0">
+        {/* Category filters from backend — horizontal carousel at ALL breakpoints (no wrapping into
+            many rows); chips are shrink-0 so they scroll sideways instead of stacking. */}
+        <div className="flex flex-nowrap gap-2 overflow-x-auto pb-2 scrollbar-hide [scrollbar-width:none] [-ms-overflow-style:none]">
           <Button
             type="button"
             size="sm"
