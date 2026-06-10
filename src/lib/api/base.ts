@@ -120,6 +120,18 @@ api.interceptors.response.use(
         onSubscription403Callback(data);
       }
     }
+    // 402 = the store reached its plan order limit (and has not enabled extra usage).
+    // Show the customer a friendly, non-technical message rather than a raw error.
+    if (error.response?.status === 402) {
+      const data = error.response?.data;
+      if (data?.code === 'usage_limit_exceeded' || data?.metric === 'orders') {
+        const { toast } = await import('sonner');
+        toast.error('This store is not accepting new orders right now', {
+          description: 'It has reached its order capacity for the moment. Please try again later.',
+          duration: 7000,
+        });
+      }
+    }
     return Promise.reject(error);
   },
 );
