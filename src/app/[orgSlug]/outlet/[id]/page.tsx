@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useOutlet, useOutletMenu } from "@/hooks/use-catalog";
 import { orgRoute } from "@/lib/routes";
-import { cn } from "@/lib/utils";
+import { cn, getMediaUrl } from "@/lib/utils";
 import { useOrgSlug } from "@/providers/org-slug-provider";
 import { useCartStore } from "@/store/cart";
 import type { DietaryTag, MenuItem } from "@/types/catalog";
@@ -82,7 +82,7 @@ function MenuItemCard({ item, onAddToCart }: { item: MenuItem; onAddToCart: () =
       >
         {item.image ? (
           <Image
-            src={item.image}
+            src={getMediaUrl(item.image)}
             alt={item.name}
             fill
             className="object-cover transition group-hover:scale-105"
@@ -112,7 +112,7 @@ export default function OutletPage() {
   const outletId = (params?.id as string) ?? "";
 
   const { data: outlet, isLoading: outletLoading, error: outletError } = useOutlet(orgSlug, outletId);
-  const { data: menuData } = useOutletMenu(orgSlug, outletId, undefined, 1, 100);
+  const { data: menuData, isLoading: menuLoading } = useOutletMenu(orgSlug, outletId, undefined, 1, 100);
   const menuItems = menuData?.data ?? [];
 
   const [search, setSearch] = useState("");
@@ -192,7 +192,7 @@ export default function OutletPage() {
         <div className="relative h-48 w-full bg-muted sm:h-64">
           {outlet.image ? (
             <Image
-              src={outlet.image}
+              src={getMediaUrl(outlet.image)}
               alt={outlet.name}
               fill
               className="object-cover"
@@ -346,6 +346,24 @@ export default function OutletPage() {
 
         {/* Menu Items */}
         <div className="mt-6 space-y-8">
+          {menuLoading && menuItems.length === 0 ? (
+            <div className="space-y-4">
+              {Array.from({ length: 4 }).map((_, i) => (
+                <div
+                  key={i}
+                  className="flex gap-4 rounded-xl border border-border bg-card p-4"
+                >
+                  <div className="flex flex-1 flex-col gap-2">
+                    <div className="h-5 w-1/2 animate-pulse rounded bg-muted" />
+                    <div className="h-4 w-3/4 animate-pulse rounded bg-muted" />
+                    <div className="mt-auto h-5 w-24 animate-pulse rounded bg-muted" />
+                  </div>
+                  <div className="size-24 shrink-0 animate-pulse rounded-lg bg-muted sm:size-28" />
+                </div>
+              ))}
+            </div>
+          ) : (
+          <>
           {Object.entries(itemsByCategory).map(([category, items]) => (
             <div key={category}>
               <h2 className="mb-4 text-lg font-semibold text-foreground">{category}</h2>
@@ -363,8 +381,14 @@ export default function OutletPage() {
 
           {filteredItems.length === 0 && (
             <div className="rounded-xl border border-dashed border-border p-8 text-center">
-              <p className="text-muted-foreground">No items match your search.</p>
+              <p className="text-muted-foreground">
+                {menuItems.length === 0
+                  ? "This outlet has no items available right now."
+                  : "No items match your search."}
+              </p>
             </div>
+          )}
+          </>
           )}
         </div>
       </div>

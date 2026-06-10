@@ -32,7 +32,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useCatalogItem, useCatalogItems } from "@/hooks/use-catalog";
 import { orgRoute } from "@/lib/routes";
-import { cn } from "@/lib/utils";
+import { cn, getMediaUrl } from "@/lib/utils";
 import { useOrgSlug } from "@/providers/org-slug-provider";
 import { useCartStore } from "@/store/cart";
 import type { DietaryTag } from "@/types/catalog";
@@ -306,7 +306,7 @@ export default function CatalogItemPage() {
               ) : galleryImages.length === 1 ? (
                 <div className="relative aspect-[4/3]">
                   <Image
-                    src={galleryImages[0]}
+                    src={getMediaUrl(galleryImages[0])}
                     alt={item.name}
                     fill
                     className="object-cover"
@@ -528,7 +528,7 @@ export default function CatalogItemPage() {
                   <div className="relative aspect-square bg-muted">
                     {related.image ? (
                       <Image
-                        src={related.image}
+                        src={getMediaUrl(related.image)}
                         alt={related.name}
                         fill
                         className="object-cover transition group-hover:scale-105"
