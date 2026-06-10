@@ -437,7 +437,13 @@ export default function HomePage() {
                 </div>
               )}
             </>
-          ) : null}
+          ) : (
+            <div className="rounded-xl border border-dashed border-border p-8 text-center">
+              <p className="text-sm text-muted-foreground">
+                No stores are available right now. Please check back later.
+              </p>
+            </div>
+          )}
         </div>
       </section>
 

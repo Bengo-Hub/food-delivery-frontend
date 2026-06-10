@@ -478,6 +478,13 @@ export function MenuDiscovery({
             <div className="col-span-full rounded-2xl border border-dashed border-border bg-card p-6 text-center sm:rounded-3xl sm:p-8">
               <p className="text-sm text-muted-foreground">Loading catalog…</p>
             </div>
+          ) : itemsError && menuItems.length === 0 ? (
+            <div className="col-span-full flex flex-col items-center gap-3 rounded-2xl border border-dashed border-border bg-card p-6 text-center sm:rounded-3xl sm:p-8">
+              <ShieldAlert className="size-8 text-muted-foreground" aria-hidden />
+              <p className="text-xs text-muted-foreground sm:text-sm">
+                We couldn&apos;t load the catalog. Please check your connection and try again.
+              </p>
+            </div>
           ) : menuItems.length === 0 ? (
             <div className="col-span-full rounded-2xl border border-dashed border-border bg-card p-6 text-center sm:rounded-3xl sm:p-8">
               <p className="text-xs text-muted-foreground sm:text-sm">
