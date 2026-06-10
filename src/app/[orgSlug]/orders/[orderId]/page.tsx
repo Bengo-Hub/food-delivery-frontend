@@ -57,7 +57,7 @@ export default function OrderDetailPage() {
   const params = useParams<{ orderId: string }>();
   const orderId = params.orderId;
 
-  const { data: order, isLoading } = useOrder(orderId);
+  const { data: order, isLoading, isError } = useOrder(orderId);
   const { data: tracking } = useOrderTracking(orderId, !!order && !["delivered", "completed", "cancelled"].includes(order.status));
   const cancelOrder = useCancelOrder();
   const addItem = useCartStore((s) => s.addItem);
@@ -110,9 +110,20 @@ export default function OrderDetailPage() {
             Back to orders
           </Link>
 
-          {isLoading || !order ? (
+          {isLoading ? (
             <div className="flex justify-center py-20">
               <Loader2 className="size-7 animate-spin text-primary" />
+            </div>
+          ) : isError || !order ? (
+            <div className="flex flex-col items-center justify-center gap-4 py-20 text-center">
+              <Package className="size-12 text-muted-foreground/40" />
+              <p className="font-medium text-foreground">Order not found</p>
+              <p className="max-w-xs text-sm text-muted-foreground">
+                We couldn&apos;t load this order. It may have been removed or you may not have access.
+              </p>
+              <Button asChild variant="outline">
+                <Link href={orgRoute(orgSlug, "/orders")}>Back to orders</Link>
+              </Button>
             </div>
           ) : (
             <>
