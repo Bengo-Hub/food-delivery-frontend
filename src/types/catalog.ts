@@ -37,6 +37,29 @@ export interface MenuItem {
   durationMinutes?: number;
   /** Whether this item requires age verification (alcohol, pharmacy) */
   requiresAgeVerification?: boolean;
+  /** Manufacturer name (retail/goods), shown as muted subtext when present. */
+  manufacturer?: string;
+  /** Model name/number (retail/goods), shown as muted subtext when present. */
+  model?: string;
+  /** Whether this item has selectable variants (e.g. color/size). */
+  hasVariants?: boolean;
+  /** Selectable variants. Present when the item is fetched with variants included. */
+  variants?: CatalogVariant[];
+}
+
+/**
+ * A selectable product variant (e.g. a specific color/size combination).
+ * Each variant is purchased as its own cart line with its own price and SKU.
+ */
+export interface CatalogVariant {
+  id: string;
+  sku: string;
+  name: string;
+  price: number;
+  /** Attribute map, e.g. { color: "Red", size: "M" }. */
+  attributes: Record<string, string>;
+  barcode?: string;
+  isActive?: boolean;
 }
 
 export interface ModifierGroup {
