@@ -40,6 +40,9 @@ type MenuItem = {
   outletId?: string;
   outletName?: string;
   isFavorite?: boolean | undefined;
+  manufacturer?: string | undefined;
+  model?: string | undefined;
+  hasVariants?: boolean | undefined;
 } & Record<string, any>;
 
 function DiscoveryMenuItem({
@@ -108,9 +111,16 @@ function DiscoveryMenuItem({
       <div className="flex flex-1 flex-col p-4 sm:p-6">
         <div className="space-y-2 sm:space-y-3">
           <header className="flex items-start justify-between gap-2 sm:gap-3">
-            <h3 className="text-base font-semibold text-foreground sm:text-lg">
-              {item.name}
-            </h3>
+            <div className="min-w-0">
+              <h3 className="text-base font-semibold text-foreground sm:text-lg">
+                {item.name}
+              </h3>
+              {(item.manufacturer || item.model) && (
+                <p className="mt-0.5 truncate text-xs text-muted-foreground">
+                  {[item.manufacturer, item.model].filter(Boolean).join(" · ")}
+                </p>
+              )}
+            </div>
             <div className="flex shrink-0 gap-1">
               {item.feature === "recommended" ? (
                 <span className="rounded-full bg-brand-muted px-2 py-0.5 text-[10px] font-medium text-brand-emphasis sm:px-3 sm:py-1 sm:text-xs">
@@ -144,18 +154,27 @@ function DiscoveryMenuItem({
               ))}
             </div>
           </div>
-          <Button
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              onAddToCart(item);
-            }}
-            className="w-full min-h-[48px]"
-            size="sm"
-          >
-            <ShoppingCartIcon className="mr-2 size-4" />
-            Add to Cart
-          </Button>
+          {item.hasVariants ? (
+            // Variant products need a selection — let the click navigate to the detail
+            // page (the wrapping Link) where the variant selector lives.
+            <Button className="w-full min-h-[48px]" size="sm" variant="outline">
+              <ShoppingCartIcon className="mr-2 size-4" />
+              Select Options
+            </Button>
+          ) : (
+            <Button
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                onAddToCart(item);
+              }}
+              className="w-full min-h-[48px]"
+              size="sm"
+            >
+              <ShoppingCartIcon className="mr-2 size-4" />
+              Add to Cart
+            </Button>
+          )}
         </footer>
       </div>
     </Link>
@@ -244,6 +263,9 @@ export function MenuDiscovery({
         outletId: m.outletId,
         outletName: m.outletName,
         isFavorite: m.isFavorite,
+        manufacturer: m.manufacturer,
+        model: m.model,
+        hasVariants: m.hasVariants,
         ...(m.featured && { feature: "recommended" as const }),
       })),
     [apiItems],
@@ -271,6 +293,11 @@ export function MenuDiscovery({
   }, [initialCategory, initialOutlet, initialSearch, initialDietary, initialFavoriteOnly]);
 
   const handleAddToCart = (item: MenuItem) => {
+    // Variant products require choosing an option on the detail page first.
+    if (item.hasVariants) {
+      router.push(`/${orgSlug}/catalog/${item.id}`);
+      return;
+    }
     addItem({
       id: item.id,
       name: item.name,

@@ -5,6 +5,7 @@
 
 import { getMediaUrl } from "@/lib/utils";
 import type {
+  CatalogVariant,
   MenuCategory,
   MenuFilters,
   MenuItem,
@@ -30,6 +31,17 @@ function toPaginated<T>(r: BackendListResponse<T>): PaginatedResponse<T> {
   };
 }
 
+/** Backend variant shape on a merged catalog item. */
+interface BackendVariant {
+  id: string;
+  sku: string;
+  name: string;
+  price: number;
+  attributes?: Record<string, string>;
+  barcode?: string;
+  isActive?: boolean;
+}
+
 /** Backend public catalog item shape (basePrice, imageUrl, categoryId, categoryName). */
 interface BackendMenuItem {
   id?: string;
@@ -44,7 +56,10 @@ interface BackendMenuItem {
   imageUrl?: string;
   imageUrls?: string[];
   leadTimeMinutes?: number;
-  variants?: unknown[];
+  manufacturer?: string;
+  model?: string;
+  hasVariants?: boolean;
+  variants?: BackendVariant[];
   dietaryTags?: unknown[];
   isFavorite?: boolean;
   modifierGroups?: {
@@ -70,6 +85,19 @@ function backendItemToMenuItem(
   const images = (b.imageUrls ?? [])
     .map((url) => getMediaUrl(url))
     .filter((url): url is string => !!url);
+  // Only surface active variants to the storefront.
+  const variants: CatalogVariant[] = (b.variants ?? [])
+    .filter((v) => v.isActive !== false)
+    .map((v) => ({
+      id: v.id,
+      sku: v.sku,
+      name: v.name,
+      price: v.price,
+      attributes: v.attributes ?? {},
+      ...(v.barcode ? { barcode: v.barcode } : {}),
+      isActive: v.isActive ?? true,
+    }));
+  const hasVariants = b.hasVariants ?? variants.length > 0;
   return {
     id: b.sku || b.id || b.inventoryId || "",
     name: b.name,
@@ -85,6 +113,10 @@ function backendItemToMenuItem(
     available: true,
     dietary: [],
     isFavorite: !!b.isFavorite,
+    ...(b.manufacturer ? { manufacturer: b.manufacturer } : {}),
+    ...(b.model ? { model: b.model } : {}),
+    hasVariants,
+    ...(variants.length > 0 ? { variants } : {}),
     ...(b.modifierGroups ? { modifierGroups: b.modifierGroups.map((g) => ({
       id: g.id,
       name: g.name,
@@ -114,6 +146,8 @@ export async function fetchMenuItems(
   const params = new URLSearchParams();
   params.set("page", String(page));
   params.set("limit", String(limit));
+  // Include variants so cards know whether a product needs variant selection.
+  params.set("include", "variants");
   if (filters?.category) params.set("category_id", filters.category);
   if (filters?.search) params.set("search", filters.search ?? "");
   if (filters?.dietary?.length) params.set("dietary", filters.dietary.join(","));
@@ -140,7 +174,9 @@ export async function fetchMenuItem(
   outletId = "",
   outletName = "",
 ): Promise<MenuItem> {
-  const response = await api.get<BackendMenuItem>(`${tenantSlug}/catalog/items/${id}`);
+  const response = await api.get<BackendMenuItem>(
+    `${tenantSlug}/catalog/items/${id}?include=variants`,
+  );
   return backendItemToMenuItem(response.data, outletId, outletName);
 }
 

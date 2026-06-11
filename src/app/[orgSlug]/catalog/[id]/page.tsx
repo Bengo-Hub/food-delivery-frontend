@@ -26,6 +26,7 @@ import {
   calculateModifierAdjustment,
   validateModifierSelections,
 } from "@/components/catalog/modifier-selector";
+import { VariantSelector, formatVariantAttributes } from "@/components/catalog/variant-selector";
 import { SiteShell } from "@/components/layout/site-shell";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -66,6 +67,7 @@ export default function CatalogItemPage() {
   const [quantity, setQuantity] = useState(1);
   const [selectedOptions, setSelectedOptions] = useState<Record<string, string[]>>({});
   const [modifierSelections, setModifierSelections] = useState<Record<string, string[]>>({});
+  const [selectedVariantId, setSelectedVariantId] = useState<string | null>(null);
   const [isFavorite, setIsFavorite] = useState(false);
   // SERVICE items (e.g. salon/spa) are booked for a date+time rather than just added — the
   // selection is carried in the cart line's metadata and flows through to the order.
@@ -98,6 +100,21 @@ export default function CatalogItemPage() {
     setModifierSelections(defaults);
   }, [item?.modifierGroups]);
 
+  // Variants: products with selectable options (color/size/etc.). The chosen variant
+  // drives the unit price, SKU, and a distinct cart line.
+  const variants = useMemo(() => item?.variants ?? [], [item?.variants]);
+  const hasVariants = !!item?.hasVariants && variants.length > 0;
+  const selectedVariant = useMemo(
+    () => variants.find((v) => v.id === selectedVariantId) ?? null,
+    [variants, selectedVariantId],
+  );
+
+  // Auto-select the only/first variant so single-variant items behave like normal items.
+  useEffect(() => {
+    if (!hasVariants) return;
+    setSelectedVariantId((prev) => (prev && variants.some((v) => v.id === prev) ? prev : variants[0]!.id));
+  }, [hasVariants, variants]);
+
   const modifierAdjustment = useMemo(() => {
     if (!item?.modifierGroups?.length) return 0;
     return calculateModifierAdjustment(item.modifierGroups, modifierSelections);
@@ -116,13 +133,17 @@ export default function CatalogItemPage() {
     return adj;
   }, [item?.customizations, selectedOptions]);
 
-  const unitPrice = (item?.price ?? 0) + customizationAdjustment + modifierAdjustment;
+  // When a product has variants, the variant price replaces the base price.
+  const basePrice = hasVariants ? (selectedVariant?.price ?? item?.price ?? 0) : (item?.price ?? 0);
+  const unitPrice = basePrice + customizationAdjustment + modifierAdjustment;
   const totalPrice = unitPrice * quantity;
 
   const modifiersValid = useMemo(() => {
     if (!item?.modifierGroups?.length) return true;
     return validateModifierSelections(item.modifierGroups, modifierSelections);
   }, [item?.modifierGroups, modifierSelections]);
+
+  const variantValid = !hasVariants || !!selectedVariant;
 
   const isService = item?.itemType === "SERVICE";
 
@@ -145,6 +166,10 @@ export default function CatalogItemPage() {
     if (!item) return;
     if (!modifiersValid) {
       toast.error("Please complete all required selections");
+      return;
+    }
+    if (hasVariants && !selectedVariant) {
+      toast.error("Please choose an option");
       return;
     }
     if (isService && !appointment) {
@@ -192,25 +217,39 @@ export default function CatalogItemPage() {
       }
     }
 
+    // Variant lines get a composite key so different variants stay separate lines,
+    // a "<product> — <variant>" name, and the variant SKU for checkout.
+    const variantAttrs = selectedVariant ? formatVariantAttributes(selectedVariant) : "";
+    const lineId = selectedVariant ? `${item.id}::${selectedVariant.id}` : item.id;
+    const lineName = selectedVariant ? `${item.name} — ${variantAttrs}` : item.name;
+
+    const metadata: Record<string, unknown> = {};
+    if (selectedVariant) {
+      metadata.variant_id = selectedVariant.id;
+      metadata.variant_sku = selectedVariant.sku;
+      metadata.variant_name = selectedVariant.name;
+      if (Object.keys(selectedVariant.attributes ?? {}).length > 0) {
+        metadata.variant_attributes = selectedVariant.attributes;
+      }
+    }
+    if (isService && appointment) {
+      metadata.is_service = true;
+      metadata.appointment_date = appointment.date;
+      metadata.appointment_time = appointment.time;
+      if (appointment.staffId) metadata.staff_id = appointment.staffId;
+    }
+
     addItem({
-      id: item.id,
-      name: item.name,
+      id: lineId,
+      name: lineName,
       price: unitPrice,
       outletId: item.outletId,
       outletName: item.outletName,
       quantity,
+      ...(selectedVariant ? { inventorySku: selectedVariant.sku } : {}),
       ...(cartModifiers.length > 0 ? { modifiers: cartModifiers } : {}),
       ...(item.image ? { image: item.image } : {}),
-      ...(isService && appointment
-        ? {
-            metadata: {
-              is_service: true,
-              appointment_date: appointment.date,
-              appointment_time: appointment.time,
-              ...(appointment.staffId ? { staff_id: appointment.staffId } : {}),
-            },
-          }
-        : {}),
+      ...(Object.keys(metadata).length > 0 ? { metadata } : {}),
     });
     toast.success(`Added ${quantity} ${item.name} to cart`);
     router.back();
@@ -357,9 +396,16 @@ export default function CatalogItemPage() {
 
             <div className="mt-2 flex items-baseline gap-2">
               <span className="text-2xl font-bold text-primary">
-                {item.currency} {item.price.toLocaleString()}
+                {item.currency} {basePrice.toLocaleString()}
               </span>
             </div>
+
+            {/* Manufacturer / model (retail goods) — subtle muted subtext */}
+            {(item.manufacturer || item.model) && (
+              <p className="mt-1 text-sm text-muted-foreground">
+                {[item.manufacturer, item.model].filter(Boolean).join(" · ")}
+              </p>
+            )}
 
             {/* Description */}
             {item.description && (
@@ -411,6 +457,18 @@ export default function CatalogItemPage() {
             )}
 
             <hr className="my-5 border-border" />
+
+            {/* -------- Variant selection (color/size/etc.) -------- */}
+            {hasVariants && (
+              <div className="mb-6">
+                <VariantSelector
+                  variants={variants}
+                  selectedVariantId={selectedVariantId}
+                  onSelect={setSelectedVariantId}
+                  currency={item.currency}
+                />
+              </div>
+            )}
 
             {/* -------- Modifiers / Customizations -------- */}
             {hasExtras && (
@@ -590,7 +648,7 @@ export default function CatalogItemPage() {
           {/* Add to cart CTA */}
           <Button
             onClick={handleAddToCart}
-            disabled={!item.available || !modifiersValid || (isService && !appointment)}
+            disabled={!item.available || !modifiersValid || !variantValid || (isService && !appointment)}
             size="lg"
             className="min-w-[180px] gap-2 rounded-xl text-base font-semibold shadow-lg sm:min-w-[220px]"
           >
