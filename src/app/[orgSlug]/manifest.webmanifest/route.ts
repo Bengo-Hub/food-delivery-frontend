@@ -55,7 +55,9 @@ export async function GET(
 
   const manifest = {
     name: `${name} Ordering`,
-    short_name: name,
+    // Home-screen label = tenant first word + service, e.g. "Urban Ordering",
+    // so a tenant's several installed Bengo apps stay distinguishable.
+    short_name: `${name.trim().split(/\s+/)[0] || 'Bengo'} Ordering`,
     description: 'Order online from your favourite local restaurants.',
     start_url: `/${orgSlug}/`,
     scope: `/${orgSlug}/`,
