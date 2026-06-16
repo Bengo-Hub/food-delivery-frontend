@@ -71,7 +71,11 @@ const pwaConfig = withPWA({
   aggressiveFrontEndNavCaching: true,
   reloadOnOnline: true,
   swcMinify: true,
-  disable: process.env.NODE_ENV === "development",
+  // Disabled: next-pwa is a webpack plugin and does NOT run under Next 16's Turbopack build
+  // (it silently produced a stale, never-regenerated sw.js). We ship a committed, hand-written
+  // offline-shell at public/sw.js (registered by the shared OfflineBar) instead — keeping it
+  // disabled guarantees no build can ever overwrite that file, regardless of bundler.
+  disable: true,
   workboxOptions: {
     skipWaiting: false,
     clientsClaim: true,

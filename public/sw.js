@@ -1,1 +1,92 @@
-if(!self.define){let e,a={};const i=(i,s)=>(i=new URL(i+".js",s).href,a[i]||new Promise(a=>{if("document"in self){const e=document.createElement("script");e.src=i,e.onload=a,document.head.appendChild(e)}else e=i,importScripts(i),a()}).then(()=>{let e=a[i];if(!e)throw new Error(`Module ${i} didn’t register its module`);return e}));self.define=(s,c)=>{const r=e||("document"in self?document.currentScript.src:"")||location.href;if(a[r])return;let d={};const n=e=>i(e,r),o={module:{uri:r},exports:d,require:n};a[r]=Promise.all(s.map(e=>o[e]||n(e))).then(e=>(c(...e),d))}}define(["./workbox-f8dc152a"],function(e){"use strict";importScripts(),self.skipWaiting(),e.clientsClaim(),e.precacheAndRoute([{url:"/_next/static/chunks/106.69687afaebc47f04.js",revision:"69687afaebc47f04"},{url:"/_next/static/chunks/1748.17f4d2eb8a5e5244.js",revision:"17f4d2eb8a5e5244"},{url:"/_next/static/chunks/1e1c3513-b7a1901d6a699603.js",revision:"b7a1901d6a699603"},{url:"/_next/static/chunks/2370-603eb16d03799014.js",revision:"603eb16d03799014"},{url:"/_next/static/chunks/3510-81855833144f0cce.js",revision:"81855833144f0cce"},{url:"/_next/static/chunks/401-61a3b7fafc18a4ec.js",revision:"61a3b7fafc18a4ec"},{url:"/_next/static/chunks/4496-29ddbf1c49d487f2.js",revision:"29ddbf1c49d487f2"},{url:"/_next/static/chunks/546-6856dcbf3377964b.js",revision:"6856dcbf3377964b"},{url:"/_next/static/chunks/5992-251ecaf72d7948e1.js",revision:"251ecaf72d7948e1"},{url:"/_next/static/chunks/6856-fb085648cfd1fb31.js",revision:"fb085648cfd1fb31"},{url:"/_next/static/chunks/7388-c0c75bab8445ed88.js",revision:"c0c75bab8445ed88"},{url:"/_next/static/chunks/7927.a6da0514684cc96a.js",revision:"a6da0514684cc96a"},{url:"/_next/static/chunks/7932-eb60cab97d671d2d.js",revision:"eb60cab97d671d2d"},{url:"/_next/static/chunks/8189-59f6df511d9540b1.js",revision:"59f6df511d9540b1"},{url:"/_next/static/chunks/9524-cd910c24a4f91d13.js",revision:"cd910c24a4f91d13"},{url:"/_next/static/chunks/app/%5BorgSlug%5D/admin/request/page-59b016fa371be4ff.js",revision:"59b016fa371be4ff"},{url:"/_next/static/chunks/app/%5BorgSlug%5D/auth/callback/page-fdb77c16dfd01d5a.js",revision:"fdb77c16dfd01d5a"},{url:"/_next/static/chunks/app/%5BorgSlug%5D/auth/page-9fc0599b1e908c6f.js",revision:"9fc0599b1e908c6f"},{url:"/_next/static/chunks/app/%5BorgSlug%5D/auth/verify-email/page-44d26bb3920ca879.js",revision:"44d26bb3920ca879"},{url:"/_next/static/chunks/app/%5BorgSlug%5D/checkout/page-f938141f82a7a540.js",revision:"f938141f82a7a540"},{url:"/_next/static/chunks/app/%5BorgSlug%5D/customers/signup/page-570e1b7324653c97.js",revision:"570e1b7324653c97"},{url:"/_next/static/chunks/app/%5BorgSlug%5D/dashboard/customer/page-55aa2921f70ea215.js",revision:"55aa2921f70ea215"},{url:"/_next/static/chunks/app/%5BorgSlug%5D/dashboard/staff/menu/page-2d7671f19c15eb53.js",revision:"2d7671f19c15eb53"},{url:"/_next/static/chunks/app/%5BorgSlug%5D/dashboard/staff/page-280be6f2cd2a92a0.js",revision:"280be6f2cd2a92a0"},{url:"/_next/static/chunks/app/%5BorgSlug%5D/dashboard/staff/settings/page-107902590bd1acd3.js",revision:"107902590bd1acd3"},{url:"/_next/static/chunks/app/%5BorgSlug%5D/layout-965fafaade960812.js",revision:"965fafaade960812"},{url:"/_next/static/chunks/app/%5BorgSlug%5D/loyalty/page-e0d24b138e42e1df.js",revision:"e0d24b138e42e1df"},{url:"/_next/static/chunks/app/%5BorgSlug%5D/menu/%5Bid%5D/page-01fc5e02e889f45b.js",revision:"01fc5e02e889f45b"},{url:"/_next/static/chunks/app/%5BorgSlug%5D/menu/page-42bfd430dfb7530c.js",revision:"42bfd430dfb7530c"},{url:"/_next/static/chunks/app/%5BorgSlug%5D/orders/%5BorderId%5D/page-329891b33f72dba0.js",revision:"329891b33f72dba0"},{url:"/_next/static/chunks/app/%5BorgSlug%5D/orders/page-55a165bf4dad4c77.js",revision:"55a165bf4dad4c77"},{url:"/_next/static/chunks/app/%5BorgSlug%5D/outlet/%5Bid%5D/page-9ca0928d57984ada.js",revision:"9ca0928d57984ada"},{url:"/_next/static/chunks/app/%5BorgSlug%5D/page-14009d8587636223.js",revision:"14009d8587636223"},{url:"/_next/static/chunks/app/%5BorgSlug%5D/profile/page-a206aa32a3bfe751.js",revision:"a206aa32a3bfe751"},{url:"/_next/static/chunks/app/%5BorgSlug%5D/track/%5BorderId%5D/page-6f28cc091225681e.js",revision:"6f28cc091225681e"},{url:"/_next/static/chunks/app/_global-error/page-526d8b4f88a5d024.js",revision:"526d8b4f88a5d024"},{url:"/_next/static/chunks/app/_not-found/page-b3552334c0121fb1.js",revision:"b3552334c0121fb1"},{url:"/_next/static/chunks/app/api/manifest/route-526d8b4f88a5d024.js",revision:"526d8b4f88a5d024"},{url:"/_next/static/chunks/app/healthz/route-526d8b4f88a5d024.js",revision:"526d8b4f88a5d024"},{url:"/_next/static/chunks/app/layout-101343b4a6ef2155.js",revision:"101343b4a6ef2155"},{url:"/_next/static/chunks/app/page-526d8b4f88a5d024.js",revision:"526d8b4f88a5d024"},{url:"/_next/static/chunks/ed48eaa7.9b79ef78c01561dd.js",revision:"9b79ef78c01561dd"},{url:"/_next/static/chunks/framework-5ea9eda719ac7c4c.js",revision:"5ea9eda719ac7c4c"},{url:"/_next/static/chunks/main-app-705d07372f079d78.js",revision:"705d07372f079d78"},{url:"/_next/static/chunks/main-db2778044a94d81b.js",revision:"db2778044a94d81b"},{url:"/_next/static/chunks/next/dist/client/components/builtin/app-error-526d8b4f88a5d024.js",revision:"526d8b4f88a5d024"},{url:"/_next/static/chunks/next/dist/client/components/builtin/forbidden-526d8b4f88a5d024.js",revision:"526d8b4f88a5d024"},{url:"/_next/static/chunks/next/dist/client/components/builtin/global-error-2ca101f6b58f7d24.js",revision:"2ca101f6b58f7d24"},{url:"/_next/static/chunks/next/dist/client/components/builtin/not-found-526d8b4f88a5d024.js",revision:"526d8b4f88a5d024"},{url:"/_next/static/chunks/next/dist/client/components/builtin/unauthorized-526d8b4f88a5d024.js",revision:"526d8b4f88a5d024"},{url:"/_next/static/chunks/polyfills-42372ed130431b0a.js",revision:"846118c33b2c0e922d7b3a7676f81f6f"},{url:"/_next/static/chunks/webpack-293e5039bf2221d9.js",revision:"293e5039bf2221d9"},{url:"/_next/static/css/55693049b062c6a3.css",revision:"55693049b062c6a3"},{url:"/_next/static/css/d3724f8041977d17.css",revision:"d3724f8041977d17"},{url:"/_next/static/gyfZ0QgFlGUbF0MBxzkmg/_buildManifest.js",revision:"fcca8fa6671e6f3c82af0932c5089206"},{url:"/_next/static/gyfZ0QgFlGUbF0MBxzkmg/_ssgManifest.js",revision:"b6652df95db52feb4daf4eca35380933"},{url:"/_next/static/media/19cfc7226ec3afaa-s.woff2",revision:"9dda5cfc9a46f256d0e131bb535e46f8"},{url:"/_next/static/media/21350d82a1f187e9-s.woff2",revision:"4e2553027f1d60eff32898367dd4d541"},{url:"/_next/static/media/28a2004cf8372660-s.woff2",revision:"a81e6c6c3493caf3463c36f633996e92"},{url:"/_next/static/media/47f136985ef5b5cb-s.woff2",revision:"62f762afb90d7743f6916ea0cce473af"},{url:"/_next/static/media/4ead58c4dcc3f285-s.woff2",revision:"774586d4bcb09cb42f38fc490d25b01b"},{url:"/_next/static/media/8e9860b6e62d6359-s.woff2",revision:"01ba6c2a184b8cba08b0d57167664d75"},{url:"/_next/static/media/ba9851c3c22cd980-s.woff2",revision:"9e494903d6b0ffec1a1e14d34427d44d"},{url:"/_next/static/media/c5fe6dc8356a8c31-s.woff2",revision:"027a89e9ab733a145db70f09b8a18b42"},{url:"/_next/static/media/df0a9ae256c0569c-s.woff2",revision:"d54db44de5ccb18886ece2fda72bdfe0"},{url:"/_next/static/media/e4af272ccee01ff0-s.p.woff2",revision:"65850a373e258f1c897a2b3d75eb74de"},{url:"/_next/static/media/eaead17c7dbfcd5d-s.p.woff2",revision:"6da252de0cbc8a69b5d5c2e0e3f67722"},{url:"/_next/static/media/layers-2x.9859cd12.png",revision:"9859cd12"},{url:"/_next/static/media/layers.ef6db872.png",revision:"ef6db872"},{url:"/_next/static/media/marker-icon.d577052a.png",revision:"d577052a"},{url:"/icons/icon-128x128.png",revision:"5635c07da18580d842cb31cc17fd95d8"},{url:"/icons/icon-144x144.png",revision:"c71e9c9686111fdf5e2ad9d0e2c0ac73"},{url:"/icons/icon-152x152.png",revision:"1c3b9221ab9dba9552f92a0cb802a3bd"},{url:"/icons/icon-192x192.png",revision:"c442312145437640fb3082a4a318c600"},{url:"/icons/icon-384x384.png",revision:"0a455dfe8f7057e45cfc2110011d129a"},{url:"/icons/icon-512x512.png",revision:"69f1525123ed445d8047fce7ee530b43"},{url:"/icons/icon-72x72.png",revision:"d3034ccc83b2e79a7cb8d259d802397c"},{url:"/icons/icon-96x96.png",revision:"1c649b461f6ae92da5839d8247dd8e40"},{url:"/icons/reorder-96x96.png",revision:"bf70a9807c3c291a401f8ddbe99f52b9"},{url:"/icons/track-96x96.png",revision:"1c04014d48e5bf804595fb2709b65960"},{url:"/illustrations/delivery-hero.svg",revision:"0d84458610141871039449c87eca2f8c"},{url:"/illustrations/login-bg.svg",revision:"ab9ad2ac41af4c83b69a28ec157f5b7e"},{url:"/illustrations/ordering-hero.svg",revision:"bae35122b018ac992ef90828dc83dda3"},{url:"/images/gallery/gallery-1.jpg",revision:"555512d6f0df7d11d317db18cb4f8eac"},{url:"/images/gallery/gallery-2.jpg",revision:"2fd6058f75fefa50ddf8e8f81a83038d"},{url:"/images/gallery/gallery-3.jpg",revision:"0864ae2a078439c477d13a60a88574d9"},{url:"/images/gallery/gallery-4.jpg",revision:"bf94d2b1d93bee7ad51a1159cc8e5966"},{url:"/images/hero/hero-accommodation.jpg",revision:"3ab412fe34b56bb5d15ee7c85a01a619"},{url:"/images/hero/hero-events.jpg",revision:"f441b5ff6fe6e12eac094fa93c508328"},{url:"/images/hero/hero-food.jpg",revision:"ad1bf80c7fc7e861341033872926c51e"},{url:"/images/hero/hero-premium-coffee.jpg",revision:"af324f797a753a128a3cf994130cd58c"},{url:"/images/hero/hero-reception-2.jpg",revision:"62d7e66b2bf05471583584474386aa00"},{url:"/images/hero/hero-reception.jpg",revision:"c320a118300f61d21da522df318028e0"},{url:"/images/hero/hero-signature-meals.jpg",revision:"237a5d3140b8c4b6fea8c4e5426d184e"},{url:"/images/hero/hero-team.jpg",revision:"a4aa8c13a1f8767d8fcf0044be454146"},{url:"/images/hero/hero-work-hub-1.jpg",revision:"82cdb95355579dc6aedb2c07e7c31218"},{url:"/images/logo/logo.jpg",revision:"ad6a6a0ba5ece2aaf28697b02af926fe"},{url:"/images/menu/accommodation-1.jpg",revision:"6ae33f2e4f54f817f900b072a0b50593"},{url:"/images/menu/breakfast.jpg",revision:"ce472592bbf363bf8d91f2d96c58d7f4"},{url:"/images/menu/burger.jpg",revision:"5172944a5a2a42c789bc58a0dcc8ab77"},{url:"/images/menu/cappuccino.jpg",revision:"40694ec635c7bbd88791f78c76672fcc"},{url:"/images/menu/chocolate-lava-cake.jpg",revision:"fcb46da48ecb97961f0175540e274e6a"},{url:"/images/menu/eat-out.jpg",revision:"0a71a38dc327c078fcdbb914cd3f7998"},{url:"/images/menu/espresso.jpg",revision:"eb261932b908a033311289964185e098"},{url:"/images/menu/events.jpg",revision:"ca3d31b0211e2485fc1daeea4da6d428"},{url:"/images/menu/food-ordering.jpg",revision:"9d7c8cd3253e7c2b2c9c52ac263b1cff"},{url:"/images/menu/main-course-1.jpg",revision:"ac7dce01387d553a6b1d62db3d185f31"},{url:"/images/menu/main-course-2.jpg",revision:"99d3c48ad4297aeb3fe198ad634c5cdb"},{url:"/images/menu/margherita-pizza.jpg",revision:"db8021a3a553e37c93406d8f3910b297"},{url:"/images/menu/placeholder-food.svg",revision:"e4296d532365f1186ddf6b378d61ff00"},{url:"/images/menu/salad.jpg",revision:"7b5363023cf6e98d4459aa3fd31802d1"},{url:"/images/outlets/urban-loft-busia.jpeg",revision:"a7cfff843213d1c0c5f831340e299383"},{url:"/images/outlets/urban-loft-kiambu.jpeg",revision:"9080a580ed5bbf00a16edc85bba9220f"},{url:"/images/promo-cake.svg",revision:"b4ffc37eb418d881f61a39a904060cae"},{url:"/images/promo-fresh.svg",revision:"ccc36feb59762dddb53f314c9eae3a0e"},{url:"/images/promo-mastercard.svg",revision:"07537375d230665389fdb797cb697cd8"},{url:"/images/promo-pizza.svg",revision:"2c5f274caadb4b052d6d45511dfdc1b2"},{url:"/images/rooms/rooms-1.jpg",revision:"6ae33f2e4f54f817f900b072a0b50593"},{url:"/images/rooms/rooms-2.jpg",revision:"bec51b8ba2b71e01b3d9dc2bab925e49"},{url:"/images/rooms/rooms-3.jpg",revision:"e373617447ce06c36dafddea47cba2eb"},{url:"/images/rooms/rooms-4.jpg",revision:"7b9812d389e3c68e6352191e6d36135e"},{url:"/images/rooms/rooms-5.jpg",revision:"54620021de658a99c5cce8a1b38f01ac"},{url:"/images/rooms/rooms-6.jpg",revision:"e373617447ce06c36dafddea47cba2eb"},{url:"/images/services/accommodation-1.jpg",revision:"e2051b67cc3d8b11c72b79124283e232"},{url:"/images/services/biz-hub-1.jpg",revision:"676219b1262dfc82cd9d4f227891470b"},{url:"/images/services/burger.jpg",revision:"5172944a5a2a42c789bc58a0dcc8ab77"},{url:"/images/services/cappuccino.jpg",revision:"40694ec635c7bbd88791f78c76672fcc"},{url:"/images/services/chocolate-lava-cake.jpg",revision:"fcb46da48ecb97961f0175540e274e6a"},{url:"/images/services/eat-out.jpg",revision:"3ff90d3ecf26c0fb89f0614d4c06b9cd"},{url:"/images/services/events.jpg",revision:"4d36c293314d0a0472c29ed73a9bee98"},{url:"/images/services/thecafe.jpg",revision:"48301073c8d3a0d78382dc66760e7ae5"},{url:"/images/services/urban-experience.jpg",revision:"3fcc33080ee8098ba72890b8761b1672"},{url:"/images/spaces/boardroom.jpg",revision:"23f4456bdeaa4419143314963f4ad42a"},{url:"/images/spaces/conference.jpg",revision:"fe3d97bca8d355243f378b8a9e909cbc"},{url:"/images/spaces/coworking.jpg",revision:"caa9811cdfea8dc1df14cdc22f1786b3"},{url:"/images/spaces/private-office.jpg",revision:"4720fd3c823bd5f981f431a5b497ea44"},{url:"/images/spaces/suite.jpg",revision:"6ae33f2e4f54f817f900b072a0b50593"},{url:"/images/team/david-kibet.jpg",revision:"58637000a62b57c8884497a611dab420"},{url:"/images/team/grace-wanjiru-2.jpg",revision:"a0e4688dc069ff57d56dfb7f323b59af"},{url:"/images/team/omondi-michael.jpg",revision:"1eb2dd434bc1a5d66ad8a66735ac5fb9"},{url:"/images/team/placeholder-team.svg",revision:"89548eba38049fefab2c7591a174d799"},{url:"/images/team/sarah-mwangi.jpg",revision:"95ed689243c7c7e2e6595c283925417f"},{url:"/images/work-hub/biz-hub-1-copy-0.jpg",revision:"ed5032a0499da3caf2c4ce9eec945cc0"},{url:"/images/work-hub/biz-hub-1.jpg",revision:"23f4456bdeaa4419143314963f4ad42a"},{url:"/images/work-hub/biz-hub-2.jpg",revision:"caa9811cdfea8dc1df14cdc22f1786b3"},{url:"/images/work-hub/biz-hub-3.jpg",revision:"fe3d97bca8d355243f378b8a9e909cbc"},{url:"/images/work-hub/biz-hub-4.jpg",revision:"4720fd3c823bd5f981f431a5b497ea44"},{url:"/logo.jpg",revision:"ad6a6a0ba5ece2aaf28697b02af926fe"},{url:"/swe-worker-5c72df51bb1f6ee0.js",revision:"76fdd3369f623a3edcf74ce2200bfdd0"}],{ignoreURLParametersMatching:[/^utm_/,/^fbclid$/]}),e.cleanupOutdatedCaches(),e.registerRoute("/",new e.NetworkFirst({cacheName:"start-url",plugins:[{cacheWillUpdate:async({response:e})=>e&&"opaqueredirect"===e.type?new Response(e.body,{status:200,statusText:"OK",headers:e.headers}):e}]}),"GET"),e.registerRoute(/^https?.*/,new e.NetworkFirst({cacheName:"offlineCache",plugins:[new e.ExpirationPlugin({maxEntries:200})]}),"GET"),self.__WB_DISABLE_DEV_LOGS=!0});
+/* eslint-disable no-restricted-globals */
+//
+// Offline-shell service worker (hand-written, bundler-agnostic).
+//
+// Next.js 16 builds with Turbopack, under which @ducanh2912/next-pwa does not run, so the
+// previously committed Workbox SW is never regenerated — its precache manifest points at stale
+// chunk hashes that 404, breaking the worker. This runtime-caching SW has no precache manifest,
+// so it stays correct across builds. Served at /sw.js, registered by the shared OfflineBar.
+//
+//   - navigations (document): network-first, fall back to the cached document for that URL.
+//   - /_next/static + assets: cache-first (content-hashed, safe to serve stale).
+//   - /api + cross-origin: network-only (never cache API responses or auth redirects).
+
+const VERSION = 'cv-offline-sw-v1';
+const DOC_CACHE = `${VERSION}-documents`;
+const ASSET_CACHE = `${VERSION}-assets`;
+
+self.addEventListener('install', () => self.skipWaiting());
+
+self.addEventListener('activate', (event) => {
+  event.waitUntil(
+    (async () => {
+      const keys = await caches.keys();
+      await Promise.all(keys.filter((k) => !k.startsWith(VERSION)).map((k) => caches.delete(k)));
+      await self.clients.claim();
+    })(),
+  );
+});
+
+self.addEventListener('message', (event) => {
+  if (event.data && event.data.type === 'SKIP_WAITING') self.skipWaiting();
+});
+
+function isAsset(url) {
+  return (
+    url.pathname.startsWith('/_next/static/') ||
+    url.pathname.startsWith('/icons/') ||
+    url.pathname.startsWith('/images/') ||
+    /\.(?:js|css|woff2?|ttf|otf|png|jpg|jpeg|svg|gif|webp|ico)$/.test(url.pathname)
+  );
+}
+
+self.addEventListener('fetch', (event) => {
+  const { request } = event;
+  if (request.method !== 'GET') return;
+  const url = new URL(request.url);
+  if (url.origin !== self.location.origin) return;
+  if (url.pathname.startsWith('/api/')) return;
+
+  if (request.mode === 'navigate') {
+    event.respondWith(
+      (async () => {
+        try {
+          const fresh = await fetch(request);
+          if (fresh && fresh.status === 200 && fresh.type === 'basic') {
+            const cache = await caches.open(DOC_CACHE);
+            cache.put(request, fresh.clone());
+          }
+          return fresh;
+        } catch {
+          const cache = await caches.open(DOC_CACHE);
+          const exact = await cache.match(request, { ignoreSearch: true });
+          if (exact) return exact;
+          const any = (await cache.keys())[0];
+          if (any) return cache.match(any);
+          return new Response(
+            '<!doctype html><meta charset="utf-8"><title>Offline</title><body style="font-family:system-ui;padding:2rem">Offline — reopen when your connection returns.</body>',
+            { headers: { 'Content-Type': 'text/html' }, status: 200 },
+          );
+        }
+      })(),
+    );
+    return;
+  }
+
+  if (isAsset(url)) {
+    event.respondWith(
+      (async () => {
+        const cache = await caches.open(ASSET_CACHE);
+        const cached = await cache.match(request);
+        if (cached) return cached;
+        try {
+          const fresh = await fetch(request);
+          if (fresh && fresh.status === 200) cache.put(request, fresh.clone());
+          return fresh;
+        } catch {
+          return cached || Response.error();
+        }
+      })(),
+    );
+  }
+});

@@ -16,6 +16,7 @@ import type { QueryClient } from "@tanstack/react-query";
 
 import { TenantBrandingProvider } from "./branding-provider";
 import { PWAUpdateBanner } from "@/components/pwa/pwa-update-banner";
+import { OfflineBar } from "@bengo-hub/shared-ui-lib/offline";
 
 /** Syncs GET /auth/me (useMe) result into auth store so roles/permissions stay current. */
 function AuthSync() {
@@ -77,6 +78,10 @@ export function AppProviders({ children }: PropsWithChildren) {
       <QueryClientProvider client={queryClient}>
         <TenantBrandingProvider>
           <PWAUpdateBanner />
+          <OfflineBar
+            availableOffline={["Browse cached menu", "View past orders"]}
+            disabledOffline={["Placing orders", "Payments", "Live tracking"]}
+          />
           <AuthSync />
           {children}
           {showDevtools ? (
