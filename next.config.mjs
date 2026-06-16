@@ -76,7 +76,7 @@ const pwaConfig = withPWA({
   swcMinify: true,
   // Fleet-uniform: built with `next build --webpack` so next-pwa regenerates the SW every build
   // (always current; browser detects updates → PwaUpdater banner). Disabled only in dev.
-  disable: process.env.NODE_ENV === "development",
+  disable: true,
   workboxOptions: {
     skipWaiting: false,
     clientsClaim: true,
