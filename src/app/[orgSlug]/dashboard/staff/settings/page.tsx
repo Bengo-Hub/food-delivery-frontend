@@ -5,6 +5,7 @@ import {
   Bell,
   Check,
   CreditCard,
+  DatabaseBackup,
   Globe,
   Link2,
   Loader2,
@@ -46,7 +47,19 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  useBackupSettings,
+  useUpdateBackupSettings,
+} from "@/hooks/use-backup-settings";
+import type { BackupSettings } from "@/lib/api/backups";
 import { toast } from "@/lib/toast";
 import { notificationsApi, subscriptionsApi } from "@/lib/api/platform-services";
 import {
@@ -1060,6 +1073,196 @@ function ConfigTable({
   );
 }
 
+// ── Automatic backups (per-tenant OPT-IN) ────────────────────────────────────
+
+const DEFAULT_BACKUP_SETTINGS: BackupSettings = {
+  auto_enabled: false,
+  schedule_hour: 2,
+  retention_days: 4,
+};
+
+/** Formats an hour (0-23) as a 12-hour label, e.g. 2 → "2:00 AM", 14 → "2:00 PM". */
+function formatHourLabel(hour: number): string {
+  const period = hour < 12 ? "AM" : "PM";
+  const h12 = hour % 12 === 0 ? 12 : hour % 12;
+  return `${h12}:00 ${period}`;
+}
+
+const HOUR_OPTIONS = Array.from({ length: 24 }, (_, h) => h);
+
+/**
+ * Accessible toggle switch built inline (the design system has no Switch
+ * component and @radix-ui/react-switch is not a dependency).
+ */
+function Toggle({
+  checked,
+  onCheckedChange,
+  disabled,
+  id,
+}: {
+  checked: boolean;
+  onCheckedChange: (next: boolean) => void;
+  disabled?: boolean;
+  id?: string;
+}) {
+  return (
+    <button
+      id={id}
+      type="button"
+      role="switch"
+      aria-checked={checked}
+      disabled={disabled}
+      onClick={() => onCheckedChange(!checked)}
+      className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 ${
+        checked ? "bg-primary" : "bg-muted-foreground/30"
+      }`}
+    >
+      <span
+        className={`inline-block size-4 transform rounded-full bg-white shadow transition-transform ${
+          checked ? "translate-x-6" : "translate-x-1"
+        }`}
+      />
+    </button>
+  );
+}
+
+/** Per-tenant auto-backup activation card (default OFF — opt-in). */
+function AutoBackupCard() {
+  const { data, isLoading } = useBackupSettings();
+  const update = useUpdateBackupSettings();
+
+  const [form, setForm] = useState<BackupSettings>(DEFAULT_BACKUP_SETTINGS);
+
+  useEffect(() => {
+    if (data) setForm(data);
+  }, [data]);
+
+  const baseline = data ?? DEFAULT_BACKUP_SETTINGS;
+  const dirty =
+    form.auto_enabled !== baseline.auto_enabled ||
+    form.schedule_hour !== baseline.schedule_hour ||
+    form.retention_days !== baseline.retention_days;
+
+  const handleSave = () => {
+    update.mutate(
+      {
+        auto_enabled: form.auto_enabled,
+        schedule_hour: form.schedule_hour,
+        retention_days: Math.max(1, form.retention_days || 1),
+      },
+      {
+        onSettled: (saved, error) => {
+          if (error) {
+            toast.error("Failed to save backup settings");
+          } else {
+            if (saved) setForm(saved);
+            toast.success(
+              form.auto_enabled
+                ? "Automatic backups activated"
+                : "Backup settings saved",
+            );
+          }
+        },
+      },
+    );
+  };
+
+  if (isLoading) {
+    return (
+      <Card>
+        <CardContent className="flex items-center justify-center py-12">
+          <Loader2 className="size-6 animate-spin text-primary" />
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <DatabaseBackup className="size-5" />
+          Automatic backups
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-6">
+        <div className="flex items-start justify-between gap-4 rounded-lg border border-border p-4">
+          <div>
+            <Label htmlFor="auto-backup-toggle" className="font-medium">
+              Enable automatic backups
+            </Label>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Off by default. When enabled, this store&apos;s data is backed up
+              automatically once a day at the selected time.
+            </p>
+          </div>
+          <Toggle
+            id="auto-backup-toggle"
+            checked={form.auto_enabled}
+            onCheckedChange={(next) =>
+              setForm((prev) => ({ ...prev, auto_enabled: next }))
+            }
+            disabled={update.isPending}
+          />
+        </div>
+
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div className="space-y-2">
+            <Label htmlFor="backup-hour">Daily backup time</Label>
+            <Select
+              value={String(form.schedule_hour)}
+              onValueChange={(v) =>
+                setForm((prev) => ({ ...prev, schedule_hour: Number(v) }))
+              }
+              disabled={!form.auto_enabled || update.isPending}
+            >
+              <SelectTrigger id="backup-hour">
+                <SelectValue placeholder="Select a time" />
+              </SelectTrigger>
+              <SelectContent>
+                {HOUR_OPTIONS.map((h) => (
+                  <SelectItem key={h} value={String(h)}>
+                    {formatHourLabel(h)}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="backup-retention">Retention (days)</Label>
+            <Input
+              id="backup-retention"
+              type="number"
+              min={1}
+              value={form.retention_days}
+              disabled={!form.auto_enabled || update.isPending}
+              onChange={(e) =>
+                setForm((prev) => ({
+                  ...prev,
+                  retention_days: Number(e.target.value),
+                }))
+              }
+            />
+            <p className="text-xs text-muted-foreground">
+              Backups older than this are deleted automatically.
+            </p>
+          </div>
+        </div>
+
+        <Button onClick={handleSave} disabled={!dirty || update.isPending}>
+          {update.isPending ? (
+            <Loader2 className="size-4 animate-spin mr-2" />
+          ) : (
+            <Save className="size-4 mr-2" />
+          )}
+          Save
+        </Button>
+      </CardContent>
+    </Card>
+  );
+}
+
 function ConfigurationTab() {
   const user = useAuthStore((s) => s.user);
   const isSuperuser = !!(
@@ -1096,6 +1299,8 @@ function ConfigurationTab() {
   return (
     <div className="space-y-6">
       <FeeConfigCard item={feeConfig} />
+
+      <AutoBackupCard />
 
       <Card>
         <CardHeader>
