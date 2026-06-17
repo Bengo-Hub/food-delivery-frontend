@@ -74,7 +74,7 @@ export function AppProviders({ children }: PropsWithChildren) {
   }, [queryClient]);
 
   return (
-    <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
+    <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false}>
       <QueryClientProvider client={queryClient}>
         <TenantBrandingProvider>
           <PWAUpdateBanner />

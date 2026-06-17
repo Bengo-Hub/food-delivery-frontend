@@ -5,12 +5,14 @@ import {
   Check,
   CreditCard,
   DollarSign,
+  KeyRound,
   LayoutDashboard,
   Loader2,
   MapPin,
   Package,
   Search,
   Settings,
+  ShieldCheck,
   ShoppingBag,
   X,
 } from "lucide-react";
@@ -24,7 +26,9 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Textarea } from "@/components/ui/textarea";
 import { useAuthStore } from "@/store/auth";
 import { useAdminOrders } from "@/hooks/use-admin";
 import {
@@ -35,6 +39,10 @@ import {
 } from "@/hooks/use-gateways";
 import { listZones } from "@/lib/api/zones";
 import { useUseCaseConfig } from "@/lib/api/use-case";
+import {
+  useEncryptionKeyStatus,
+  useUpdateEncryptionKey,
+} from "@/lib/api/encryption-key";
 import { useServiceConfig } from "@/hooks/use-service-config";
 import { orgRoute } from "@/lib/routes";
 import { toast } from "@/lib/toast";
@@ -120,6 +128,10 @@ export default function PlatformDashboardPage({
             <TabsTrigger value="zones">
               <MapPin className="mr-1.5 size-4" />
               Delivery Zones
+            </TabsTrigger>
+            <TabsTrigger value="encryption">
+              <KeyRound className="mr-1.5 size-4" />
+              Encryption Key
             </TabsTrigger>
           </TabsList>
 
@@ -255,9 +267,184 @@ export default function PlatformDashboardPage({
               </CardContent>
             </Card>
           </TabsContent>
+
+          {/* ─── Credential Encryption Key Tab ─────────────────────── */}
+          <TabsContent value="encryption" className="space-y-6">
+            <EncryptionKeyTab orgSlug={orgSlug} enabled={isPlatformOwner} />
+          </TabsContent>
         </Tabs>
       </div>
     </SiteShell>
+  );
+}
+
+/* ─── Credential Encryption Key Tab ──────────────────────────────────── */
+//
+// Platform-owner-only management of the encryption key used to protect stored
+// Google/OAuth credentials at rest. Data flows through the tenant-scoped (but
+// platform-owner gated) admin endpoints:
+//   GET/PUT /api/v1/{slug}/admin/encryption-key
+//
+// The raw key is never returned by the backend or shown here — only a
+// fingerprint and the active key source.
+
+function extractApiError(err: unknown, fallback: string): string {
+  const e = err as { response?: { data?: { error?: string; message?: string } } };
+  return e?.response?.data?.error || e?.response?.data?.message || fallback;
+}
+
+function EncryptionKeyTab({ orgSlug, enabled }: { orgSlug: string; enabled: boolean }) {
+  const { data, isLoading } = useEncryptionKeyStatus(orgSlug, enabled);
+  const updateKey = useUpdateEncryptionKey(orgSlug);
+
+  const [showAdvanced, setShowAdvanced] = useState(false);
+  const [manualKey, setManualKey] = useState("");
+  const [keyError, setKeyError] = useState<string | null>(null);
+
+  const source = data?.source;
+  const badge =
+    source === "db"
+      ? { label: "Configured (database)", className: "border-transparent bg-green-500/15 text-green-600 dark:text-green-400" }
+      : source === "env"
+        ? { label: "Using environment fallback", className: "border-transparent bg-amber-500/15 text-amber-600 dark:text-amber-400" }
+        : { label: "Insecure dev key — set a key", className: "border-transparent bg-red-500/15 text-red-600 dark:text-red-400" };
+
+  const handleGenerate = () => {
+    setKeyError(null);
+    updateKey.mutate(
+      { generate: true },
+      {
+        onSuccess: () => toast.success("New encryption key generated and activated"),
+        onError: (err) => toast.error(extractApiError(err, "Failed to generate key")),
+      },
+    );
+  };
+
+  const handleSaveManual = () => {
+    setKeyError(null);
+    const key = manualKey.trim();
+    if (!key) {
+      setKeyError("Enter a base64-encoded 32-byte key.");
+      return;
+    }
+    updateKey.mutate(
+      { key },
+      {
+        onSuccess: () => {
+          setManualKey("");
+          setShowAdvanced(false);
+          toast.success("Encryption key updated");
+        },
+        onError: (err) => {
+          const msg = extractApiError(err, "Failed to set key");
+          setKeyError(msg);
+          toast.error(msg);
+        },
+      },
+    );
+  };
+
+  const isPending = updateKey.isPending;
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2 text-lg">
+          <ShieldCheck className="size-5" />
+          Credential Encryption Key
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        {isLoading ? (
+          <div className="flex items-center justify-center py-12">
+            <Loader2 className="size-8 animate-spin text-primary" />
+          </div>
+        ) : (
+          <div className="space-y-6">
+            {/* Status */}
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+              <div className="space-y-2">
+                <Badge className={badge.className}>{badge.label}</Badge>
+                <dl className="space-y-1 text-sm">
+                  <div className="flex gap-2">
+                    <dt className="text-muted-foreground">Fingerprint:</dt>
+                    <dd className="font-mono">{data?.key_fingerprint || "—"}</dd>
+                  </div>
+                  <div className="flex gap-2">
+                    <dt className="text-muted-foreground">Last updated:</dt>
+                    <dd>
+                      {data?.updated_at
+                        ? new Date(data.updated_at).toLocaleString()
+                        : "Never"}
+                    </dd>
+                  </div>
+                </dl>
+              </div>
+              <Button onClick={handleGenerate} disabled={isPending}>
+                {isPending ? (
+                  <Loader2 className="mr-1.5 size-4 animate-spin" />
+                ) : (
+                  <KeyRound className="mr-1.5 size-4" />
+                )}
+                Generate &amp; activate new key
+              </Button>
+            </div>
+
+            {/* Info note */}
+            <p className="rounded-lg border bg-muted/40 p-3 text-xs text-muted-foreground">
+              New tokens encrypt with the active key; existing tokens stay
+              readable (decryption tries previous keys). The raw key is never
+              shown.
+            </p>
+
+            {/* Advanced: paste key */}
+            <div className="border-t pt-4">
+              <button
+                type="button"
+                className="text-sm font-medium text-primary hover:underline"
+                onClick={() => setShowAdvanced((v) => !v)}
+              >
+                {showAdvanced ? "Hide advanced" : "Advanced — set a specific key"}
+              </button>
+              {showAdvanced && (
+                <div className="mt-3 space-y-2">
+                  <Label htmlFor="encryption-key-input">
+                    Base64-encoded 32-byte key
+                  </Label>
+                  <Textarea
+                    id="encryption-key-input"
+                    value={manualKey}
+                    onChange={(e) => {
+                      setManualKey(e.target.value);
+                      if (keyError) setKeyError(null);
+                    }}
+                    placeholder="Paste a base64-encoded 32-byte key…"
+                    rows={2}
+                    className="font-mono text-xs"
+                    spellCheck={false}
+                  />
+                  {keyError && (
+                    <p className="text-xs text-destructive">{keyError}</p>
+                  )}
+                  <div className="flex justify-end">
+                    <Button
+                      size="sm"
+                      onClick={handleSaveManual}
+                      disabled={isPending}
+                    >
+                      {isPending ? (
+                        <Loader2 className="mr-1.5 size-4 animate-spin" />
+                      ) : null}
+                      Save key
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+      </CardContent>
+    </Card>
   );
 }
 
