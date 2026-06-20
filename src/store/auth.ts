@@ -10,6 +10,7 @@ import {
     fetchOrderSummary,
     fetchProfile,
     fetchProfileFromSSO,
+    revokeServerSession,
     updatePreferences,
     updateProfile,
     updateSecurity,
@@ -331,6 +332,9 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   },
 
   logout: async () => {
+    // Revoke the backend session (Redis session_token keys + DB sessions) while
+    // the access token is still available, before clearing local state.
+    await revokeServerSession(get().session?.accessToken);
     clearSession(set);
     // Clear Zustand persist storage to prevent rehydration of stale session
     if (typeof window !== "undefined") {
