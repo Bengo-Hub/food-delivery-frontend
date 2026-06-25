@@ -1,6 +1,7 @@
 import type { AxiosError } from "axios";
 import { create } from "zustand";
 
+import { apiErrorMessage } from "@/lib/api/error-message";
 import { attachAuthTokenGetter } from "@/lib/api/base";
 import { attachPlatformAuthTokenGetter } from "@/lib/api/platform-services";
 import {
@@ -356,7 +357,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       toast.success("Profile updated successfully.");
     } catch (error) {
       set({ status: "error", error: "Could not update profile right now." });
-      toast.error("Failed to update profile.");
+      toast.error(await apiErrorMessage(error, "Failed to update profile."));
       throw error;
     }
   },
@@ -369,7 +370,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       toast.success("Preferences updated.");
     } catch (error) {
       set({ status: "error", error: "Could not update preferences right now." });
-      toast.error("Failed to update preferences.");
+      toast.error(await apiErrorMessage(error, "Failed to update preferences."));
       throw error;
     }
   },
@@ -382,7 +383,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       toast.success("Security settings updated.");
     } catch (error) {
       set({ status: "error", error: "Unable to update security settings." });
-      toast.error("Failed to update security settings.");
+      toast.error(await apiErrorMessage(error, "Failed to update security settings."));
       throw error;
     }
   },

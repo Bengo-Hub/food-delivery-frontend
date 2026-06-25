@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Loader2, Star, X } from "lucide-react";
 
 import { useRateOrder } from "@/hooks/use-orders";
+import { apiErrorMessage } from "@/lib/api/error-message";
 import { toast } from "@/lib/toast";
 
 interface RatingDialogProps {
@@ -29,8 +30,8 @@ export function RatingDialog({ orderId, orderNumber, onClose }: RatingDialogProp
       await rateOrder.mutateAsync({ orderId, rating, comment });
       toast.success("Thanks for your rating!");
       onClose();
-    } catch {
-      toast.error("Failed to submit rating. Please try again.");
+    } catch (e) {
+      toast.error(await apiErrorMessage(e, "Failed to submit rating. Please try again."));
     }
   };
 

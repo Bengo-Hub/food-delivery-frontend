@@ -10,6 +10,7 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { brand } from "@/config/brand";
 import { api } from "@/lib/api/base";
+import { apiErrorMessage } from "@/lib/api/error-message";
 import { orgRoute } from "@/lib/routes";
 import { toast } from "@/lib/toast";
 import { useOrgSlug } from "@/providers/org-slug-provider";
@@ -90,8 +91,8 @@ export default function VerifyEmailPage() {
       setTimeout(() => {
         router.push(orgRoute(orgSlug, "/catalog"));
       }, 1500);
-    } catch {
-      toast.error("Invalid code. Please try again.");
+    } catch (e) {
+      toast.error(await apiErrorMessage(e, "Invalid code. Please try again."));
       setDigits(Array(CODE_LENGTH).fill(""));
       inputRefs.current[0]?.focus();
     } finally {
@@ -105,8 +106,8 @@ export default function VerifyEmailPage() {
       await api.post(`${orgSlug}/auth/resend-verification`, { email });
       toast.success("Verification code resent!");
       setResendTimer(RESEND_COOLDOWN);
-    } catch {
-      toast.error("Failed to resend code. Please try again.");
+    } catch (e) {
+      toast.error(await apiErrorMessage(e, "Failed to resend code. Please try again."));
     } finally {
       setResending(false);
     }

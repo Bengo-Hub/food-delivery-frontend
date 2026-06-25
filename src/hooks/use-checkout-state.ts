@@ -9,6 +9,7 @@ import { useCheckout, useGuestCheckout, useFeeBreakdown } from "@/hooks/use-cart
 import { useApplyPromoCode } from "@/hooks/use-orders";
 import { usePaymentMethods } from "@/hooks/use-payment-methods";
 import { useZoneCheck } from "@/hooks/use-zones";
+import { apiErrorMessage } from "@/lib/api/error-message";
 import { api } from "@/lib/api/base";
 import { payOrderWithWallet } from "@/lib/api/orders";
 import { orgRoute } from "@/lib/routes";
@@ -373,8 +374,8 @@ export function useCheckoutState() {
         setPromoMessage(result.message);
         toast.error(result.message);
       }
-    } catch {
-      toast.error("Failed to apply promo code");
+    } catch (e) {
+      toast.error(await apiErrorMessage(e, "Failed to apply promo code"));
     }
   }, [promoCode, cartSubtotal, applyPromo]);
 

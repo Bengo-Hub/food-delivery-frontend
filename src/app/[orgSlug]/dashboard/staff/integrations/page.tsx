@@ -33,6 +33,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "@/lib/toast";
+import { apiErrorMessage } from "@/lib/api/error-message";
 
 // ── Status card ───────────────────────────────────────────────────────────────
 
@@ -49,7 +50,7 @@ function StatusCard({ status }: { status: GoogleStatus }) {
           toast.error("Could not start the Google connection.");
         }
       },
-      onError: () => toast.error("Could not start the Google connection."),
+      onError: async (err) => toast.error(await apiErrorMessage(err, "Could not start the Google connection.")),
     });
   };
 
@@ -59,7 +60,7 @@ function StatusCard({ status }: { status: GoogleStatus }) {
     }
     disconnect.mutate(undefined, {
       onSuccess: () => toast.success("Google Business Profile disconnected"),
-      onError: () => toast.error("Failed to disconnect"),
+      onError: async (err) => toast.error(await apiErrorMessage(err, "Failed to disconnect")),
     });
   };
 
@@ -173,7 +174,7 @@ function LocationPicker({ status }: { status: GoogleStatus }) {
       },
       {
         onSuccess: () => toast.success(`Location set to ${loc.title || loc.name}`),
-        onError: () => toast.error("Failed to select location"),
+        onError: async (err) => toast.error(await apiErrorMessage(err, "Failed to select location")),
         onSettled: () => setSelectingName(null),
       },
     );
@@ -283,7 +284,7 @@ function ReviewRow({ review }: { review: GoogleReview }) {
           toast.success("Reply posted");
           setDraft("");
         },
-        onError: () => toast.error("Failed to post reply"),
+        onError: async (err) => toast.error(await apiErrorMessage(err, "Failed to post reply")),
       },
     );
   };

@@ -25,6 +25,7 @@ import { useOrders } from "@/hooks/use-orders";
 import { useLoyaltyAccount, useLoyaltyTransactions, useRegisterLoyalty } from "@/hooks/use-loyalty";
 import { useSubscription } from "@/hooks/use-subscription";
 import { useWalletBalance } from "@/hooks/use-wallet";
+import { apiErrorMessage } from "@/lib/api/error-message";
 import { formatDateTime } from "@/lib/datetime";
 import { orgRoute } from "@/lib/routes";
 import { toast } from "@/lib/toast";
@@ -84,8 +85,8 @@ export default function CustomerDashboardPage() {
     try {
       await registerLoyalty.mutateAsync();
       toast.success("Welcome to the loyalty program! You're now earning points.");
-    } catch {
-      toast.error("Could not register for the loyalty program. Please try again.");
+    } catch (e) {
+      toast.error(await apiErrorMessage(e, "Could not register for the loyalty program. Please try again."));
     }
   };
 
