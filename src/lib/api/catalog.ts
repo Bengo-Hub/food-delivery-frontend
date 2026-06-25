@@ -207,8 +207,14 @@ interface BackendMenuCategory {
 export async function fetchCategories(
   tenantSlug: string,
   outletId?: string,
+  useCase?: string,
 ): Promise<MenuCategory[]> {
-  const params = outletId ? `?outlet_id=${outletId}` : "";
+  // use_case lets the backend drop categories that don't belong to this outlet's
+  // vertical (e.g. food categories never appear on a hardware storefront).
+  const qs = new URLSearchParams();
+  if (outletId) qs.set("outlet_id", outletId);
+  if (useCase) qs.set("use_case", useCase);
+  const params = qs.toString() ? `?${qs.toString()}` : "";
   const response = await api.get<BackendMenuCategory[]>(`${tenantSlug}/catalog/categories${params}`);
   return response.data.map((cat) => ({
     id: cat.id,

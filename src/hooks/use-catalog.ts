@@ -128,10 +128,10 @@ export function useFeaturedItems(
 /**
  * Hook to fetch all catalog categories (outletId optional for filtering by outlet).
  */
-export function useCategories(tenantSlug: string, outletId?: string) {
+export function useCategories(tenantSlug: string, outletId?: string, useCase?: string) {
   return useQuery({
-    queryKey: [tenantSlug, ...catalogKeys.categoryList(outletId)],
-    queryFn: () => fetchCategories(tenantSlug, outletId),
+    queryKey: [tenantSlug, ...catalogKeys.categoryList(outletId), useCase ?? ""],
+    queryFn: () => fetchCategories(tenantSlug, outletId, useCase),
     enabled: !!tenantSlug,
     staleTime: CATALOG_STALE_MS,
     gcTime: CATALOG_GC_MS,

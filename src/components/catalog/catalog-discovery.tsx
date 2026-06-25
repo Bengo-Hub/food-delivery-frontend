@@ -20,6 +20,8 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useCategories, useCatalogItems, useOutlets, useToggleFavorite } from "@/hooks/use-catalog";
+import { useOrderingConfig } from "@/hooks/use-ordering-config";
+import type { OrderingConfig } from "@/lib/use-case-config";
 import { orgRoute } from "@/lib/routes";
 import { cn, getMediaUrl } from "@/lib/utils";
 import { useOrgSlug } from "@/providers/org-slug-provider";
@@ -49,11 +51,13 @@ function DiscoveryMenuItem({
   item,
   orgSlug,
   onAddToCart,
+  cfg,
   index = 0,
 }: {
   item: MenuItem;
   orgSlug: string;
   onAddToCart: (item: MenuItem) => void;
+  cfg: OrderingConfig;
   index?: number;
 }) {
   const itemUrl = item.id ? `/${orgSlug}/catalog/${item.id}` : "#";
@@ -88,7 +92,7 @@ function DiscoveryMenuItem({
           />
         ) : (
           <div className="flex size-full items-center justify-center bg-gradient-to-br from-muted to-muted/50">
-            <span className="text-4xl opacity-30">🍽️</span>
+            <span className="text-4xl opacity-30">{cfg.placeholderGlyph}</span>
           </div>
         )}
 
@@ -115,7 +119,7 @@ function DiscoveryMenuItem({
               <h3 className="text-base font-semibold text-foreground sm:text-lg">
                 {item.name}
               </h3>
-              {(item.manufacturer || item.model) && (
+              {cfg.showMakeModel && (item.manufacturer || item.model) && (
                 <p className="mt-0.5 truncate text-xs text-muted-foreground">
                   {[item.manufacturer, item.model].filter(Boolean).join(" · ")}
                 </p>
@@ -159,7 +163,7 @@ function DiscoveryMenuItem({
             // page (the wrapping Link) where the variant selector lives.
             <Button className="w-full min-h-[48px]" size="sm" variant="outline">
               <ShoppingCartIcon className="mr-2 size-4" />
-              Select Options
+              {cfg.selectOptionsLabel}
             </Button>
           ) : (
             <Button
@@ -172,7 +176,7 @@ function DiscoveryMenuItem({
               size="sm"
             >
               <ShoppingCartIcon className="mr-2 size-4" />
-              Add to Cart
+              {cfg.ctaLabel}
             </Button>
           )}
         </footer>
@@ -229,7 +233,15 @@ export function MenuDiscovery({
   const { data: outletsData } = useOutlets(orgSlug, undefined, 1, 50);
   const outlets = outletsData?.data ?? [];
   const firstOutletId = outlets[0]?.id ?? undefined;
-  const { data: categoriesData } = useCategories(orgSlug, firstOutletId);
+
+  // Adapt the storefront to the browsed outlet's vertical: a hardware/electronics
+  // shop, a restaurant, a pharmacy and a ticketed event must not render the same
+  // food-oriented menu. cfg/copy drive layout, CTA labels, dietary filters, etc.;
+  // effectiveUseCase also gates which categories the backend returns.
+  const browsedOutlet = outlets.find((o) => o.id === (activeOutletId || firstOutletId));
+  const { config: cfg, copy, useCase: effectiveUseCase } = useOrderingConfig(browsedOutlet?.businessType);
+
+  const { data: categoriesData } = useCategories(orgSlug, firstOutletId, effectiveUseCase);
   const categoriesFromApi = useMemo(() => categoriesData ?? [], [categoriesData]);
 
   const filters = useMemo(
@@ -350,7 +362,7 @@ export function MenuDiscovery({
         <div className="flex flex-col gap-4 rounded-2xl border border-border bg-brand-surface/40 p-4 shadow-sm sm:gap-6 sm:rounded-3xl sm:p-6 md:flex-row md:items-center md:justify-between">
           <div className="flex-1 space-y-2">
             <h2 className="text-xl font-semibold text-foreground sm:text-2xl md:text-3xl">
-              Browse the {activeCategoryId === "all" ? "full catalog" : (categoriesFromApi.find((c) => c.id === activeCategoryId)?.name ?? "catalog").toLowerCase()}
+              Browse {activeCategoryId === "all" ? `all ${copy.itemLabelPlural.toLowerCase()}` : (categoriesFromApi.find((c) => c.id === activeCategoryId)?.name ?? copy.itemLabelPlural).toLowerCase()}
             </h2>
             <p className="text-xs text-muted-foreground sm:text-sm">
               Filter by dietary preference, explore specials, and build your cart seamlessly.
@@ -367,7 +379,7 @@ export function MenuDiscovery({
               />
               <Input
                 id="menu-search"
-                placeholder="Search items, products, or categories"
+                placeholder={copy.searchPlaceholder}
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 onBlur={() => updateUrl({ search: search.trim() || undefined })}
@@ -474,7 +486,9 @@ export function MenuDiscovery({
             <Heart className={cn("size-4", initialAction === "whitelist" && "fill-current")} aria-hidden />
             <span>Favorites</span>
           </button>
-          {dietaryFilterOpts.map((filter) => {
+          {/* Dietary filters only make sense for food verticals (vegan/gluten-free/etc.) —
+              hidden for retail/pharmacy/services/ticketing where they're meaningless. */}
+          {cfg.showDietaryFilters && dietaryFilterOpts.map((filter) => {
             const isActive = activeDietary.includes(filter.value);
             return (
               <button
@@ -500,8 +514,12 @@ export function MenuDiscovery({
           })}
         </div>
 
-        {/* Menu items grid - Mobile: Single column, Tablet: 2 columns, Desktop: 3 columns */}
-        <div className="grid gap-4 sm:grid-cols-2 sm:gap-6 lg:grid-cols-3">
+        {/* Items grid — denser (4-up) for product-style retail/wholesale verticals,
+            comfortable (3-up) for food/services where cards carry more detail. */}
+        <div className={cn(
+          "grid gap-4 sm:grid-cols-2 sm:gap-6",
+          cfg.productLayout === "compact" ? "lg:grid-cols-4" : "lg:grid-cols-3",
+        )}>
           {isPending && menuItems.length === 0 ? (
             <div className="col-span-full rounded-2xl border border-dashed border-border bg-card p-6 text-center sm:rounded-3xl sm:p-8">
               <p className="text-sm text-muted-foreground">Loading catalog…</p>
@@ -527,6 +545,7 @@ export function MenuDiscovery({
                 item={item}
                 orgSlug={orgSlug}
                 onAddToCart={handleAddToCart}
+                cfg={cfg}
                 index={idx}
               />
             ))
