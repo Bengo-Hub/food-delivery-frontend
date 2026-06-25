@@ -61,6 +61,7 @@ import {
 } from "@/hooks/use-backup-settings";
 import type { BackupSettings } from "@/lib/api/backups";
 import { toast } from "@/lib/toast";
+import { apiErrorMessage } from "@/lib/api/error-message";
 import { notificationsApi, subscriptionsApi } from "@/lib/api/platform-services";
 import {
   useAvailableGateways,
@@ -226,7 +227,7 @@ function PaymentSettingsTab({ tenantSlug: _tenantSlug }: { tenantSlug: string })
       { gatewayType },
       {
         onSuccess: () => toast.success("Payment gateway enabled"),
-        onError: () => toast.error("Failed to enable gateway"),
+        onError: async (err) => toast.error(await apiErrorMessage(err, "Failed to enable gateway")),
         onSettled: () => setPendingType(null),
       },
     );
@@ -236,7 +237,7 @@ function PaymentSettingsTab({ tenantSlug: _tenantSlug }: { tenantSlug: string })
     setPendingType(gatewayType);
     deactivateGateway.mutate(gatewayType, {
       onSuccess: () => toast.success("Payment gateway disabled"),
-      onError: () => toast.error("Failed to disable gateway"),
+      onError: async (err) => toast.error(await apiErrorMessage(err, "Failed to disable gateway")),
       onSettled: () => setPendingType(null),
     });
   };
@@ -379,8 +380,8 @@ function NotificationSettingsTab({ tenantSlug }: { tenantSlug: string }) {
     try {
       await notificationsApi.put(`/api/v1/${tenantSlug}/branding`, branding);
       toast.success("Branding updated");
-    } catch {
-      toast.error("Failed to update branding");
+    } catch (e) {
+      toast.error(await apiErrorMessage(e, "Failed to update branding"));
     } finally {
       setIsSaving(false);
     }
@@ -394,8 +395,8 @@ function NotificationSettingsTab({ tenantSlug }: { tenantSlug: string }) {
       });
       toast.success(`${channel.toUpperCase()} provider updated`);
       fetchData();
-    } catch {
-      toast.error("Failed to update provider");
+    } catch (e) {
+      toast.error(await apiErrorMessage(e, "Failed to update provider"));
     }
   };
 
@@ -573,8 +574,8 @@ function SubscriptionAddonsTab({ tenantSlug }: { tenantSlug: string }) {
       });
       toast.success("Add-on activated");
       fetchData();
-    } catch {
-      toast.error("Failed to activate add-on");
+    } catch (e) {
+      toast.error(await apiErrorMessage(e, "Failed to activate add-on"));
     } finally {
       setSubscribing(null);
     }
@@ -586,8 +587,8 @@ function SubscriptionAddonsTab({ tenantSlug }: { tenantSlug: string }) {
       await subscriptionsApi.delete(`/api/v1/${tenantSlug}/addons/${addonCode}`);
       toast.success("Add-on removed");
       fetchData();
-    } catch {
-      toast.error("Failed to remove add-on");
+    } catch (e) {
+      toast.error(await apiErrorMessage(e, "Failed to remove add-on"));
     } finally {
       setUnsubscribing(null);
     }
@@ -878,8 +879,8 @@ function FeeConfigCard({ item }: { item: ServiceConfigItem | undefined }) {
     update.mutate(
       { key: "fee_config", value },
       {
-        onSettled: (_data, error) => {
-          if (error) toast.error("Failed to save fee configuration");
+        onSettled: async (_data, error) => {
+          if (error) toast.error(await apiErrorMessage(error, "Failed to save fee configuration"));
           else toast.success("Fee configuration saved");
         },
       },
@@ -957,9 +958,9 @@ function EditConfigDialog({
     mutation.mutate(
       { key: item.configKey, value },
       {
-        onSettled: (_data, error) => {
+        onSettled: async (_data, error) => {
           if (error) {
-            toast.error(`Failed to update ${item.configKey}`);
+            toast.error(await apiErrorMessage(error, `Failed to update ${item.configKey}`));
           } else {
             toast.success(`${item.configKey} updated`);
             onOpenChange(false);
@@ -1151,9 +1152,9 @@ function AutoBackupCard() {
         retention_days: Math.max(1, form.retention_days || 1),
       },
       {
-        onSettled: (saved, error) => {
+        onSettled: async (saved, error) => {
           if (error) {
-            toast.error("Failed to save backup settings");
+            toast.error(await apiErrorMessage(error, "Failed to save backup settings"));
           } else {
             if (saved) setForm(saved);
             toast.success(

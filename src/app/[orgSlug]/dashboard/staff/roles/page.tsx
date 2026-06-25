@@ -27,6 +27,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from "@/lib/toast";
+import { apiErrorMessage } from "@/lib/api/error-message";
 
 // ── Roles section ─────────────────────────────────────────────────────────────
 
@@ -182,7 +183,7 @@ function AssignRoleForm({ roles }: { roles: OrderingRole[] }) {
           setRoleId("");
           setUserSearch("");
         },
-        onError: () => toast.error("Failed to assign role"),
+        onError: async (err) => toast.error(await apiErrorMessage(err, "Failed to assign role")),
       },
     );
   };
@@ -261,7 +262,7 @@ function AssignmentsTable({
     setRevokingId(assignment.ID);
     revoke.mutate(assignment.ID, {
       onSuccess: () => toast.success("Role revoked"),
-      onError: () => toast.error("Failed to revoke role"),
+      onError: async (err) => toast.error(await apiErrorMessage(err, "Failed to revoke role")),
       onSettled: () => setRevokingId(null),
     });
   };

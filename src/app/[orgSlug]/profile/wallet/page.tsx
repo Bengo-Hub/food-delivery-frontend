@@ -29,6 +29,7 @@ import { useInitiateWalletTopUp, useWalletBalance, useWalletTransactions } from 
 import { usePaymentMethods } from "@/hooks/use-payment-methods";
 import { formatDateTime } from "@/lib/datetime";
 import { toast } from "@/lib/toast";
+import { apiErrorMessage } from "@/lib/api/error-message";
 import { useAuthStore } from "@/store/auth";
 
 // ─── Payment method icon map ──────────────────────────────────────────
@@ -100,11 +101,7 @@ function TopUpModal({
       toast.success("Top-up initiated. Check your phone to complete the payment.");
       onClose();
     } catch (err: unknown) {
-      const msg =
-        (err as { response?: { data?: { message?: string } } })?.response?.data?.message ??
-        (err as Error)?.message ??
-        "Failed to initiate top-up";
-      toast.error(msg);
+      toast.error(await apiErrorMessage(err, "Failed to initiate top-up"));
     }
   };
 

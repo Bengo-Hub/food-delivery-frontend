@@ -21,6 +21,7 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "@/lib/toast";
+import { apiErrorMessage } from "@/lib/api/error-message";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -126,7 +127,7 @@ function CreateRefundForm() {
           toast.success("Refund created");
           reset();
         },
-        onError: () => toast.error("Failed to create refund"),
+        onError: async (err) => toast.error(await apiErrorMessage(err, "Failed to create refund")),
       },
     );
   };

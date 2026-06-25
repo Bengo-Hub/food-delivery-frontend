@@ -35,6 +35,7 @@ import type {
   DeletionType,
 } from "@/lib/api/compliance";
 import { toast } from "@/lib/toast";
+import { apiErrorMessage } from "@/lib/api/error-message";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -82,7 +83,7 @@ function RequestForm() {
           toast.success("Data subject request submitted");
           setDescription("");
         },
-        onError: () => toast.error("Failed to submit request"),
+        onError: async (err) => toast.error(await apiErrorMessage(err, "Failed to submit request")),
       },
     );
   };
@@ -95,7 +96,7 @@ function RequestForm() {
       { format: exportFormat },
       {
         onSuccess: () => toast.success("Data export requested"),
-        onError: () => toast.error("Failed to request export"),
+        onError: async (err) => toast.error(await apiErrorMessage(err, "Failed to request export")),
       },
     );
   };
@@ -112,7 +113,7 @@ function RequestForm() {
       { deletion_type: deletionType, confirmed: true },
       {
         onSuccess: () => toast.success("Data deletion requested"),
-        onError: () => toast.error("Failed to request deletion"),
+        onError: async (err) => toast.error(await apiErrorMessage(err, "Failed to request deletion")),
       },
     );
   };

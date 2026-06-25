@@ -26,6 +26,7 @@ import { Input } from "@/components/ui/input";
 import { Pagination } from "@/components/ui/pagination";
 import { useAdminOrders, useAssignRider, useAvailableRiders, useUpdateOrderStatus, useDeleteAdminOrder } from "@/hooks/use-admin";
 import { toast } from "@/lib/toast";
+import { apiErrorMessage } from "@/lib/api/error-message";
 import type { AdminOrder } from "@/lib/api/admin";
 
 const STATUS_TABS = [
@@ -132,8 +133,8 @@ export default function StaffDashboardPage() {
       try {
         await updateStatus.mutateAsync({ orderId, status });
         toast.success(`Order status updated to ${status.replace(/_/g, " ")}`);
-      } catch {
-        toast.error("Failed to update order status");
+      } catch (e) {
+        toast.error(await apiErrorMessage(e, "Failed to update order status"));
       }
     },
     [updateStatus],
@@ -145,8 +146,8 @@ export default function StaffDashboardPage() {
         await assignRider.mutateAsync({ orderId, fleetMemberId });
         toast.success("Rider assigned successfully");
         setRiderPickerOrderId(null);
-      } catch (err: any) {
-        toast.error(err?.response?.data?.message || err?.message || "Failed to assign rider");
+      } catch (err) {
+        toast.error(await apiErrorMessage(err, "Failed to assign rider"));
       }
     },
     [assignRider],

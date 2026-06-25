@@ -27,6 +27,7 @@ import { useCancelOrder, useOrder, useOrderTracking } from "@/hooks/use-orders";
 import { formatDateTime } from "@/lib/datetime";
 import { orgRoute } from "@/lib/routes";
 import { toast } from "@/lib/toast";
+import { apiErrorMessage } from "@/lib/api/error-message";
 import { cn } from "@/lib/utils";
 import { useOrgSlug } from "@/providers/org-slug-provider";
 import { useCartStore } from "@/store/cart";
@@ -92,7 +93,7 @@ export default function OrderDetailPage() {
           toast.success("Order cancelled");
           setShowCancelReason(false);
         },
-        onError: () => toast.error("Failed to cancel order"),
+        onError: async (err) => toast.error(await apiErrorMessage(err, "Failed to cancel order")),
       },
     );
   }

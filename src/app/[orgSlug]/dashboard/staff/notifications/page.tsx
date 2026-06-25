@@ -38,6 +38,7 @@ import type {
   NotificationTemplate,
 } from "@/lib/api/notifications";
 import { toast } from "@/lib/toast";
+import { apiErrorMessage } from "@/lib/api/error-message";
 
 const CHANNELS: { value: NotificationChannel; label: string }[] = [
   { value: "email", label: "Email" },
@@ -137,7 +138,7 @@ function TemplateDialog({ open, onOpenChange, template }: TemplateDialogProps) {
             toast.success("Template updated");
             onOpenChange(false);
           },
-          onError: () => toast.error("Failed to update template"),
+          onError: async (err) => toast.error(await apiErrorMessage(err, "Failed to update template")),
         },
       );
       return;
@@ -160,7 +161,7 @@ function TemplateDialog({ open, onOpenChange, template }: TemplateDialogProps) {
         toast.success("Template created");
         onOpenChange(false);
       },
-      onError: () => toast.error("Failed to create template"),
+      onError: async (err) => toast.error(await apiErrorMessage(err, "Failed to create template")),
     });
   };
 
@@ -314,7 +315,7 @@ function TemplatesSection() {
     setDeletingId(tpl.id);
     deleteMut.mutate(tpl.id, {
       onSuccess: () => toast.success("Template deleted"),
-      onError: () => toast.error("Failed to delete template"),
+      onError: async (err) => toast.error(await apiErrorMessage(err, "Failed to delete template")),
       onSettled: () => setDeletingId(null),
     });
   };

@@ -46,6 +46,7 @@ import {
 import { useServiceConfig } from "@/hooks/use-service-config";
 import { orgRoute } from "@/lib/routes";
 import { toast } from "@/lib/toast";
+import { apiErrorMessage } from "@/lib/api/error-message";
 
 /* ─── Page ───────────────────────────────────────────────────────────── */
 
@@ -471,7 +472,7 @@ function PaymentGatewaysTab() {
       { gatewayType },
       {
         onSuccess: () => toast.success("Payment gateway enabled"),
-        onError: () => toast.error("Failed to enable gateway"),
+        onError: async (err) => toast.error(await apiErrorMessage(err, "Failed to enable gateway")),
         onSettled: () => setPendingType(null),
       },
     );
@@ -481,7 +482,7 @@ function PaymentGatewaysTab() {
     setPendingType(gatewayType);
     deactivateGateway.mutate(gatewayType, {
       onSuccess: () => toast.success("Payment gateway disabled"),
-      onError: () => toast.error("Failed to disable gateway"),
+      onError: async (err) => toast.error(await apiErrorMessage(err, "Failed to disable gateway")),
       onSettled: () => setPendingType(null),
     });
   };

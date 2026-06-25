@@ -27,6 +27,7 @@ import {
   useUpdateMenuItem,
 } from "@/hooks/use-admin";
 import { toast } from "@/lib/toast";
+import { apiErrorMessage } from "@/lib/api/error-message";
 
 export default function MenuManagementPage() {
   const [editingItem, setEditingItem] = useState<any>(null);
@@ -46,8 +47,8 @@ export default function MenuManagementPage() {
     try {
       await toggleAvailability.mutateAsync({ sku, data: { isAvailable: !current } });
       toast.success(current ? "Item marked unavailable" : "Item marked available");
-    } catch {
-      toast.error("Failed to update item availability");
+    } catch (e) {
+      toast.error(await apiErrorMessage(e, "Failed to update item availability"));
     }
   };
 
@@ -56,8 +57,8 @@ export default function MenuManagementPage() {
     try {
       await deleteItem.mutateAsync(sku);
       toast.success("Item deleted");
-    } catch {
-      toast.error("Failed to delete item");
+    } catch (e) {
+      toast.error(await apiErrorMessage(e, "Failed to delete item"));
     }
   };
 
@@ -269,8 +270,8 @@ function AddItemForm({
       });
       toast.success("Item added to menu");
       onClose();
-    } catch {
-      toast.error("Failed to add item — check the SKU is valid in inventory");
+    } catch (e) {
+      toast.error(await apiErrorMessage(e, "Failed to add item — check the SKU is valid in inventory"));
     }
   };
 
@@ -351,8 +352,8 @@ function EditItemForm({
       });
       toast.success("Catalog item updated");
       onClose();
-    } catch {
-      toast.error("Failed to update catalog item");
+    } catch (e) {
+      toast.error(await apiErrorMessage(e, "Failed to update catalog item"));
     }
   };
 

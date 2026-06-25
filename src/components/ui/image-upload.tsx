@@ -3,6 +3,7 @@
 import { useState, useRef } from "react";
 import { Camera, Loader2, Upload, X } from "lucide-react";
 import { toast } from "@/lib/toast";
+import { apiErrorMessage } from "@/lib/api/error-message";
 import { api } from "@/lib/api/base";
 
 interface ImageUploadProps {
@@ -36,7 +37,7 @@ export function ImageUpload({ label, value, onChange, required }: ImageUploadPro
       toast.success(`${label} uploaded`);
     } catch (error) {
       console.error("Upload error:", error);
-      toast.error(`Failed to upload ${label}`);
+      toast.error(await apiErrorMessage(error, `Failed to upload ${label}`));
     } finally {
       setUploading(false);
       if (fileInputRef.current) fileInputRef.current.value = "";
