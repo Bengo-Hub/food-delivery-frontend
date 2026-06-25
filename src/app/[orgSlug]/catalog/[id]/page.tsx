@@ -32,6 +32,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useCatalogItem, useCatalogItems } from "@/hooks/use-catalog";
+import { useOrderingConfig } from "@/hooks/use-ordering-config";
 import { orgRoute } from "@/lib/routes";
 import { cn, getMediaUrl } from "@/lib/utils";
 import { useOrgSlug } from "@/providers/org-slug-provider";
@@ -61,6 +62,7 @@ export default function CatalogItemPage() {
   const router = useRouter();
   const orgSlug = useOrgSlug();
   const itemId = (params?.id as string) ?? "";
+  const { config: cfg } = useOrderingConfig();
 
   const { data: item, isLoading, error } = useCatalogItem(orgSlug, itemId);
 
@@ -401,7 +403,7 @@ export default function CatalogItemPage() {
             </div>
 
             {/* Manufacturer / model (retail goods) — subtle muted subtext */}
-            {(item.manufacturer || item.model) && (
+            {cfg.showMakeModel && (item.manufacturer || item.model) && (
               <p className="mt-1 text-sm text-muted-foreground">
                 {[item.manufacturer, item.model].filter(Boolean).join(" · ")}
               </p>
@@ -657,7 +659,7 @@ export default function CatalogItemPage() {
               {item.currency} {totalPrice.toLocaleString()}
             </span>
             <span className="hidden sm:inline">
-              Add to Cart &middot; {item.currency} {totalPrice.toLocaleString()}
+              {cfg.ctaLabel} &middot; {item.currency} {totalPrice.toLocaleString()}
             </span>
           </Button>
         </div>
