@@ -2,6 +2,8 @@
 
 import { createContext, useContext, useEffect, type ReactNode } from "react";
 
+import { PlatformScopeGuard } from "@/components/layout/platform-scope-guard";
+
 const OrgSlugContext = createContext<string>("");
 
 export function useOrgSlug(): string {
@@ -23,6 +25,9 @@ export function OrgSlugProvider({
   }, [orgSlug]);
 
   return (
-    <OrgSlugContext.Provider value={orgSlug}>{children}</OrgSlugContext.Provider>
+    <OrgSlugContext.Provider value={orgSlug}>
+      <PlatformScopeGuard />
+      {children}
+    </OrgSlugContext.Provider>
   );
 }
