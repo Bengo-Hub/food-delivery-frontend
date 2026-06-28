@@ -5,6 +5,7 @@ import Link from "next/link";
 
 import { Button } from "@/components/ui/button";
 import { useFeeBreakdown } from "@/hooks/use-cart-api";
+import { useSubscription } from "@/hooks/use-subscription";
 import { orgRoute } from "@/lib/routes";
 import { cn } from "@/lib/utils";
 import { useOrgSlug } from "@/providers/org-slug-provider";
@@ -113,6 +114,9 @@ export function CartDrawer({ open, onOpenChange }: CartDrawerProps) {
   const items = useCartStore((state) => state.items);
   const subtotal = useCartStore((state) => state.subtotal);
   const clear = useCartStore((state) => state.clear);
+  const { hasFeature } = useSubscription();
+  // Group ordering is plan-gated (exempt tenants pass via hasFeature).
+  const showGroupOrder = hasFeature("group_ordering");
 
   const handleClose = () => {
     onOpenChange(false);
@@ -167,8 +171,8 @@ export function CartDrawer({ open, onOpenChange }: CartDrawerProps) {
           </button>
         </div>
 
-        {/* Group order chip */}
-        {items.length > 0 && (
+        {/* Group order chip — plan-gated */}
+        {showGroupOrder && items.length > 0 && (
           <div className="shrink-0 border-b border-border px-4 py-2">
             <button className="inline-flex items-center gap-1.5 rounded-full border border-border px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:border-foreground/50 hover:text-foreground">
               <Users className="size-3.5" />

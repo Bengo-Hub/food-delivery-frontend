@@ -14,6 +14,7 @@ import { useSearchParams } from "next/navigation";
 
 import { RequireAuth } from "@/components/auth/require-auth";
 import { SiteShell } from "@/components/layout/site-shell";
+import { SubscriptionGate } from "@/components/subscription/subscription-gate";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -215,6 +216,7 @@ export default function WalletPage() {
     <RequireAuth>
       <SiteShell>
         <div className="mx-auto flex w-full max-w-2xl flex-col gap-4 px-4 py-4 sm:gap-6 sm:py-8">
+          <SubscriptionGate feature="wallet">
           {/* Header */}
           <header className="flex flex-col gap-1">
             <p className="text-sm font-semibold uppercase tracking-wide text-brand-emphasis">
@@ -326,6 +328,7 @@ export default function WalletPage() {
               )}
             </CardContent>
           </Card>
+          </SubscriptionGate>
         </div>
 
         <TopUpModal

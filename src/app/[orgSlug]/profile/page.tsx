@@ -25,6 +25,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { userHasRole } from "@/lib/auth/permissions";
+import { useSubscription } from "@/hooks/use-subscription";
 import { useWalletBalance } from "@/hooks/use-wallet";
 import type { OrderSummary } from "@/lib/auth/types";
 import { orgRoute } from "@/lib/routes";
@@ -48,6 +49,10 @@ export default function ProfilePage() {
   }, [user, status, initialize]);
 
   const isStaffOrAdmin = user ? userHasRole(user, ["staff", "admin", "superuser"]) : false;
+  const { hasFeature } = useSubscription();
+  // Plan-gated customer widgets (exempt tenants pass via hasFeature).
+  const hasWallet = hasFeature("wallet");
+  const hasLoyalty = hasFeature("loyalty_program");
 
   const loyaltySummary = useMemo(() => {
     if (!user) return null;
@@ -88,8 +93,8 @@ export default function ProfilePage() {
 
           {!isStaffOrAdmin && (
             <>
-              {/* Payment & Wallet section — customers only */}
-              <PaymentWalletCard />
+              {/* Payment & Wallet section — customers only, plan-gated */}
+              {hasWallet && <PaymentWalletCard />}
 
               <div className="grid gap-6 md:grid-cols-2">
                 <AuthorizationGate permissions={["profile:update"]}>
@@ -101,9 +106,11 @@ export default function ProfilePage() {
               </div>
 
               <div className="grid gap-6 lg:grid-cols-2">
-                <AuthorizationGate permissions={["loyalty:view"]}>
-                  <LoyaltyCard summary={loyaltySummary} />
-                </AuthorizationGate>
+                {hasLoyalty && (
+                  <AuthorizationGate permissions={["loyalty:view"]}>
+                    <LoyaltyCard summary={loyaltySummary} />
+                  </AuthorizationGate>
+                )}
                 <AuthorizationGate permissions={["orders:view"]}>
                   <OrdersCard orders={orders} />
                 </AuthorizationGate>

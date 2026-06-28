@@ -26,6 +26,7 @@ import {
   type CheckoutPaymentOption,
   type CheckoutPaymentOptionId,
 } from "@/hooks/use-checkout-state";
+import { useSubscription } from "@/hooks/use-subscription";
 import { cn } from "@/lib/utils";
 import { orgRoute } from "@/lib/routes";
 
@@ -34,6 +35,11 @@ const SMALL_ORDER_THRESHOLD = 500;
 export default function CheckoutPage() {
   // Single hook call — guarantees stable hook count across all render paths
   const state = useCheckoutState();
+  const { hasFeature } = useSubscription();
+  // Plan-driven storefront features (exempt tenants pass via hasFeature).
+  const showPromoCodes = hasFeature("promo_codes");
+  const showScheduledDelivery = hasFeature("scheduled_delivery");
+  const showWalletPay = hasFeature("wallet");
 
   // Intercept wallet payment requests from the treasury-ui iframe
   useEffect(() => {
@@ -151,17 +157,20 @@ export default function CheckoutPage() {
                 </div>
               )}
 
-              {/* 2. FULFILLMENT — Delivery / Pickup / Schedule toggle */}
+              {/* 2. FULFILLMENT — Delivery / Pickup / Schedule toggle.
+                  Scheduled delivery is a plan-gated feature; hide the option when
+                  the tenant's plan lacks it (core delivery/pickup stay available). */}
               <FulfillmentToggle
                 mode={state.fulfillmentMode}
                 onModeChange={state.handleFulfillmentChange}
                 deliveryTotal={state.zoneResult?.delivery_fee ?? state.feeBreakdown?.delivery_fee ?? 0}
                 pickupTotal={0}
                 estimatedTime={state.estimatedTime}
+                allowSchedule={showScheduledDelivery}
               />
 
               {/* Schedule picker */}
-              {state.fulfillmentMode === "schedule" && (
+              {showScheduledDelivery && state.fulfillmentMode === "schedule" && (
                 <SchedulePicker onSchedule={state.handleScheduleSelect} />
               )}
 
@@ -175,15 +184,17 @@ export default function CheckoutPage() {
           {/* 3. ORDER — Items summary */}
           <OrderSummarySection items={state.items} />
 
-          {/* Promo code */}
-          <PromoCodeSection
-            code={state.promoCode}
-            message={state.promoMessage}
-            discount={state.discount}
-            isPending={state.promoIsPending}
-            onCodeChange={state.setPromoCode}
-            onApply={state.handleApplyPromo}
-          />
+          {/* Promo code — plan-gated; hidden when the tenant's plan lacks promo codes */}
+          {showPromoCodes && (
+            <PromoCodeSection
+              code={state.promoCode}
+              message={state.promoMessage}
+              discount={state.discount}
+              isPending={state.promoIsPending}
+              onCodeChange={state.setPromoCode}
+              onApply={state.handleApplyPromo}
+            />
+          )}
 
           {/* Small order warning */}
           {state.feeBreakdown && state.feeBreakdown.small_order_fee > 0 && (
@@ -231,8 +242,9 @@ export default function CheckoutPage() {
     <SiteShell hideBottomNav hideSidebar>
       {content}
 
-      {/* Wallet payment option — shown inline when payment step is active and user has balance */}
-      {state.showPaymentModal && !state.isGuestMode && state.walletBalance !== null && state.walletBalance > 0 && (
+      {/* Wallet payment option — shown inline when payment step is active and user has balance.
+          Plan-gated: hidden when the tenant's plan lacks the wallet feature. */}
+      {showWalletPay && state.showPaymentModal && !state.isGuestMode && state.walletBalance !== null && state.walletBalance > 0 && (
         <div className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-background p-4 shadow-lg sm:relative sm:bottom-auto sm:border sm:rounded-xl sm:mt-0 sm:mx-auto sm:max-w-md sm:z-auto">
           <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2">Pay with Wallet</p>
           <div className="flex items-center justify-between mb-3">

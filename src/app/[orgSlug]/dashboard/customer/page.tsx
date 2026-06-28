@@ -499,8 +499,12 @@ export default function CustomerDashboardPage() {
             {[
               { label: "Order Now", href: "/catalog", icon: UtensilsIcon },
               { label: "My Orders", href: "/orders", icon: ShoppingBagIcon },
-              { label: "Loyalty", href: "/loyalty", icon: StarIcon },
-              { label: "Wallet", href: "/profile/wallet", icon: WalletIcon },
+              ...(hasLoyalty
+                ? [{ label: "Loyalty", href: "/loyalty", icon: StarIcon }]
+                : []),
+              ...(hasWallet
+                ? [{ label: "Wallet", href: "/profile/wallet", icon: WalletIcon }]
+                : []),
             ].map(({ label, href, icon: Icon }) => (
               <Link
                 key={label}

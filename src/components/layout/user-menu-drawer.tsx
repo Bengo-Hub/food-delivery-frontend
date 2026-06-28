@@ -28,6 +28,7 @@ import { usePathname } from "next/navigation";
 
 import { Button } from "@/components/ui/button";
 import { brand } from "@/config/brand";
+import { useSubscription } from "@/hooks/use-subscription";
 import { useTenantConfig } from "@/hooks/use-tenant-config";
 import { orgRoute } from "@/lib/routes";
 import { cn } from "@/lib/utils";
@@ -48,6 +49,11 @@ export function UserMenuDrawer({ open, onOpenChange }: UserMenuDrawerProps) {
   const logout = useAuthStore((state) => state.logout);
   const { tenant } = useTenantBranding();
   const { copy } = useTenantConfig();
+  const { hasFeature } = useSubscription();
+  // Plan-gated nav entries (exempt tenants pass via hasFeature).
+  const hasAnalytics = hasFeature("advanced_analytics");
+  const hasWallet = hasFeature("wallet");
+  const hasPromos = hasFeature("promo_codes");
 
   const handleLogout = () => {
     logout();
@@ -138,7 +144,7 @@ export function UserMenuDrawer({ open, onOpenChange }: UserMenuDrawerProps) {
             },
           ]
           : []),
-        ...(canViewAnalytics
+        ...(canViewAnalytics && hasAnalytics
           ? [
             {
               icon: BarChart3,
@@ -191,11 +197,15 @@ export function UserMenuDrawer({ open, onOpenChange }: UserMenuDrawerProps) {
       label: "Favorites",
       href: "/favorites", // Redirect to favorites page
     },
-    {
-      icon: CreditCard,
-      label: "Wallet",
-      href: "/profile/wallet",
-    },
+    ...(hasWallet
+      ? [
+        {
+          icon: CreditCard,
+          label: "Wallet",
+          href: "/profile/wallet",
+        },
+      ]
+      : []),
     {
       icon: HelpCircle,
       label: "Help",
@@ -208,11 +218,15 @@ export function UserMenuDrawer({ open, onOpenChange }: UserMenuDrawerProps) {
       href: `https://riderapp.codevertexitsolutions.com/${orgSlug}/request-ride`,
       external: true,
     },
-    {
-      icon: Tag,
-      label: "Promotions",
-      href: "/promotions",
-    },
+    ...(hasPromos
+      ? [
+        {
+          icon: Tag,
+          label: "Promotions",
+          href: "/promotions",
+        },
+      ]
+      : []),
     // Category items moved from sidebar
     {
       icon: ShoppingCart,

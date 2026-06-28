@@ -13,6 +13,8 @@ interface FulfillmentToggleProps {
   deliveryTotal: number;
   pickupTotal: number;
   estimatedTime: string;
+  /** When false, the Schedule (timed delivery) option is hidden (plan-gated). Defaults to true. */
+  allowSchedule?: boolean;
 }
 
 interface OptionProps {
@@ -68,6 +70,7 @@ export function FulfillmentToggle({
   deliveryTotal,
   pickupTotal,
   estimatedTime,
+  allowSchedule = true,
 }: FulfillmentToggleProps) {
   const { copy } = useTenantConfig();
 
@@ -90,13 +93,15 @@ export function FulfillmentToggle({
           selected={mode === "pickup"}
           onClick={() => onModeChange("pickup")}
         />
-        <FulfillmentOption
-          icon={<Calendar className="size-5" />}
-          label="Schedule"
-          subtitle="Select time"
-          selected={mode === "schedule"}
-          onClick={() => onModeChange("schedule")}
-        />
+        {allowSchedule && (
+          <FulfillmentOption
+            icon={<Calendar className="size-5" />}
+            label="Schedule"
+            subtitle="Select time"
+            selected={mode === "schedule"}
+            onClick={() => onModeChange("schedule")}
+          />
+        )}
       </div>
 
       {mode === "pickup" && (

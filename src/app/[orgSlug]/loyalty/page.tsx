@@ -17,6 +17,7 @@ import { useState } from "react";
 
 import { RequireAuth } from "@/components/auth/require-auth";
 import { SiteShell } from "@/components/layout/site-shell";
+import { SubscriptionGate } from "@/components/subscription/subscription-gate";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -90,6 +91,7 @@ export default function LoyaltyPage() {
             Back to profile
           </Link>
 
+          <SubscriptionGate feature="loyalty_program">
           {accountLoading ? (
             <div className="flex justify-center py-20">
               <Loader2 className="size-7 animate-spin text-primary" />
@@ -326,6 +328,7 @@ export default function LoyaltyPage() {
               </Tabs>
             </>
           )}
+          </SubscriptionGate>
         </div>
       </SiteShell>
     </RequireAuth>

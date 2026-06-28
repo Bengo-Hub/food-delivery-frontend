@@ -20,6 +20,7 @@ import Link from "next/link";
 
 import { RequireAuth } from "@/components/auth/require-auth";
 import { SiteShell } from "@/components/layout/site-shell";
+import { useSubscription } from "@/hooks/use-subscription";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -213,6 +214,7 @@ function DashboardCard({
 }
 
 function AnalyticsContent() {
+  const { hasFeature, isLoading: subLoading } = useSubscription();
   const {
     data: dashboards,
     isLoading,
@@ -237,7 +239,9 @@ function AnalyticsContent() {
     }
   }, [sorted, activeModule]);
 
-  if (isFeatureDisabled(error)) {
+  // Plan-level gate: hide dashboards when the tenant's plan lacks advanced analytics.
+  // Exempt tenants (platform owner / demo / service_charge) pass via hasFeature.
+  if (isFeatureDisabled(error) || (!subLoading && !hasFeature("advanced_analytics"))) {
     return <FeatureDisabledState />;
   }
 
