@@ -15,6 +15,7 @@ import { useOutletFilterStore } from "@/store/outlet-filter";
 import type { QueryClient } from "@tanstack/react-query";
 
 import { TenantBrandingProvider } from "./branding-provider";
+import { SubscriptionEntitlementsProvider } from "./subscription-entitlements-provider";
 import { PWAUpdateBanner } from "@/components/pwa/pwa-update-banner";
 import { OfflineBar } from "@bengo-hub/shared-ui-lib/offline";
 
@@ -77,16 +78,18 @@ export function AppProviders({ children }: PropsWithChildren) {
     <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false}>
       <QueryClientProvider client={queryClient}>
         <TenantBrandingProvider>
-          <PWAUpdateBanner />
-          <OfflineBar
-            availableOffline={["Browse cached menu", "View past orders"]}
-            disabledOffline={["Placing orders", "Payments", "Live tracking"]}
-          />
-          <AuthSync />
-          {children}
-          {showDevtools ? (
-            <ReactQueryDevtools initialIsOpen={false} buttonPosition="bottom-right" />
-          ) : null}
+          <SubscriptionEntitlementsProvider>
+            <PWAUpdateBanner />
+            <OfflineBar
+              availableOffline={["Browse cached menu", "View past orders"]}
+              disabledOffline={["Placing orders", "Payments", "Live tracking"]}
+            />
+            <AuthSync />
+            {children}
+            {showDevtools ? (
+              <ReactQueryDevtools initialIsOpen={false} buttonPosition="bottom-right" />
+            ) : null}
+          </SubscriptionEntitlementsProvider>
         </TenantBrandingProvider>
       </QueryClientProvider>
     </ThemeProvider>
