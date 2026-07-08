@@ -1,6 +1,6 @@
 /**
  * PKCE (Proof Key for Code Exchange) utilities for OAuth2 Authorization Code flow.
- * Used by the ordering-frontend to authenticate via the BengoBox SSO.
+ * Used by the ordering-frontend to authenticate via the Codevertex SSO.
  */
 
 const VERIFIER_STORAGE_KEY = "sso_code_verifier";

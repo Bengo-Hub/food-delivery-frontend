@@ -1,6 +1,6 @@
 # Ordering Service Frontend
 
-**Progressive Web Application (PWA)** for the BengoBox Ordering Service — a customer-focused, app-first (feed-first) mobile-first ordering experience. Built with Next.js App Router, this PWA surfaces the item feed immediately on landing, requests geolocation consent to pick a default outlet, and provides a minimal OAuth2 entrypoint for customers.
+**Progressive Web Application (PWA)** for the Codevertex Ordering Service — a customer-focused, app-first (feed-first) mobile-first ordering experience. Built with Next.js App Router, this PWA surfaces the item feed immediately on landing, requests geolocation consent to pick a default outlet, and provides a minimal OAuth2 entrypoint for customers.
 
 **Scope**: This frontend handles **online ordering only**. Rider dashboards, staff/admin dashboards, and POS operations belong to other services (logistics-service, cafe-website, pos-service). Rider/staff flows are intentionally redirected to their owning UIs — this app is customer-only.
 

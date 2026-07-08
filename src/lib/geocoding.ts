@@ -32,7 +32,7 @@ export async function reverseGeocode(latitude: number, longitude: number): Promi
         `format=json&lat=${latitude}&lon=${longitude}&zoom=18&addressdetails=1`,
       {
         headers: {
-          "User-Agent": "BengoBox-Ordering-App/1.0",
+          "User-Agent": "Codevertex-Ordering-App/1.0",
         },
       },
     );

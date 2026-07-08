@@ -16,7 +16,7 @@ Please email [security@bengobox.com](mailto:security@bengobox.com) with the subj
 - Affected versions / commit SHA
 - Suggested remediation, if known
 
-We will acknowledge receipt within **48 hours** and provide an initial assessment within **5 business days**. If the issue affects other services, we will coordinate a private fix across the BengoBox teams before disclosure.
+We will acknowledge receipt within **48 hours** and provide an initial assessment within **5 business days**. If the issue affects other services, we will coordinate a private fix across the Codevertex teams before disclosure.
 
 ## Responsible Disclosure
 
@@ -31,4 +31,4 @@ We will acknowledge receipt within **48 hours** and provide an initial assessmen
 3. Fix rolled out via CI/CD and ArgoCD deployment
 4. Public advisory published in [`CHANGELOG.md`](CHANGELOG.md) and security bulletin channels
 
-Thank you for helping keep BengoBox users safe.
+Thank you for helping keep Codevertex users safe.

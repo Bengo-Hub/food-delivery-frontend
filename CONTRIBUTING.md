@@ -1,6 +1,6 @@
 # Contributing
 
-Thank you for helping build the BengoBox Food Delivery experience. This guide outlines how to propose changes safely and effectively.
+Thank you for helping build the Codevertex Food Delivery experience. This guide outlines how to propose changes safely and effectively.
 
 ## Prerequisites
 

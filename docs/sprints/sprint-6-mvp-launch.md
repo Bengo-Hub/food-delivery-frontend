@@ -32,7 +32,7 @@ Wire every step of the customer journey to real API calls:
 - [ ] Login page calls `POST /v1/urban-loft/auth/login` via `baseapi` (app uses SSO/OAuth instead)
 - [ ] Registration page calls `POST /v1/urban-loft/auth/register` (app uses SSO signup)
 - [x] Token stored in Zustand auth store, refresh interceptor works (persisted in localStorage; 401 response interceptor clears session)
-- [x] Google OAuth redirect and callback handler functional (SSO/BengoBox OIDC redirect + callback in auth/callback)
+- [x] Google OAuth redirect and callback handler functional (SSO/Codevertex OIDC redirect + callback in auth/callback)
 - [x] Role-based redirect after auth (customer stays, staff/rider redirected)
 
 **Menu**

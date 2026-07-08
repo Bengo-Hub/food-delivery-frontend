@@ -2,7 +2,7 @@
   "name": "@bengobox/ordering-frontend",
   "version": "0.1.0",
   "private": true,
-  "description": "Next.js PWA for the BengoBox Ordering Service - Customer-facing online ordering platform.",
+  "description": "Next.js PWA for the Codevertex Ordering Service - Customer-facing online ordering platform.",
   "scripts": {
     "dev": "next dev",
     "build": "next build",

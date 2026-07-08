@@ -2,7 +2,7 @@
 
 ## Overview
 
-The Ordering Frontend integrates with the centralized Apache Superset instance for BI dashboards and analytics. Superset is deployed as a centralized service accessible to all BengoBox services.
+The Ordering Frontend integrates with the centralized Apache Superset instance for BI dashboards and analytics. Superset is deployed as a centralized service accessible to all Codevertex services.
 
 **Superset URL**: `https://superset.codevertexitsolutions.com`
 
