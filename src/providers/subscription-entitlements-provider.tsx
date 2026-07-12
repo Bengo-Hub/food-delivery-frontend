@@ -20,6 +20,7 @@ interface CatalogItem {
   serviceTag?: string;
   minPlanCode?: string;
   minTierLabel?: string;
+  minTierOrder?: number;
 }
 
 export function SubscriptionEntitlementsProvider({ children }: { children: ReactNode }) {
@@ -49,6 +50,8 @@ export function SubscriptionEntitlementsProvider({ children }: { children: React
         minTierLabel: f.minTierLabel ?? "",
         serviceTag: f.serviceTag ?? "",
         label: f.label ?? "",
+        // exactOptionalPropertyTypes: only set the optional numeric field when present.
+        ...(f.minTierOrder !== undefined ? { minTierOrder: f.minTierOrder } : {}),
       };
     }
     return map;
@@ -62,10 +65,11 @@ export function SubscriptionEntitlementsProvider({ children }: { children: React
       status: sub.status,
       isLoading: sub.isLoading,
       planCode: sub.plan,
+      tierOrder: sub.tierOrder,
       catalog,
       upgradeBaseUrl: UPGRADE_BASE,
     }),
-    [sub.info?.features, sub.info?.limits, isExempt, sub.status, sub.isLoading, sub.plan, catalog],
+    [sub.info?.features, sub.info?.limits, isExempt, sub.status, sub.isLoading, sub.plan, sub.tierOrder, catalog],
   );
 
   return <SubscriptionProvider value={value}>{children}</SubscriptionProvider>;
