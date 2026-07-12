@@ -41,11 +41,14 @@ export function SubscriptionEntitlementsProvider({ children }: { children: React
   const catalog = useMemo<Record<string, FeatureCatalogEntry>>(() => {
     const map: Record<string, FeatureCatalogEntry> = {};
     for (const f of catalogData?.features ?? []) {
+      // FeatureCatalogEntry's fields are required strings; the catalog API may omit
+      // any of them, so coalesce to "" (under exactOptionalPropertyTypes, assigning a
+      // possibly-undefined value to a required-string prop is a type error).
       map[f.featureCode] = {
-        minPlanCode: f.minPlanCode,
-        minTierLabel: f.minTierLabel,
-        serviceTag: f.serviceTag,
-        label: f.label,
+        minPlanCode: f.minPlanCode ?? "",
+        minTierLabel: f.minTierLabel ?? "",
+        serviceTag: f.serviceTag ?? "",
+        label: f.label ?? "",
       };
     }
     return map;
