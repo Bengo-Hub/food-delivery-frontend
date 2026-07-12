@@ -48,6 +48,8 @@ interface CartState {
   }) => void;
   removeItem: (id: string) => void;
   updateQuantity: (id: string, quantity: number) => void;
+  /** Shallow-merge a patch into a line's metadata (e.g. per-ticket attendees). */
+  updateItemMetadata: (id: string, patch: Record<string, unknown>) => void;
   clear: () => void;
   subtotal: () => number;
   isTicketOnly: () => boolean;
@@ -109,6 +111,13 @@ export const useCartStore = create<CartState>()(
       updateQuantity: (id, quantity) =>
         set(({ items }) => ({
           items: items.map((i) => (i.id === id ? { ...i, quantity, total: i.price * quantity } : i)),
+        })),
+      updateItemMetadata: (id, patch) =>
+        set(({ items }) => ({
+          items: items.map((i) =>
+            i.id === id ? { ...i, metadata: { ...(i.metadata ?? {}), ...patch } } : i,
+          ),
+          updatedAt: Date.now(),
         })),
       clear: () => set({ items: [], requestUtensils: false, orderNotes: "" }),
       subtotal: () => get().items.reduce((s, i) => s + i.total, 0),

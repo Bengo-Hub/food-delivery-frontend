@@ -5,9 +5,28 @@ import { Info, Loader2 } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import type { FeeBreakdown } from "@/lib/api/cart-api";
 
+/**
+ * Deposit breakdown for BOOKING carts (event tickets / service appointments) when
+ * the outlet charges a partial deposit up front. Amounts are computed client-side
+ * for display only — the backend independently charges `depositAmount` using the
+ * same round2(total * percent / 100) formula.
+ */
+export interface DepositBreakdown {
+  /** Deposit percentage (1-100) configured on the outlet. */
+  percent: number;
+  /** round2(total * percent / 100) — the amount charged now. */
+  depositAmount: number;
+  /** total - depositAmount — settled at the event/appointment. */
+  balanceDue: number;
+  /** Contextual label for the remainder, e.g. "Balance due at appointment". */
+  balanceLabel: string;
+}
+
 interface FeeBreakdownProps {
   feeBreakdown: FeeBreakdown | null;
   loading: boolean;
+  /** When present, render a "deposit now / balance later" split under the total. */
+  deposit?: DepositBreakdown | null;
 }
 
 function FeeRow({
@@ -56,7 +75,7 @@ function FeeRow({
   );
 }
 
-export function FeeBreakdownCard({ feeBreakdown, loading }: FeeBreakdownProps) {
+export function FeeBreakdownCard({ feeBreakdown, loading, deposit }: FeeBreakdownProps) {
   if (loading) {
     return (
       <section className="rounded-xl border border-border bg-muted/30 p-4">
@@ -104,6 +123,18 @@ export function FeeBreakdownCard({ feeBreakdown, loading }: FeeBreakdownProps) {
         <div className="border-t border-border pt-2">
           <FeeRow label="Total" amount={fb.grand_total} bold />
         </div>
+
+        {deposit && (
+          <div className="mt-2 space-y-2 rounded-lg border border-primary/30 bg-primary/5 p-3">
+            <FeeRow
+              label={`Deposit due now (${deposit.percent}%)`}
+              amount={deposit.depositAmount}
+              bold
+              tooltip="A deposit secures your booking now. The balance is settled at your event/appointment."
+            />
+            <FeeRow label={deposit.balanceLabel} amount={deposit.balanceDue} />
+          </div>
+        )}
       </div>
     </section>
   );

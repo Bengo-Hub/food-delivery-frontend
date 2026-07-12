@@ -6,6 +6,7 @@ import { useQuery } from "@tanstack/react-query";
 
 import { useAddresses } from "@/hooks/use-addresses";
 import { useCheckout, useGuestCheckout, useFeeBreakdown } from "@/hooks/use-cart-api";
+import { useOutlet } from "@/hooks/use-catalog";
 import { useApplyPromoCode } from "@/hooks/use-orders";
 import { usePaymentMethods } from "@/hooks/use-payment-methods";
 import { useZoneCheck } from "@/hooks/use-zones";
@@ -215,6 +216,30 @@ export function useCheckoutState() {
 
   const grandTotal = feeBreakdown?.grand_total ?? cartSubtotal - discount;
 
+  // ─── Per-outlet booking deposit (tickets / appointments only) ──────────
+  // Resolve the checkout outlet via the existing outlet hook to read its
+  // bookingDepositPercent. For a BOOKING cart with a deposit % > 0 the customer
+  // pays only the deposit now; the backend independently charges the same amount
+  // (round2(total * pct/100)) and records deposit_amount/balance_due on the order.
+  const { data: checkoutOutlet } = useOutlet(orgSlug, outletId ?? "");
+  const bookingDepositPercent = checkoutOutlet?.bookingDepositPercent ?? 0;
+  const hasBookingDeposit = noFulfillment && bookingDepositPercent > 0 && grandTotal > 0;
+  // round2: multiply then round to 2dp — MUST match the backend's deposit formula.
+  const depositAmount = hasBookingDeposit
+    ? Math.round(grandTotal * bookingDepositPercent) / 100
+    : 0;
+  const balanceDue = hasBookingDeposit ? Math.round((grandTotal - depositAmount) * 100) / 100 : 0;
+  // The amount actually collected now (deposit for booking-deposit carts, else full).
+  const amountDueNow = hasBookingDeposit ? depositAmount : grandTotal;
+  const depositBreakdown = hasBookingDeposit
+    ? {
+        percent: bookingDepositPercent,
+        depositAmount,
+        balanceDue,
+        balanceLabel: isTicketOnly ? "Balance due at event" : "Balance due at appointment",
+      }
+    : null;
+
   const estimatedTime = zoneResult
     ? `${zoneResult.estimated_time}-${zoneResult.estimated_time + 15} min`
     : "35-50 min";
@@ -271,8 +296,9 @@ export function useCheckoutState() {
       });
     }
 
-    // Wallet — authenticated users only, and only when the balance covers the order.
-    if (!isGuestMode && walletBalance !== null && walletBalance >= grandTotal && grandTotal > 0) {
+    // Wallet — authenticated users only, and only when the balance covers the amount
+    // due now (the deposit for booking-deposit carts, otherwise the full total).
+    if (!isGuestMode && walletBalance !== null && walletBalance >= amountDueNow && amountDueNow > 0) {
       opts.push({
         id: "wallet",
         method: "wallet",
@@ -300,7 +326,7 @@ export function useCheckoutState() {
     }
 
     return opts;
-  }, [paymentMethodsData, fulfillmentMode, isGuestMode, walletBalance, walletCurrency, grandTotal]);
+  }, [paymentMethodsData, fulfillmentMode, isGuestMode, walletBalance, walletCurrency, amountDueNow]);
 
   // The currently selected option object (derived from the tracked id).
   const selectedOption = useMemo(
@@ -457,10 +483,10 @@ export function useCheckoutState() {
     }
 
     // Booking carts (tickets/appointments) have no fulfillment — send pickup so no
-    // delivery address/fee is required.
-    // TODO(use-case): appointment/ticket checkout flow — deposits, per-attendee info and
-    // an appointment-confirmation step are follow-ups; today a booking places a pickup
-    // order carrying the ticket/appointment metadata on each line.
+    // delivery address/fee is required. Deposits (per-outlet bookingDepositPercent)
+    // and per-ticket attendees are handled here: the backend charges the deposit and
+    // reads metadata.attendees off each ticket line — both flow through untouched on
+    // the line metadata below.
     const effectiveFulfillment: FulfillmentMode = noFulfillment ? "pickup" : fulfillmentMode;
 
     setStep("processing");
@@ -663,6 +689,16 @@ export function useCheckoutState() {
     feesLoading,
     cartSubtotal,
     grandTotal,
+
+    // Booking deposit (tickets/appointments) — null/0 for non-booking carts
+    bookingDepositPercent,
+    hasBookingDeposit,
+    depositAmount,
+    balanceDue,
+    /** Amount collected now: deposit for booking-deposit carts, else grandTotal. */
+    amountDueNow,
+    /** Ready-to-render deposit split for FeeBreakdownCard; null when no deposit. */
+    depositBreakdown,
 
     // Promo
     promoCode,

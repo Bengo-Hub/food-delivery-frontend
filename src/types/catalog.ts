@@ -123,6 +123,12 @@ export interface Outlet {
   promoted?: boolean;
   offerBadge?: string;
   discount?: number;
+  /**
+   * Per-outlet booking deposit percentage (0-100). When > 0, BOOKING carts
+   * (event tickets / service appointments) pay only this % up front at checkout;
+   * the remainder is settled at the event/appointment. 0 = pay the full amount.
+   */
+  bookingDepositPercent?: number;
   businessType: "food" | "grocery" | "pharmacy" | "retail" | "services" | "hospitality" | "quick_service" | "manufacturing" | "e_commerce" | "warehousing";
 }
 

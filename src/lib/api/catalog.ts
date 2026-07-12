@@ -261,6 +261,7 @@ interface BackendOutlet {
   useCase?: string;
   isOpen?: boolean;
   is_open?: boolean;
+  bookingDepositPercent?: number;
 }
 
 function backendOutletToOutlet(o: BackendOutlet): Outlet {
@@ -276,6 +277,9 @@ function backendOutletToOutlet(o: BackendOutlet): Outlet {
     image: getMediaUrl(o.imageUrl),
     isOpen: o.isOpen ?? o.is_open ?? o.status === "active",
     businessType: (o.useCase as Outlet["businessType"]) ?? "food",
+    // Per-outlet booking deposit % (drives the deposit-at-checkout breakdown for
+    // ticket/appointment carts). Absent/undefined → treated as 0 (pay in full).
+    ...(o.bookingDepositPercent != null ? { bookingDepositPercent: o.bookingDepositPercent } : {}),
     // These fields may be populated by future enhancements
     rating: 0,
     reviewCount: 0,

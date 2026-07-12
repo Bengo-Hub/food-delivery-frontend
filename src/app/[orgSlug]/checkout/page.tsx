@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useEffect } from "react";
 
 import { AddressSelector } from "@/components/checkout/address-selector";
+import { AttendeeInfoSection } from "@/components/checkout/attendee-info-section";
 import { CheckoutModeChooser } from "@/components/checkout/checkout-mode-chooser";
 import { DeliveryNotesSection } from "@/components/checkout/delivery-notes-section";
 import { FeeBreakdownCard } from "@/components/checkout/fee-breakdown";
@@ -121,6 +122,10 @@ export default function CheckoutPage() {
             </div>
           )}
 
+          {/* Per-ticket attendee details (optional) — collects name+email per seat
+              and writes them to each ticket line's metadata.attendees. */}
+          {state.isTicketOnly && <AttendeeInfoSection items={state.items} />}
+
           {/* Appointment bookings (salon/spa/services) need no delivery/pickup — the
               customer visits the provider at the time chosen on the service page. Show
               the booked time(s) instead of a fulfillment picker. */}
@@ -210,8 +215,12 @@ export default function CheckoutPage() {
             />
           )}
 
-          {/* 4. FEES — Breakdown */}
-          <FeeBreakdownCard feeBreakdown={state.feeBreakdown ?? null} loading={state.feesLoading} />
+          {/* 4. FEES — Breakdown (+ deposit split for booking-deposit carts) */}
+          <FeeBreakdownCard
+            feeBreakdown={state.feeBreakdown ?? null}
+            loading={state.feesLoading}
+            deposit={state.depositBreakdown}
+          />
 
           {/* 5. PAYMENT METHOD — choose how to pay */}
           {state.paymentOptions.length > 0 && (
@@ -237,6 +246,9 @@ export default function CheckoutPage() {
             loading={state.isPlacingOrder}
             disabled={!state.noFulfillment && state.fulfillmentMode !== "pickup" && !state.hasDeliveryAddress}
             total={state.grandTotal}
+            {...(state.hasBookingDeposit
+              ? { label: `Pay deposit - KES ${state.depositAmount.toLocaleString()}` }
+              : {})}
           />
         </div>
       </div>

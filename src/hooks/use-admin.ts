@@ -14,6 +14,7 @@ import {
   listAdminOrders,
   listCategories,
   listMenuItems,
+  setOutletBookingDeposit,
   updateCategory,
   updateMenuItem,
   updateOrderStatus,
@@ -209,6 +210,27 @@ export function useDeleteMenuItem() {
     mutationFn: (sku: string) => deleteMenuItem(slug, sku),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: adminKeys.menuItems() });
+    },
+  });
+}
+
+// ─── Outlet Booking Deposit ──────────────────────────────────────────
+
+/**
+ * Set an outlet's booking-deposit % (0-100). Ready-to-wire for an outlet-settings
+ * screen; ordering-frontend has no per-outlet admin surface today (outlets are
+ * managed in pos-ui/inventory-ui/auth), so this hook is currently unused here.
+ * Invalidates the outlets cache so a refreshed deposit % is picked up at checkout.
+ */
+export function useSetOutletBookingDeposit() {
+  const slug = useOrgSlug();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ outletId, percent }: { outletId: string; percent: number }) =>
+      setOutletBookingDeposit(slug, outletId, percent),
+    onSuccess: (_data, { outletId }) => {
+      queryClient.invalidateQueries({ queryKey: [slug, "outlets", outletId] });
+      queryClient.invalidateQueries({ queryKey: ["outlets"] });
     },
   });
 }

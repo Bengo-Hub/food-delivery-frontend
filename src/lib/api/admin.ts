@@ -355,3 +355,31 @@ export async function updateMenuItem(
 export async function deleteMenuItem(slug: string, sku: string): Promise<void> {
   await api.delete(`${slug}/catalog/overrides/${sku}`);
 }
+
+// ─── Outlet Booking Deposit ─────────────────────────────────────────
+
+export interface OutletBookingDeposit {
+  outletId: string;
+  bookingDepositPercent: number;
+}
+
+/**
+ * Set an outlet's booking-deposit percentage (0-100; 0 = pay full). Requires auth
+ * + orders.manage. NOTE: ordering-frontend has no per-outlet admin surface (outlets
+ * are managed in the outlet-management app — pos-ui/inventory-ui/auth "My
+ * Organization"). This client + its mutation hook exist so the control is ready to
+ * wire wherever outlets are edited.
+ */
+export async function setOutletBookingDeposit(
+  slug: string,
+  outletId: string,
+  percent: number,
+): Promise<OutletBookingDeposit> {
+  const res = await api.put(`${slug}/admin/outlets/${outletId}/booking-deposit`, { percent });
+  return {
+    outletId: (res.data?.outletId ?? res.data?.outlet_id ?? outletId) as string,
+    bookingDepositPercent: (res.data?.bookingDepositPercent ??
+      res.data?.booking_deposit_percent ??
+      percent) as number,
+  };
+}
