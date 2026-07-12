@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowLeft, Minus, Plus, ShoppingBag, Store, Trash2, Utensils } from "lucide-react";
+import { ArrowLeft, Minus, Plus, Store, Trash2, Utensils } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
@@ -10,6 +10,7 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/componen
 import { Textarea } from "@/components/ui/textarea";
 import { useFeeBreakdown } from "@/hooks/use-cart-api";
 import { useOutlet } from "@/hooks/use-catalog";
+import { useOrderingConfig } from "@/hooks/use-ordering-config";
 import { orgRoute } from "@/lib/routes";
 import { useOrgSlug } from "@/providers/org-slug-provider";
 import { useCartStore } from "@/store/cart";
@@ -31,26 +32,32 @@ export default function CartPage() {
   const requestUtensils = useCartStore((s) => s.requestUtensils);
   const setRequestUtensils = useCartStore((s) => s.setRequestUtensils);
   const diningMode = useDiningModeStore((s) => s.mode);
+  const { config: cfg, copy } = useOrderingConfig();
 
   const cartSubtotal = subtotal();
 
   // Event tickets are bought on their own — no delivery/pickup, fees, or utensils.
   const ticketOnly = items.length > 0 && items.every((i) => (i.metadata as { is_ticket?: boolean } | undefined)?.is_ticket === true);
+  // Appointment/service bookings likewise have no delivery/pickup/utensils — the customer
+  // visits the provider at the booked time (metadata.is_service, set on the service page).
+  const appointmentOnly = items.length > 0 && items.every((i) => (i.metadata as { is_service?: boolean } | undefined)?.is_service === true);
+  // Booking carts skip the whole fulfillment/fees flow.
+  const noFulfillment = ticketOnly || appointmentOnly;
 
   // Fetch fee breakdown from backend using the first item's outlet and current dining mode
   const outletId = items[0]?.outletId ?? null;
   const { data: feeData } = useFeeBreakdown(outletId, diningMode);
   const deliveryFee = feeData?.delivery_fee ?? 0;
-  const serviceFee = ticketOnly ? 0 : (feeData?.service_fee ?? 0);
-  const total = ticketOnly ? cartSubtotal : (feeData?.grand_total ?? cartSubtotal + deliveryFee + serviceFee);
+  const serviceFee = noFulfillment ? 0 : (feeData?.service_fee ?? 0);
+  const total = noFulfillment ? cartSubtotal : (feeData?.grand_total ?? cartSubtotal + deliveryFee + serviceFee);
 
   if (items.length === 0) {
     return (
       <SiteShell>
         <div className="container mx-auto flex max-w-2xl flex-col items-center gap-6 px-4 py-20 text-center">
-          <ShoppingBag className="h-16 w-16 text-muted-foreground" />
+          <span className="text-6xl" aria-hidden>{cfg.placeholderGlyph}</span>
           <h1 className="text-2xl font-bold">Your cart is empty</h1>
-          <p className="text-muted-foreground">Add items from the menu to get started.</p>
+          <p className="text-muted-foreground">Add {copy.itemLabelPlural.toLowerCase()} to get started.</p>
           <Button asChild>
             <Link href={orgRoute(orgSlug, "/catalog")}>Browse Catalog</Link>
           </Button>
@@ -98,9 +105,11 @@ export default function CartPage() {
               {outletData?.address && (
                 <p className="text-xs text-muted-foreground">{outletData.address}</p>
               )}
-              <p className="text-xs text-muted-foreground">
-                {diningMode === "delivery" ? "Delivery" : "Pickup"}
-              </p>
+              {!noFulfillment && (
+                <p className="text-xs text-muted-foreground">
+                  {diningMode === "delivery" ? "Delivery" : "Pickup"}
+                </p>
+              )}
             </div>
           </div>
         )}
@@ -204,19 +213,22 @@ export default function CartPage() {
             <CardTitle className="text-base">Order Preferences</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            {/* Request utensils */}
-            <label className="flex cursor-pointer items-center gap-3">
-              <input
-                type="checkbox"
-                checked={requestUtensils}
-                onChange={(e) => setRequestUtensils(e.target.checked)}
-                className="h-4 w-4 rounded border-input accent-primary"
-              />
-              <div className="flex items-center gap-2">
-                <Utensils className="h-4 w-4 text-muted-foreground" />
-                <span className="text-sm">Request utensils, napkins, etc.</span>
-              </div>
-            </label>
+            {/* Request utensils — food verticals only (a pharmacy/retail/salon order
+                has no cutlery). */}
+            {cfg.showDietaryFilters && (
+              <label className="flex cursor-pointer items-center gap-3">
+                <input
+                  type="checkbox"
+                  checked={requestUtensils}
+                  onChange={(e) => setRequestUtensils(e.target.checked)}
+                  className="h-4 w-4 rounded border-input accent-primary"
+                />
+                <div className="flex items-center gap-2">
+                  <Utensils className="h-4 w-4 text-muted-foreground" />
+                  <span className="text-sm">Request utensils, napkins, etc.</span>
+                </div>
+              </label>
+            )}
 
             {/* Order notes */}
             <div>
@@ -245,7 +257,7 @@ export default function CartPage() {
               <span className="text-muted-foreground">Subtotal</span>
               <span>{formatCurrency(cartSubtotal)}</span>
             </div>
-            {!ticketOnly && diningMode === "delivery" && (
+            {!noFulfillment && diningMode === "delivery" && (
               <div className="flex justify-between">
                 <span className="text-muted-foreground">
                   Delivery fee
@@ -253,7 +265,7 @@ export default function CartPage() {
                 <span>{deliveryFee === 0 ? <span className="text-green-600">Free</span> : formatCurrency(deliveryFee)}</span>
               </div>
             )}
-            {!ticketOnly && (
+            {!noFulfillment && (
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Service fee</span>
                 <span>{formatCurrency(serviceFee)}</span>
@@ -273,7 +285,7 @@ export default function CartPage() {
               Proceed to Checkout
             </Button>
             <Button variant="outline" className="w-full" asChild>
-              <Link href={orgRoute(orgSlug, "/catalog")}>Add more items</Link>
+              <Link href={orgRoute(orgSlug, "/catalog")}>Add more {copy.itemLabelPlural.toLowerCase()}</Link>
             </Button>
           </CardFooter>
         </Card>

@@ -5,6 +5,7 @@ import Link from "next/link";
 
 import { Button } from "@/components/ui/button";
 import { useFeeBreakdown } from "@/hooks/use-cart-api";
+import { useOrderingConfig } from "@/hooks/use-ordering-config";
 import { useSubscription } from "@/hooks/use-subscription";
 import { orgRoute } from "@/lib/routes";
 import { cn } from "@/lib/utils";
@@ -20,7 +21,7 @@ function formatCurrency(amount: number) {
   return `KES ${amount.toLocaleString("en-KE", { minimumFractionDigits: 0 })}`;
 }
 
-function CartItemRow({ item }: { item: CartItem }) {
+function CartItemRow({ item, placeholderGlyph }: { item: CartItem; placeholderGlyph: string }) {
   const updateQuantity = useCartStore((state) => state.updateQuantity);
   const removeItem = useCartStore((state) => state.removeItem);
 
@@ -38,9 +39,9 @@ function CartItemRow({ item }: { item: CartItem }) {
 
   return (
     <div className="flex items-start gap-3 border-b border-border py-4 last:border-b-0">
-      {/* Item image placeholder */}
-      <div className="flex size-16 shrink-0 items-center justify-center rounded-lg bg-muted">
-        <ShoppingBag className="size-6 text-muted-foreground" />
+      {/* Item image placeholder — glyph reflects the outlet vertical (🍽️ / 💊 / 📦 / 🎟️ …) */}
+      <div className="flex size-16 shrink-0 items-center justify-center rounded-lg bg-muted text-2xl">
+        <span aria-hidden>{placeholderGlyph}</span>
       </div>
 
       {/* Item details */}
@@ -115,8 +116,16 @@ export function CartDrawer({ open, onOpenChange }: CartDrawerProps) {
   const subtotal = useCartStore((state) => state.subtotal);
   const clear = useCartStore((state) => state.clear);
   const { hasFeature } = useSubscription();
+  const { config: cfg, copy } = useOrderingConfig();
   // Group ordering is plan-gated (exempt tenants pass via hasFeature).
   const showGroupOrder = hasFeature("group_ordering");
+
+  // Booking carts (event tickets / service appointments) have no delivery or pickup —
+  // hide the delivery/service fee rows that make no sense for them.
+  const noFulfillment =
+    items.length > 0 &&
+    (items.every((i) => (i.metadata as { is_ticket?: boolean } | undefined)?.is_ticket === true) ||
+      items.every((i) => (i.metadata as { is_service?: boolean } | undefined)?.is_service === true));
 
   const handleClose = () => {
     onOpenChange(false);
@@ -130,7 +139,7 @@ export function CartDrawer({ open, onOpenChange }: CartDrawerProps) {
   const { data: feeData } = useFeeBreakdown(outletId);
   const deliveryFee = feeData?.delivery_fee ?? 0;
   const serviceFee = feeData?.service_fee ?? 0;
-  const total = feeData?.grand_total ?? cartSubtotal + deliveryFee + serviceFee;
+  const total = noFulfillment ? cartSubtotal : (feeData?.grand_total ?? cartSubtotal + deliveryFee + serviceFee);
 
   if (!open) return null;
 
@@ -190,7 +199,7 @@ export function CartDrawer({ open, onOpenChange }: CartDrawerProps) {
             <div className="text-center">
               <h3 className="text-lg font-semibold">Your cart is empty</h3>
               <p className="mt-1 text-sm text-muted-foreground">
-                Add items from the menu to get started
+                Add {copy.itemLabelPlural.toLowerCase()} to get started
               </p>
             </div>
             <Button onClick={handleClose} asChild>
@@ -202,7 +211,7 @@ export function CartDrawer({ open, onOpenChange }: CartDrawerProps) {
             {/* Items list - scrollable, takes remaining space */}
             <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4">
               {items.map((item) => (
-                <CartItemRow key={item.id} item={item} />
+                <CartItemRow key={item.id} item={item} placeholderGlyph={cfg.placeholderGlyph} />
               ))}
 
               {/* Clear cart button - inside scroll area to save space on mobile */}
@@ -223,21 +232,25 @@ export function CartDrawer({ open, onOpenChange }: CartDrawerProps) {
                   <span className="text-muted-foreground">Subtotal</span>
                   <span className="font-medium">{formatCurrency(cartSubtotal)}</span>
                 </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Delivery fee</span>
-                  <span className="font-medium">
-                    {deliveryFee === 0 ? (
-                      <span className="text-green-600">Free</span>
-                    ) : (
-                      formatCurrency(deliveryFee)
-                    )}
-                  </span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Service fee</span>
-                  <span className="font-medium">{formatCurrency(serviceFee)}</span>
-                </div>
-                {deliveryFee > 0 && feeData?.delivery_discount === 0 && (
+                {!noFulfillment && (
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">Delivery fee</span>
+                    <span className="font-medium">
+                      {deliveryFee === 0 ? (
+                        <span className="text-green-600">Free</span>
+                      ) : (
+                        formatCurrency(deliveryFee)
+                      )}
+                    </span>
+                  </div>
+                )}
+                {!noFulfillment && (
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">Service fee</span>
+                    <span className="font-medium">{formatCurrency(serviceFee)}</span>
+                  </div>
+                )}
+                {!noFulfillment && deliveryFee > 0 && feeData?.delivery_discount === 0 && (
                   <p className="text-xs text-muted-foreground">
                     Delivery fee based on your location
                   </p>

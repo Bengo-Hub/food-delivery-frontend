@@ -2,6 +2,7 @@
 
 import {
   ArrowLeft,
+  CalendarClock,
   Check,
   ChevronRight,
   Clock,
@@ -147,7 +148,11 @@ export default function CatalogItemPage() {
 
   const variantValid = !hasVariants || !!selectedVariant;
 
-  const isService = item?.itemType === "SERVICE";
+  // A line is booked for a date+time when the item is a SERVICE *or* the outlet's
+  // vertical is appointment-based (services/salon/spa) — the whole storefront then
+  // behaves as a booking flow (cfg.bookingMode drives it), so even a non-typed item
+  // gets the appointment picker + "Book Now" CTA rather than add-to-cart quantity.
+  const isAppointment = item?.itemType === "SERVICE" || cfg.bookingMode === "appointment";
 
   const handleOptionToggle = (customizationId: string, optionId: string, maxSelections: number) => {
     setSelectedOptions((prev) => {
@@ -174,7 +179,7 @@ export default function CatalogItemPage() {
       toast.error("Please choose an option");
       return;
     }
-    if (isService && !appointment) {
+    if (isAppointment && !appointment) {
       toast.error("Please select an appointment date and time");
       return;
     }
@@ -234,7 +239,7 @@ export default function CatalogItemPage() {
         metadata.variant_attributes = selectedVariant.attributes;
       }
     }
-    if (isService && appointment) {
+    if (isAppointment && appointment) {
       metadata.is_service = true;
       metadata.appointment_date = appointment.date;
       metadata.appointment_time = appointment.time;
@@ -253,7 +258,7 @@ export default function CatalogItemPage() {
       ...(item.image ? { image: item.image } : {}),
       ...(Object.keys(metadata).length > 0 ? { metadata } : {}),
     });
-    toast.success(`Added ${quantity} ${item.name} to cart`);
+    toast.success(isAppointment ? `Booked ${item.name}` : `Added ${quantity} ${item.name} to cart`);
     router.back();
   };
 
@@ -434,8 +439,9 @@ export default function CatalogItemPage() {
               )}
             </div>
 
-            {/* Dietary tags */}
-            {(item.dietary ?? []).length > 0 && (
+            {/* Dietary tags — food verticals only (vegan/spicy/chef's special make no
+                sense for a pharmacy, hardware store, salon or event). */}
+            {cfg.showDietaryFilters && (item.dietary ?? []).length > 0 && (
               <div className="mt-3 flex flex-wrap gap-1.5">
                 {(item.dietary ?? []).map((tag) => (
                   <span
@@ -558,8 +564,8 @@ export default function CatalogItemPage() {
           </div>
         </div>
 
-        {/* ---------- Service appointment (SERVICE items) ---------- */}
-        {isService && (
+        {/* ---------- Service appointment (SERVICE items / services vertical) ---------- */}
+        {isAppointment && (
           <div className="mt-8">
             <hr className="mb-8 border-border" />
             <h2 className="mb-4 text-lg font-bold text-foreground">Choose an appointment</h2>
@@ -647,21 +653,32 @@ export default function CatalogItemPage() {
             </button>
           </div>
 
-          {/* Add to cart CTA */}
-          <Button
-            onClick={handleAddToCart}
-            disabled={!item.available || !modifiersValid || !variantValid || (isService && !appointment)}
-            size="lg"
-            className="min-w-[180px] gap-2 rounded-xl text-base font-semibold shadow-lg sm:min-w-[220px]"
-          >
-            <ShoppingCart className="size-5" />
-            <span className="sm:hidden">
-              {item.currency} {totalPrice.toLocaleString()}
-            </span>
-            <span className="hidden sm:inline">
-              {cfg.ctaLabel} &middot; {item.currency} {totalPrice.toLocaleString()}
-            </span>
-          </Button>
+          {/* Primary CTA — label + icon adapt to the vertical: "Book Now"/calendar for
+              appointment verticals, the vertical's ctaLabel otherwise. While required
+              selections (variant/modifiers/time) are outstanding, show selectOptionsLabel
+              ("Choose a Time" / "Select Options") instead of the final action label. */}
+          {(() => {
+            const needsSelection =
+              (hasVariants && !selectedVariant) || !modifiersValid || (isAppointment && !appointment);
+            const ctaText = needsSelection ? cfg.selectOptionsLabel : cfg.ctaLabel;
+            const CtaIcon = isAppointment ? CalendarClock : ShoppingCart;
+            return (
+              <Button
+                onClick={handleAddToCart}
+                disabled={!item.available || !modifiersValid || !variantValid || (isAppointment && !appointment)}
+                size="lg"
+                className="min-w-[180px] gap-2 rounded-xl text-base font-semibold shadow-lg sm:min-w-[220px]"
+              >
+                <CtaIcon className="size-5" />
+                <span className="sm:hidden">
+                  {item.currency} {totalPrice.toLocaleString()}
+                </span>
+                <span className="hidden sm:inline">
+                  {ctaText} &middot; {item.currency} {totalPrice.toLocaleString()}
+                </span>
+              </Button>
+            );
+          })()}
         </div>
 
         {/* Validation messages */}

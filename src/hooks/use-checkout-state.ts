@@ -79,6 +79,18 @@ export function useCheckoutState() {
     [items],
   );
 
+  // Appointment/service carts (salon/spa/services vertical) are booked for a date+time —
+  // the date/time is captured on the product page into each line's metadata.is_service.
+  // Like tickets, they have no delivery/pickup/address/delivery-fee: the customer visits
+  // the provider at the chosen time. Detected the same metadata-driven way as isTicketOnly.
+  const isAppointmentOnly = useMemo(
+    () => items.length > 0 && items.every((i) => (i.metadata as { is_service?: boolean } | undefined)?.is_service === true),
+    [items],
+  );
+
+  // Booking carts (tickets or appointments) skip the whole delivery/pickup fulfillment flow.
+  const noFulfillment = isTicketOnly || isAppointmentOnly;
+
   // Step & fulfillment
   const [step, setStep] = useState<CheckoutStep>("review");
   const [fulfillmentMode, setFulfillmentMode] = useState<FulfillmentMode>(
@@ -171,7 +183,7 @@ export function useCheckoutState() {
 
   // Use backend fee breakdown when available and non-zero; otherwise compute locally
   const feeBreakdown: import("@/lib/api/cart-api").FeeBreakdown | undefined =
-    isTicketOnly && cartSubtotal > 0
+    noFulfillment && cartSubtotal > 0
       ? {
           item_total: cartSubtotal,
           discount,
@@ -422,8 +434,8 @@ export function useCheckoutState() {
       }
     }
 
-    // Delivery/pickup/schedule validations don't apply to ticket-only carts.
-    if (!isTicketOnly) {
+    // Delivery/pickup/schedule validations don't apply to booking carts (tickets/appointments).
+    if (!noFulfillment) {
       if (fulfillmentMode !== "pickup" && !selectedAddressId && addresses.length > 0) {
         toast.error("Please select a delivery address");
         return;
@@ -444,8 +456,12 @@ export function useCheckoutState() {
       }
     }
 
-    // Tickets have no fulfillment — send pickup so no delivery address/fee is required.
-    const effectiveFulfillment: FulfillmentMode = isTicketOnly ? "pickup" : fulfillmentMode;
+    // Booking carts (tickets/appointments) have no fulfillment — send pickup so no
+    // delivery address/fee is required.
+    // TODO(use-case): appointment/ticket checkout flow — deposits, per-attendee info and
+    // an appointment-confirmation step are follow-ups; today a booking places a pickup
+    // order carrying the ticket/appointment metadata on each line.
+    const effectiveFulfillment: FulfillmentMode = noFulfillment ? "pickup" : fulfillmentMode;
 
     setStep("processing");
     setOrderError(null);
@@ -572,7 +588,7 @@ export function useCheckoutState() {
   }, [
     isGuestMode, guestEmail, guestPhone, guestName, guestDeliveryLocation,
     fulfillmentMode, selectedAddressId, addresses, isOutsideDeliveryZone, scheduledTime,
-    items, sessionId, deliveryNotes, promoCode, orderNotes, requestUtensils, isTicketOnly,
+    items, sessionId, deliveryNotes, promoCode, orderNotes, requestUtensils, isTicketOnly, noFulfillment,
     checkoutMutation, guestCheckoutMutation, orgSlug, router, clearCart,
     selectedMethod, selectedOption, handleWalletPayment,
   ]);
@@ -626,6 +642,8 @@ export function useCheckoutState() {
     // Fulfillment
     fulfillmentMode,
     isTicketOnly,
+    isAppointmentOnly,
+    noFulfillment,
     estimatedTime,
     scheduledTime,
     handleFulfillmentChange,

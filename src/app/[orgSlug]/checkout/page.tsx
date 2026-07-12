@@ -1,6 +1,6 @@
 "use client";
 
-import { AlertTriangle, ArrowLeft, CreditCard, Loader2, MapPin, ShoppingBag, Store, Ticket, Wallet } from "lucide-react";
+import { AlertTriangle, ArrowLeft, CalendarClock, CreditCard, Loader2, MapPin, ShoppingBag, Store, Ticket, Wallet } from "lucide-react";
 import Link from "next/link";
 import { useEffect } from "react";
 
@@ -121,7 +121,12 @@ export default function CheckoutPage() {
             </div>
           )}
 
-          {!state.isTicketOnly && (
+          {/* Appointment bookings (salon/spa/services) need no delivery/pickup — the
+              customer visits the provider at the time chosen on the service page. Show
+              the booked time(s) instead of a fulfillment picker. */}
+          {state.isAppointmentOnly && <AppointmentSummary items={state.items} />}
+
+          {!state.noFulfillment && (
             <>
               {/* 1. LOCATION — Address selector for delivery/schedule, outlet selector for pickup */}
               {state.fulfillmentMode !== "pickup" ? (
@@ -230,7 +235,7 @@ export default function CheckoutPage() {
           <SlideToConfirm
             onConfirm={state.handlePlaceOrder}
             loading={state.isPlacingOrder}
-            disabled={!state.isTicketOnly && state.fulfillmentMode !== "pickup" && !state.hasDeliveryAddress}
+            disabled={!state.noFulfillment && state.fulfillmentMode !== "pickup" && !state.hasDeliveryAddress}
             total={state.grandTotal}
           />
         </div>
@@ -334,6 +339,55 @@ function PaymentMethodSelector({ options, selected, onSelect }: PaymentMethodSel
           );
         })}
       </div>
+    </section>
+  );
+}
+
+// ─── Appointment Summary (services / salon / spa bookings) ──────────
+// Booking carts carry the chosen date+time on each line's metadata (set on the
+// service detail page). We surface it here in place of the delivery/pickup picker.
+
+interface AppointmentSummaryItem {
+  id: string;
+  name: string;
+  metadata?: Record<string, unknown>;
+}
+
+function formatApptDate(value: unknown): string | null {
+  if (typeof value !== "string" || !value.trim()) return null;
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return value; // already human-readable — show as-is
+  return d.toLocaleDateString("en-KE", { weekday: "short", day: "numeric", month: "short", year: "numeric" });
+}
+
+function AppointmentSummary({ items }: { items: AppointmentSummaryItem[] }) {
+  return (
+    <section className="rounded-xl border border-primary/30 bg-primary/5 p-4">
+      <div className="mb-3 flex items-center gap-2 text-sm font-medium">
+        <CalendarClock className="size-4 text-primary" />
+        <span>Your appointment</span>
+      </div>
+      <div className="space-y-2">
+        {items.map((item) => {
+          const meta = item.metadata ?? {};
+          const date = formatApptDate(meta.appointment_date);
+          const time = typeof meta.appointment_time === "string" ? meta.appointment_time : null;
+          return (
+            <div key={item.id} className="flex items-start justify-between gap-3 text-sm">
+              <span className="min-w-0 flex-1 font-medium">{item.name}</span>
+              <span className="shrink-0 text-right text-muted-foreground">
+                {date}
+                {date && time ? " · " : ""}
+                {time}
+                {!date && !time ? "Time to be confirmed" : ""}
+              </span>
+            </div>
+          );
+        })}
+      </div>
+      <p className="mt-3 text-xs text-muted-foreground">
+        No delivery or pickup needed — just arrive at the provider at your booked time.
+      </p>
     </section>
   );
 }
