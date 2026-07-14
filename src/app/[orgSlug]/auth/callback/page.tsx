@@ -2,10 +2,10 @@
 
 import { Suspense, useEffect, useRef } from "react";
 
-import { CheckCircle2, Loader2, RefreshCw, ShieldCheckIcon, User } from "lucide-react";
+import { SSOCallbackError } from "@bengo-hub/shared-ui-lib/auth";
+import { CheckCircle2, Loader2, User } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 
-import { Button } from "@/components/ui/button";
 import { userHasPermission, userHasRole } from "@/lib/auth/permissions";
 import { consumeState } from "@/lib/auth/pkce";
 import { orgRoute } from "@/lib/routes";
@@ -14,12 +14,29 @@ import { useAuthStore } from "@/store/auth";
 import { useOutletFilterStore } from "@/store/outlet-filter";
 import { ORDERING_SELECTED_OUTLET_KEY } from "@/app/[orgSlug]/auth/select-outlet/page";
 
+// The stored return URL was captured BEFORE the SSO hop. If the user switched
+// organisation mid-login, its slug is stale — re-point the first path segment
+// at the org the token was actually issued for. Cross-origin values are dropped.
+function sanitizedReturnTo(raw: string | null, orgSlug: string): string | null {
+  if (!raw) return null;
+  try {
+    const url = raw.startsWith("http") ? new URL(raw) : new URL(raw, window.location.origin);
+    if (url.origin !== window.location.origin) return null;
+    const segments = url.pathname.split("/");
+    if (segments[1] && segments[1] !== orgSlug) segments[1] = orgSlug;
+    return segments.join("/") + url.search + url.hash;
+  } catch {
+    return null;
+  }
+}
+
 function AuthCallbackContent() {
   const router = useRouter();
   const orgSlug = useOrgSlug();
   const searchParams = useSearchParams();
   const code = searchParams?.get("code");
   const oauthError = searchParams?.get("error");
+  const oauthErrorDescription = searchParams?.get("error_description");
   const handleSSOCallback = useAuthStore((s) => s.handleSSOCallback);
   const status = useAuthStore((s) => s.status);
   const user = useAuthStore((s) => s.user);
@@ -50,9 +67,11 @@ function AuthCallbackContent() {
 
     // Allow brief time for the user to see the confirmation
     const timer = setTimeout(() => {
-      // Read sso_return_to early — must be captured before any redirect clears it
+      // Read sso_return_to early — must be captured before any redirect clears it.
+      // Sanitized: if the user switched organisation mid-login the stored URL
+      // still carries the old slug.
       const returnTo = typeof window !== "undefined"
-        ? sessionStorage.getItem("sso_return_to") ?? orgRoute(orgSlug, "/")
+        ? sanitizedReturnTo(sessionStorage.getItem("sso_return_to"), orgSlug) ?? orgRoute(orgSlug, "/")
         : orgRoute(orgSlug, "/");
 
       // --- Outlet context setup ---
@@ -153,43 +172,23 @@ function AuthCallbackContent() {
     return () => clearTimeout(timer);
   }, [status, user, router, orgSlug]);
 
-  // Error state from SSO redirect
-  if (oauthError) {
+  // Error state from SSO redirect (?error=...) or from the auth store
+  // (token exchange / profile sync failure). The shared card explains
+  // wrong-organisation denials properly; "Sign in again" restarts the SSO
+  // flow (/auth auto-triggers redirectToSSO with fresh PKCE + authorize).
+  if (oauthError || (status === "error" && error)) {
     return (
-      <div className="flex min-h-[50vh] flex-col items-center justify-center gap-4 px-4 text-center">
-        <ShieldCheckIcon className="size-8 text-destructive" />
-        <h1 className="text-2xl font-semibold text-foreground">Sign-in failed</h1>
-        <p className="text-muted-foreground">
-          {oauthError === "access_denied"
-            ? "You denied the permissions requested. Please try again."
-            : "We were unable to complete your sign-in."}
-        </p>
-        <Button onClick={() => router.replace(orgRoute(orgSlug, "/auth"))} variant="outline">
-          Return to sign in
-        </Button>
-      </div>
-    );
-  }
-
-  // Auth store error
-  if (status === "error" && error) {
-    return (
-      <div className="flex min-h-[50vh] flex-col items-center justify-center gap-4 px-4 text-center">
-        <ShieldCheckIcon className="size-8 text-destructive" />
-        <h1 className="text-2xl font-semibold text-foreground">Something went wrong</h1>
-        <p className="text-muted-foreground">{error}</p>
-        <Button
-          onClick={() => {
-            hasStarted.current = false;
-            router.replace(orgRoute(orgSlug, "/auth"));
-          }}
-          variant="outline"
-          className="gap-2"
-        >
-          <RefreshCw className="size-4" />
-          Try again
-        </Button>
-      </div>
+      <SSOCallbackError
+        error={oauthError}
+        errorDescription={oauthError ? oauthErrorDescription : error}
+        orgSlug={orgSlug}
+        lastKnownTenant={typeof window !== "undefined" ? localStorage.getItem("tenantSlug") : null}
+        onRetry={() => {
+          hasStarted.current = false;
+          router.replace(orgRoute(orgSlug, "/auth"));
+        }}
+        onSwitchTenant={(slug) => router.replace(orgRoute(slug, "/auth"))}
+      />
     );
   }
 
