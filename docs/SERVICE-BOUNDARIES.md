@@ -34,7 +34,7 @@
 
 ### ❌ Rider Dashboards & Management → **logistics-service**
 - **Route**: `/dashboard/rider`
-- **Redirects To**: `https://logistics.codevertexitsolutions.com/{tenant_slug}/dashboard`
+- **Redirects To**: `https://logistics.codevertexafrica.com/{tenant_slug}/dashboard`
 - **Why**: All rider data (profiles, shifts, tasks, earnings) owned by logistics-service
 - **Integration**: Ordering service only stores `rider_id` references for order assignments
 
@@ -42,7 +42,7 @@
 
 ### ❌ Rider Onboarding → **logistics-service**
 - **Route**: `/riders/signup`
-- **Redirects To**: `https://logistics.codevertexitsolutions.com/{tenant_slug}/riders/onboard`
+- **Redirects To**: `https://logistics.codevertexafrica.com/{tenant_slug}/riders/onboard`
 - **Why**: Rider registration, KYC, vehicle management belong to logistics-service
 - **Flow**: User redirected to logistics-service for complete onboarding
 
@@ -71,7 +71,7 @@
 ### 1. **Logistics Service** (Rider & Delivery Management)
 ```typescript
 // Redirect pattern for rider features
-const logisticsUrl = `https://logistics.codevertexitsolutions.com/${tenantSlug}/dashboard?return_url=${returnUrl}`;
+const logisticsUrl = `https://logistics.codevertexafrica.com/${tenantSlug}/dashboard?return_url=${returnUrl}`;
 window.location.href = logisticsUrl;
 ```
 

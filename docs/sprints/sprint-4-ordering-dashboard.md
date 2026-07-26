@@ -261,7 +261,7 @@ Sprint 4 focuses on building the cafe administrator dashboard with order managem
 **Dependencies**:
 - `@superset-ui/embedded-sdk` - Official Superset embedding SDK
 - Backend analytics API at `/api/v1/{tenant}/analytics/dashboards`
-- Superset instance at `https://superset.codevertexitsolutions.com`
+- Superset instance at `https://superset.codevertexafrica.com`
 
 **Documentation**:
 - See [Superset Integration Guide](../superset-integration.md) for detailed implementation

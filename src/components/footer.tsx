@@ -13,7 +13,7 @@ export function Footer() {
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs font-medium text-slate-500 dark:text-slate-400">
         <span className="tracking-wide">All Rights Reserved. {tenantName} &copy; {new Date().getFullYear()}.</span>
         <a
-          href="https://codevertexitsolutions.com"
+          href="https://codevertexafrica.com"
           target="_blank"
           rel="noopener noreferrer"
           className="flex items-center gap-2 group transition-all"

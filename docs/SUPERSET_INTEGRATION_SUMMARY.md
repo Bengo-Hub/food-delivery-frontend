@@ -2,7 +2,7 @@
 
 **Date**: January 19, 2026
 **Services**: Ordering Backend & Frontend
-**Superset URL**: https://superset.codevertexitsolutions.com
+**Superset URL**: https://superset.codevertexafrica.com
 
 ---
 
@@ -25,7 +25,7 @@
    - Authentication with token management
    - Guest token generation with RLS
    - Dashboard operations (list, get, embed)
-   - Production URL configured: `https://superset.codevertexitsolutions.com`
+   - Production URL configured: `https://superset.codevertexafrica.com`
 
 2. **Analytics Service** (`internal/modules/analytics/service.go`)
    - Dashboard embed URL generation
@@ -59,7 +59,7 @@
      - **Result**: ✅ All 8 test suites passing (100% coverage)
 
 5. **Configuration**
-   - Production URL: `https://superset.codevertexitsolutions.com`
+   - Production URL: `https://superset.codevertexafrica.com`
    - Guest token TTL: 5 minutes (configurable)
    - Auto-refresh: 4 minutes (before expiry)
    - Dashboard IDs configurable via environment variables

@@ -345,7 +345,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       // Redirect to SSO logout → clears session cookie → redirects to accounts login page
       // Use accounts URL (not app URL) so user lands on login page, not a redirect loop
       const returnTo = encodeURIComponent(window.location.origin);
-      window.location.href = buildLogoutUrl(`https://accounts.codevertexitsolutions.com/login?return_to=${returnTo}`);
+      window.location.href = buildLogoutUrl(`https://accounts.codevertexafrica.com/login?return_to=${returnTo}`);
     }
   },
 

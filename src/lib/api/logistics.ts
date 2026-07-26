@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const LOGISTICS_BASE_URL =
-  (process.env.NEXT_PUBLIC_LOGISTICS_API_URL || "https://logisticsapi.codevertexitsolutions.com/api/v1").replace(/\/$/, "");
+  (process.env.NEXT_PUBLIC_LOGISTICS_API_URL || "https://logisticsapi.codevertexafrica.com/api/v1").replace(/\/$/, "");
 
 const logisticsApi = axios.create({
   baseURL: LOGISTICS_BASE_URL,

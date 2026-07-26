@@ -50,14 +50,14 @@
 - **Rider Onboarding Integration**:
   - **Tenant Service Check**: Before rider onboarding, verify tenant has logistics service enabled in subscription plan
   - **Option A - API Push**: If tenant has logistics service, call ordering-backend endpoint which pushes to logistics-service API (`POST /v1/{tenant}/fleet-members`)
-  - **Option B - UI Redirect**: Redirect to logistics-service UI for self-onboarding (`https://logistics.codevertexitsolutions.com/{tenant_slug}/riders/onboard?return_url={cafe_url}`)
+  - **Option B - UI Redirect**: Redirect to logistics-service UI for self-onboarding (`https://logistics.codevertexafrica.com/{tenant_slug}/riders/onboard?return_url={cafe_url}`)
   - Frontend stores only `rider_id` reference returned from logistics-service
   - **All rider/fleet/driver logic is centralized in logistics-service—ordering-backend does not handle rider data**
   - **Standalone Logistics**: If tenant only uses logistics-service, rider onboarding happens directly in logistics-service UI
 - Connect merchant/staff invite flows to tenancy provisioning once backend tenancy endpoints are live.
 - Surface subscription/license management UI: plan comparison, usage metrics (orders/riders), upgrade/downgrade flows, renewal notices, and invoice history powered by the new subscription APIs.
 - Build admin settings for integration credentials (POS gateway, treasury, notifications), API key rotation, and backup/restore requests once backend configuration endpoints are exposed; surface cross-service linkage (logistics riders, inventory stock, POS outlets) using a unified tenant/outlet selector and webhook-driven status updates.
-- **Auth-Service Integration** (Production: `https://sso.codevertexitsolutions.com/`):
+- **Auth-Service Integration** (Production: `https://sso.codevertexafrica.com/`):
   - Update login/registration to call auth-service directly or proxy through backend
   - Add tenant selection UI (tenant_slug required for all auth requests)
   - Handle auth-service response format: `{access_token, refresh_token, session_id, tenant, user}`
@@ -139,7 +139,7 @@
 - **State & Data:** TanStack Query for server state, Zustand for lightweight client state, React Hook Form + Zod validation, Jotai for low-level atoms where needed.
 - **Networking:** Axios via shared `baseapi` wrapper, WebSocket/SSE client for live updates, service worker API for offline sync.
 - **UI System:** Tailwind CSS + Radix UI (web), NativeWind (mobile), Figma handoff tokens synced through Style Dictionary.
-- **Maps & Geo:** `@bengo-hub/maps` (MapLibre GL JS wrapper) with self-hosted TileServer-GL tiles (`https://tiles.codevertexitsolutions.com`) and Valhalla routing via logistics-api (`/api/v1/{tenant}/routing/*`). Data sourced from OpenStreetMap Kenya (Geofabrik, weekly refresh).
+- **Maps & Geo:** `@bengo-hub/maps` (MapLibre GL JS wrapper) with self-hosted TileServer-GL tiles (`https://tiles.codevertexafrica.com`) and Valhalla routing via logistics-api (`/api/v1/{tenant}/routing/*`). Data sourced from OpenStreetMap Kenya (Geofabrik, weekly refresh).
 - **Internationalization:** next-intl (web) & react-native-localize + i18next (mobile), centralized copy JSON with translation pipeline.
 - **Testing & Quality:** Vitest + Testing Library, Detox/E2E for mobile, Playwright for PWA, Percy visual testing.
 - **Analytics:** Segment/Amplitude instrumentation, consent-aware tracking toggles.
@@ -151,7 +151,7 @@
 - **Offline & Performance:** service worker caching strategies (App Shell, stale-while-revalidate), background sync for failed actions, skeleton loading states, Lighthouse score targets (Performance 90+, PWA badge).
 - **Accessibility:** Semantic components, keyboard navigation, color contrast validation (axe), accessible map alternatives.
 - **Security & Privacy:** Secure storage (expo-secure-store), CSRF protection, input sanitization, session renewal flows, telemetry anonymization, and enforcing that all API calls include tenant + outlet context consistent with backend microservices. Webhook signatures are verified client-side (where applicable) before mutating state.
-- **Identity Federation:** Consume `auth-service` OIDC sessions (Production: `https://sso.codevertexitsolutions.com/`)
+- **Identity Federation:** Consume `auth-service` OIDC sessions (Production: `https://sso.codevertexafrica.com/`)
   - PKCE + refresh token lifecycles with silent renewals
   - MFA prompts mirrored in mobile/web
   - Tenant selection required for all auth flows
@@ -167,7 +167,7 @@
 - **Cross-Service Data Ownership:** See [Cross-Service Data Ownership](../ordering-backend/docs/CROSS-SERVICE-DATA-OWNERSHIP.md) for patterns on service-specific data management, tenant service availability checks, and user management across services.
 - **`notifications-api`:** Subscription management UI, template preview, user channel preferences, and consumption of notification delivery receipts for in-app status chips, all scoped by the shared tenant/outlet keys and delivered via signed webhooks.
 - **`treasury-api`:** Payment status webhooks, rider/cafe wallet balances, payout visibility, and surface of treasury settlement timelines inside the operations dashboards (no polling).
-- **`auth-service`** (Production: `https://sso.codevertexitsolutions.com/`):
+- **`auth-service`** (Production: `https://sso.codevertexafrica.com/`):
   - **SSO Flows**: All login/registration via auth-service endpoints
   - **Session Refresh**: Token refresh proxied to auth-service
   - **Device Management UI**: Device management handled by auth-service
@@ -249,4 +249,4 @@
 ## Runtime Ports & Environments
 
 - **Local development:** consume backend at `http://localhost:4000`, treasury at `http://localhost:4001`, and notifications at `http://localhost:4002` when running services locally.
-- **Cloud deployment:** all backend ingress endpoints terminate on port **4000**, so the frontend uses public DNS (e.g. `https://orderingapi.codevertexitsolutions.com`) without port suffixes.
+- **Cloud deployment:** all backend ingress endpoints terminate on port **4000**, so the frontend uses public DNS (e.g. `https://orderingapi.codevertexafrica.com`) without port suffixes.

@@ -6,16 +6,16 @@ import type { ReactNode } from "react";
 import { useAuthStore } from "@/store/auth";
 
 const TILE_SERVER_URL =
-  process.env.NEXT_PUBLIC_TILE_SERVER_URL || "https://tiles.codevertexitsolutions.com";
+  process.env.NEXT_PUBLIC_TILE_SERVER_URL || "https://tiles.codevertexafrica.com";
 const TILE_STYLE_URL = `${TILE_SERVER_URL}/styles/osm-bright/style.json`;
 const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_URL || "https://orderingapi.codevertexitsolutions.com/api/v1/";
+  process.env.NEXT_PUBLIC_API_URL || "https://orderingapi.codevertexafrica.com/api/v1/";
 const LOGISTICS_API_URL =
-  process.env.NEXT_PUBLIC_LOGISTICS_API_URL || "https://logisticsapi.codevertexitsolutions.com/api/v1";
+  process.env.NEXT_PUBLIC_LOGISTICS_API_URL || "https://logisticsapi.codevertexafrica.com/api/v1";
 
 /**
  * Client-side wrapper around @bengo-hub/maps MapProvider.
- * Tiles are self-hosted via Planetiler + TileServer-GL at tiles.codevertexitsolutions.com.
+ * Tiles are self-hosted via Planetiler + TileServer-GL at tiles.codevertexafrica.com.
  * Routing requests go through logistics-api for tenant-based rate limiting.
  */
 export function MapProviderWrapper({ children }: { children: ReactNode }) {

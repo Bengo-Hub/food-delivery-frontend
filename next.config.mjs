@@ -23,12 +23,12 @@ const nextConfig = {
       },
       {
         protocol: "https",
-        hostname: "orderingapi.codevertexitsolutions.com",
+        hostname: "orderingapi.codevertexafrica.com",
         pathname: "/media/**",
       },
       {
         protocol: "https",
-        hostname: "inventoryapi.codevertexitsolutions.com",
+        hostname: "inventoryapi.codevertexafrica.com",
         pathname: "/media/**",
       },
     ],

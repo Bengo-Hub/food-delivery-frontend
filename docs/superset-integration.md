@@ -4,7 +4,7 @@
 
 The Ordering Frontend integrates with the centralized Apache Superset instance for BI dashboards and analytics. Superset is deployed as a centralized service accessible to all Codevertex services.
 
-**Superset URL**: `https://superset.codevertexitsolutions.com`
+**Superset URL**: `https://superset.codevertexafrica.com`
 
 ---
 
@@ -13,7 +13,7 @@ The Ordering Frontend integrates with the centralized Apache Superset instance f
 ### Service Configuration
 
 **Environment Variables**:
-- `NEXT_PUBLIC_SUPERSET_URL` - Superset service URL (default: `https://superset.codevertexitsolutions.com`)
+- `NEXT_PUBLIC_SUPERSET_URL` - Superset service URL (default: `https://superset.codevertexafrica.com`)
 - `NEXT_PUBLIC_API_URL` - Ordering backend API URL
 
 **Authentication**:
@@ -448,8 +448,8 @@ const securityHeaders = [
   {
     key: 'Content-Security-Policy',
     value: `
-      frame-src 'self' https://superset.codevertexitsolutions.com;
-      connect-src 'self' https://superset.codevertexitsolutions.com ${process.env.NEXT_PUBLIC_API_URL};
+      frame-src 'self' https://superset.codevertexafrica.com;
+      connect-src 'self' https://superset.codevertexafrica.com ${process.env.NEXT_PUBLIC_API_URL};
     `.replace(/\s{2,}/g, ' ').trim()
   }
 ];
@@ -586,7 +586,7 @@ describe('SupersetDashboard', () => {
 ## Dependencies
 
 - Backend analytics API (Sprint 7 - ordering-backend)
-- Superset instance (https://superset.codevertexitsolutions.com)
+- Superset instance (https://superset.codevertexafrica.com)
 - @superset-ui/embedded-sdk package
 - TanStack Query for data fetching
 - Auth service for JWT tokens

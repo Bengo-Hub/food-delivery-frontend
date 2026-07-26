@@ -725,8 +725,8 @@ function SubscriptionAddonsTab({ tenantSlug }: { tenantSlug: string }) {
 
 // ── Integrations Settings ────────────────────────────────────────────────────
 
-const AUTH_API_URL_DEFAULT = process.env.NEXT_PUBLIC_AUTH_API_URL || 'https://sso.codevertexitsolutions.com';
-const ORDERING_API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://orderingapi.codevertexitsolutions.com';
+const AUTH_API_URL_DEFAULT = process.env.NEXT_PUBLIC_AUTH_API_URL || 'https://sso.codevertexafrica.com';
+const ORDERING_API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://orderingapi.codevertexafrica.com';
 
 function IntegrationsTab() {
   const [authApiUrl, setAuthApiUrl] = useState(AUTH_API_URL_DEFAULT);

@@ -165,7 +165,7 @@ export default function CustomerDashboardPage() {
                       </p>
                     </div>
                     <Button variant="outline" size="sm" asChild>
-                      <a href={`${process.env.NEXT_PUBLIC_SUBSCRIPTIONS_UI_URL ?? "https://pricing.codevertexitsolutions.com"}/plans`} target="_blank" rel="noopener noreferrer">
+                      <a href={`${process.env.NEXT_PUBLIC_SUBSCRIPTIONS_UI_URL ?? "https://pricing.codevertexafrica.com"}/plans`} target="_blank" rel="noopener noreferrer">
                         View Plans
                       </a>
                     </Button>
@@ -335,7 +335,7 @@ export default function CustomerDashboardPage() {
                       </p>
                     </div>
                     <Button variant="outline" size="sm" asChild>
-                      <a href={`${process.env.NEXT_PUBLIC_SUBSCRIPTIONS_UI_URL ?? "https://pricing.codevertexitsolutions.com"}/plans`} target="_blank" rel="noopener noreferrer">
+                      <a href={`${process.env.NEXT_PUBLIC_SUBSCRIPTIONS_UI_URL ?? "https://pricing.codevertexafrica.com"}/plans`} target="_blank" rel="noopener noreferrer">
                         View Plans
                       </a>
                     </Button>
@@ -472,7 +472,7 @@ export default function CustomerDashboardPage() {
                   <a
                     key={order.id}
                     href={`${
-                      process.env.NEXT_PUBLIC_LOGISTICS_UI_URL ?? "https://logistics.codevertexitsolutions.com"
+                      process.env.NEXT_PUBLIC_LOGISTICS_UI_URL ?? "https://logistics.codevertexafrica.com"
                     }/${orgSlug}/tracking?orderId=${encodeURIComponent(order.id)}`}
                     className="flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-border bg-muted/30 px-4 py-3 mb-2 text-sm transition-colors hover:bg-muted/60"
                   >

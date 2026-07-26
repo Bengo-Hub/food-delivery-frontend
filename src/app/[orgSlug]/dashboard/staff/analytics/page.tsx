@@ -36,7 +36,7 @@ import type { AnalyticsDashboardInfo } from "@/lib/api/analytics";
 
 const SUBSCRIBE_URL =
   process.env.NEXT_PUBLIC_SUBSCRIPTIONS_UI_URL ||
-  "https://pricing.codevertexitsolutions.com";
+  "https://pricing.codevertexafrica.com";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 

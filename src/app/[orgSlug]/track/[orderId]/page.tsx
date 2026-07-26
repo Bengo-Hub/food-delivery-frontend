@@ -44,7 +44,7 @@ export default function TrackOrderPage() {
 
   const logisticsUrl =
     process.env.NEXT_PUBLIC_LOGISTICS_UI_URL ??
-    "https://logistics.codevertexitsolutions.com";
+    "https://logistics.codevertexafrica.com";
 
   // Fetch initial order data (with polling fallback when SSE is down)
   const { data: order, isLoading: orderLoading } = useOrder(orderId, {

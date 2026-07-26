@@ -112,7 +112,7 @@ export function LocationSearchInput({
           {
             headers: {
               "Accept-Language": "en",
-              "User-Agent": "OrderingApp/1.0 (support@codevertexitsolutions.com)",
+              "User-Agent": "OrderingApp/1.0 (support@codevertexafrica.com)",
             },
             signal: controller.signal,
           },

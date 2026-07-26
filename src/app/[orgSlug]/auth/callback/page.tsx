@@ -141,7 +141,7 @@ function AuthCallbackContent() {
       }
 
       if (userHasRole(user, ["rider"])) {
-        const logisticsUrl = process.env.NEXT_PUBLIC_LOGISTICS_UI_URL ?? "https://logistics.codevertexitsolutions.com";
+        const logisticsUrl = process.env.NEXT_PUBLIC_LOGISTICS_UI_URL ?? "https://logistics.codevertexafrica.com";
         window.location.href = `${logisticsUrl}/${orgSlug}`;
         return;
       }

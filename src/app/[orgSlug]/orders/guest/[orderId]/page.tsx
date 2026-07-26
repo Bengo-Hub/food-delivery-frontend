@@ -638,7 +638,7 @@ function GuestOrderContent() {
           <Button asChild variant="outline" className="gap-2">
             <a
               href={`${
-                process.env.NEXT_PUBLIC_LOGISTICS_UI_URL ?? "https://logistics.codevertexitsolutions.com"
+                process.env.NEXT_PUBLIC_LOGISTICS_UI_URL ?? "https://logistics.codevertexafrica.com"
               }/${orgSlug}/tracking?orderId=${encodeURIComponent(order.id)}`}
             >
               <Bike className="size-4" />

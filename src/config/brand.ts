@@ -54,7 +54,7 @@ const brandDescription =
   process.env.NEXT_PUBLIC_BRAND_DESCRIPTION?.trim() ||
   "Multi-business online ordering platform with flexible catalog management, real-time tracking, and seamless payment integration.";
 const supportEmail =
-  process.env.NEXT_PUBLIC_BRAND_SUPPORT_EMAIL?.trim() || "support@codevertexitsolutions.com";
+  process.env.NEXT_PUBLIC_BRAND_SUPPORT_EMAIL?.trim() || "support@codevertexafrica.com";
 const supportPhone = process.env.NEXT_PUBLIC_BRAND_SUPPORT_PHONE?.trim() || "+254 743 793 901";
 const headquarters =
   process.env.NEXT_PUBLIC_BRAND_HQ?.trim() ||

@@ -14,7 +14,7 @@ interface OrderSuccessProps {
 export function OrderSuccess({ orderId }: OrderSuccessProps) {
   const orgSlug = useOrgSlug();
   const logisticsUrl =
-    process.env.NEXT_PUBLIC_LOGISTICS_UI_URL ?? "https://logistics.codevertexitsolutions.com";
+    process.env.NEXT_PUBLIC_LOGISTICS_UI_URL ?? "https://logistics.codevertexafrica.com";
 
   return (
     <div className="flex flex-col items-center gap-6 py-12 text-center">

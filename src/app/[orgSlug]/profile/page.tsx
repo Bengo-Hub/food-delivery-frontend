@@ -33,7 +33,7 @@ import { useOrgSlug } from "@/providers/org-slug-provider";
 import { useAuthStore } from "@/store/auth";
 
 const SSO_PROFILE_URL =
-  process.env.NEXT_PUBLIC_AUTH_UI_URL || "https://accounts.codevertexitsolutions.com";
+  process.env.NEXT_PUBLIC_AUTH_UI_URL || "https://accounts.codevertexafrica.com";
 
 export default function ProfilePage() {
   const user = useAuthStore((state) => state.user);
