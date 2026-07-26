@@ -20,7 +20,7 @@ if (fs.existsSync(envTestPath)) {
 const defaultOrgSlug = process.env.E2E_ORG_SLUG || 'urban-loft';
 
 /**
- * Playwright E2E config for ordering-frontend (ordersapp.codevertexitsolutions.com).
+ * Playwright E2E config for ordering-frontend (ordering.codevertexafrica.com).
  * Tests run against the production base URL by default; set BASE_URL to override.
  */
 export default defineConfig({
@@ -37,7 +37,7 @@ export default defineConfig({
   use: {
     baseURL: process.env.BASE_URL
       ? `${process.env.BASE_URL}/${defaultOrgSlug}`
-      : `https://ordersapp.codevertexitsolutions.com/${defaultOrgSlug}`,
+      : `https://ordering.codevertexafrica.com/${defaultOrgSlug}`,
     headless: process.env.CI === 'true',
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',

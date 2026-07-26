@@ -2,7 +2,7 @@
 
 **Last Updated**: March 6, 2026
 
-Design and interaction patterns for `ordersapp.codevertexitsolutions.com`. Mobile-first PWA targeting Kenyan customers ordering food delivery from the Busia outlet.
+Design and interaction patterns for `ordering.codevertexafrica.com`. Mobile-first PWA targeting Kenyan customers ordering food delivery from the Busia outlet.
 
 ---
 

@@ -2,13 +2,13 @@
 
 **Last Updated**: March 6, 2026
 
-How the ordering frontend (`ordersapp.codevertexitsolutions.com`) connects to backend APIs and external services.
+How the ordering frontend (`ordering.codevertexafrica.com`) connects to backend APIs and external services.
 
 ---
 
 ## Primary Backend: Ordering API
 
-**Base URL**: `https://orderingapi.codevertexitsolutions.com`  
+**Base URL**: `https://orderingapi.codevertexafrica.com`  
 **Config**: `NEXT_PUBLIC_API_BASE_URL` environment variable  
 **Client**: Axios instance in `src/lib/baseapi.ts`
 
@@ -43,7 +43,7 @@ Mutations use `useMutation` with optimistic updates for cart operations and `onS
 
 ## Authentication: Auth Service (SSO)
 
-**Auth Service URL**: `https://sso.codevertexitsolutions.com`  
+**Auth Service URL**: `https://sso.codevertexafrica.com`  
 **Config**: `NEXT_PUBLIC_AUTH_SERVICE_URL`
 
 ### Auth Flow
@@ -51,8 +51,8 @@ Mutations use `useMutation` with optimistic updates for cart operations and `onS
 The frontend does NOT call auth-service directly. All auth requests go through the ordering backend proxy:
 
 ```
-Frontend → orderingapi.codevertexitsolutions.com/v1/{tenant}/auth/login
-           → proxies to → sso.codevertexitsolutions.com/api/v1/auth/login
+Frontend → orderingapi.codevertexafrica.com/v1/{tenant}/auth/login
+           → proxies to → sso.codevertexafrica.com/api/v1/auth/login
 ```
 
 ### Endpoints (via Backend Proxy)
@@ -137,7 +137,7 @@ const { data: order } = useQuery({
 
 ## Logistics: Live Tracking (via Backend + Direct)
 
-**Logistics UI URL**: `https://logistics.codevertexitsolutions.com`  
+**Logistics UI URL**: `https://logistics.codevertexafrica.com`  
 **Config**: `NEXT_PUBLIC_LOGISTICS_UI_URL`
 
 ### Order Tracking (Centralized in Logistics Service)
@@ -147,7 +147,7 @@ All live delivery tracking — rider location, ETA, status timeline, map display
 When a customer clicks "Track Order", the ordering-frontend redirects to:
 
 ```
-https://logistics.codevertexitsolutions.com/track/{orderId}
+https://logistics.codevertexafrica.com/track/{orderId}
 ```
 
 The ordering-frontend does **not** render any tracking UI, maps, or rider location data. The order detail from backend includes only reference data:
@@ -165,7 +165,7 @@ The ordering-frontend does **not** render any tracking UI, maps, or rider locati
 
 ### Rider Redirects
 
-Users with `rider` role are redirected to the rider-app (`riderapp.codevertexitsolutions.com`) after auth. No rider features exist in the ordering frontend.
+Users with `rider` role are redirected to the rider-app (`riderapp.codevertexafrica.com`) after auth. No rider features exist in the ordering frontend.
 
 ---
 
@@ -202,9 +202,9 @@ Not implemented for MVP. Post-launch: notification bell in header with unread co
 
 | Service | Env Variable | URL | When Used |
 |---------|-------------|-----|-----------|
-| Logistics UI | `NEXT_PUBLIC_LOGISTICS_UI_URL` | `logistics.codevertexitsolutions.com` | Rider role redirect, rider onboarding |
+| Logistics UI | `NEXT_PUBLIC_LOGISTICS_UI_URL` | `logistics.codevertexafrica.com` | Rider role redirect, rider onboarding |
 | Cafe Website | `NEXT_PUBLIC_CAFE_WEBSITE_URL` | `theurbanloftcafe.com` | Staff/admin role redirect |
-| Auth Service | `NEXT_PUBLIC_AUTH_SERVICE_URL` | `sso.codevertexitsolutions.com` | OAuth callbacks |
+| Auth Service | `NEXT_PUBLIC_AUTH_SERVICE_URL` | `sso.codevertexafrica.com` | OAuth callbacks |
 
 All redirects preserve `tenant_slug` in the URL and include `return_url` for navigation back.
 
@@ -214,9 +214,9 @@ All redirects preserve `tenant_slug` in the URL and include `return_url` for nav
 
 | Variable | Example | Required | Purpose |
 |----------|---------|----------|---------|
-| `NEXT_PUBLIC_API_BASE_URL` | `https://orderingapi.codevertexitsolutions.com` | Yes | Ordering backend |
-| `NEXT_PUBLIC_AUTH_SERVICE_URL` | `https://sso.codevertexitsolutions.com` | Yes | OAuth redirects |
-| `NEXT_PUBLIC_LOGISTICS_UI_URL` | `https://logistics.codevertexitsolutions.com` | Yes | Rider redirects |
+| `NEXT_PUBLIC_API_BASE_URL` | `https://orderingapi.codevertexafrica.com` | Yes | Ordering backend |
+| `NEXT_PUBLIC_AUTH_SERVICE_URL` | `https://sso.codevertexafrica.com` | Yes | OAuth redirects |
+| `NEXT_PUBLIC_LOGISTICS_UI_URL` | `https://logistics.codevertexafrica.com` | Yes | Rider redirects |
 | `NEXT_PUBLIC_CAFE_WEBSITE_URL` | `https://theurbanloftcafe.com` | Yes | Staff redirects |
 | `NEXT_PUBLIC_VAPID_KEY` | `BEl62i...` | Yes | Web Push subscription |
 | `NEXT_PUBLIC_MAPBOX_TOKEN` | `pk.eyJ...` | No | Map display (tracking page) |

@@ -16,15 +16,15 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
 # Next.js bakes NEXT_PUBLIC_* at build time. Pass these in CI/deploy to avoid production calling localhost.
-ARG NEXT_PUBLIC_API_URL=https://orderingapi.codevertexitsolutions.com/api/v1
-ARG NEXT_PUBLIC_SSO_URL=https://sso.codevertexitsolutions.com
+ARG NEXT_PUBLIC_API_URL=https://orderingapi.codevertexafrica.com/api/v1
+ARG NEXT_PUBLIC_SSO_URL=https://sso.codevertexafrica.com
 ARG NEXT_PUBLIC_CAFE_WEBSITE_URL=https://theurbanloftcafe.com
-ARG NEXT_PUBLIC_LOGISTICS_UI_URL=https://logistics.codevertexitsolutions.com
-ARG NEXT_PUBLIC_NOTIFICATIONS_API_URL=https://notificationsapi.codevertexitsolutions.com
-ARG NEXT_PUBLIC_TREASURY_API_URL=https://booksapi.codevertexitsolutions.com
-ARG NEXT_PUBLIC_TREASURY_UI_URL=https://books.codevertexitsolutions.com
-ARG NEXT_PUBLIC_TILE_SERVER_URL=https://tiles.codevertexitsolutions.com
-ARG NEXT_PUBLIC_LOGISTICS_API_URL=https://logisticsapi.codevertexitsolutions.com/api/v1
+ARG NEXT_PUBLIC_LOGISTICS_UI_URL=https://logistics.codevertexafrica.com
+ARG NEXT_PUBLIC_NOTIFICATIONS_API_URL=https://notificationsapi.codevertexafrica.com
+ARG NEXT_PUBLIC_TREASURY_API_URL=https://booksapi.codevertexafrica.com
+ARG NEXT_PUBLIC_TREASURY_UI_URL=https://books.codevertexafrica.com
+ARG NEXT_PUBLIC_TILE_SERVER_URL=https://tiles.codevertexafrica.com
+ARG NEXT_PUBLIC_LOGISTICS_API_URL=https://logisticsapi.codevertexafrica.com/api/v1
 ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
 ENV NEXT_PUBLIC_SSO_URL=$NEXT_PUBLIC_SSO_URL
 ENV NEXT_PUBLIC_CAFE_WEBSITE_URL=$NEXT_PUBLIC_CAFE_WEBSITE_URL

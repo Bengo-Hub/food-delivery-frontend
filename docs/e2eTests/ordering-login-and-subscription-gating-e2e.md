@@ -10,7 +10,7 @@ E2E tests validate ordering-frontend landing and menu pages for a tenant (defaul
 
 ## Preconditions
 
-- **Target:** `https://ordersapp.codevertexitsolutions.com` (override via `BASE_URL`)
+- **Target:** `https://ordering.codevertexafrica.com` (override via `BASE_URL`)
 - **Default tenant:** `urban-loft` (override via `E2E_ORG_SLUG`)
 - **Auth:** SSO (auth-api) and OAuth client `ordering-ui` with redirect URI for `/{tenant}/auth/callback`
 
@@ -43,7 +43,7 @@ Per [TRINITY-AUTHORIZATION-PATTERN.md](../../../shared-docs/TRINITY-AUTHORIZATIO
 
 | Variable | Description | Default |
 |----------|-------------|---------|
-| `BASE_URL` | Ordering-frontend origin (without tenant path) | `https://ordersapp.codevertexitsolutions.com` |
+| `BASE_URL` | Ordering-frontend origin (without tenant path) | `https://ordering.codevertexafrica.com` |
 | `E2E_ORG_SLUG` | Tenant slug used in base URL | `urban-loft` |
 
 ## Running
@@ -64,7 +64,7 @@ pnpm test:e2e -- ordering-login-and-landing
 
 ## Real run results (March 2026)
 
-Manual run against production `https://ordersapp.codevertexitsolutions.com/urban-loft`:
+Manual run against production `https://ordering.codevertexafrica.com/urban-loft`:
 
 - **Landing:** Pass. Page shows "Order App Food Delivery"; tabs Delivery/Pickup; categories (Restaurants, Grocery, Pizza, etc.); "Open cart", "Sign in", "Browse Menu"; bottom nav Home, Menu, Cart, Orders, Account. Featured Items and Outlets Near You sections present.
 - **Sign in / cart:** "Sign in" link and "Open cart" button visible; cart shows "1 Cart" in nav when items added.

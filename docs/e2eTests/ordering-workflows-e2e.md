@@ -10,7 +10,7 @@ E2E tests validate ordering-frontend menu page and cart/checkout entry points. F
 
 ## Preconditions
 
-- **Target:** `https://ordersapp.codevertexitsolutions.com/{tenant}` (default tenant `urban-loft`)
+- **Target:** `https://ordering.codevertexafrica.com/{tenant}` (default tenant `urban-loft`)
 - Ordering-api and menu/catalog data available for the tenant
 
 ## Test File

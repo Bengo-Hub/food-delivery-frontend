@@ -10,7 +10,7 @@ Validates that tenant admin and customer roles see the correct dashboard and sid
 
 ## Preconditions
 
-- Ordering-frontend deployed at `ordersapp.codevertexitsolutions.com`
+- Ordering-frontend deployed at `ordering.codevertexafrica.com`
 - Seeded users: tenant admin `admin@theurbanloftcafe.com`, customer (or demo user with member role)
 - Auth-api and subscription-api reachable
 
