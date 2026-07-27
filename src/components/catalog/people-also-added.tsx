@@ -1,16 +1,18 @@
 "use client";
 
 import { Plus } from "lucide-react";
-import Image from "next/image";
 
+import { ImageWithFallback } from "@/components/ui/image-with-fallback";
 import type { MenuItem } from "@/types/catalog";
 
 interface PeopleAlsoAddedProps {
   items: MenuItem[];
   onAddToCart: (item: MenuItem) => void;
+  /** Outlet/tenant use_case — drives the SVG placeholder when an item has no image. */
+  useCase?: string;
 }
 
-export function PeopleAlsoAdded({ items, onAddToCart }: PeopleAlsoAddedProps) {
+export function PeopleAlsoAdded({ items, onAddToCart, useCase }: PeopleAlsoAddedProps) {
   if (!items.length) return null;
 
   return (
@@ -24,19 +26,15 @@ export function PeopleAlsoAdded({ items, onAddToCart }: PeopleAlsoAddedProps) {
           >
             {/* Thumbnail */}
             <div className="relative aspect-square bg-muted">
-              {item.image ? (
-                <Image
-                  src={item.image}
-                  alt={item.name}
-                  fill
-                  className="object-cover"
-                  sizes="144px"
-                />
-              ) : (
-                <div className="flex size-full items-center justify-center">
-                  <span className="text-2xl opacity-30">🍽️</span>
-                </div>
-              )}
+              <ImageWithFallback
+                src={item.image}
+                alt={item.name}
+                useCase={useCase}
+                fill
+                className="object-cover"
+                sizes="144px"
+                iconClassName="size-7"
+              />
             </div>
 
             {/* Info */}

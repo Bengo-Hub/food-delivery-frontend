@@ -12,18 +12,18 @@ import {
   SproutIcon,
   WheatIcon
 } from "lucide-react";
-import Image from "next/image";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 
+import { ImageWithFallback } from "@/components/ui/image-with-fallback";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useCategories, useCatalogItems, useOutlets, useToggleFavorite } from "@/hooks/use-catalog";
 import { useOrderingConfig } from "@/hooks/use-ordering-config";
 import type { OrderingConfig } from "@/lib/use-case-config";
 import { orgRoute } from "@/lib/routes";
-import { cn, getMediaUrl } from "@/lib/utils";
+import { cn } from "@/lib/utils";
 import { useOrgSlug } from "@/providers/org-slug-provider";
 import { useCartStore } from "@/store/cart";
 import type { DietaryTag } from "@/types/catalog";
@@ -80,21 +80,16 @@ function DiscoveryMenuItem({
     >
       {/* Image - Responsive height */}
       <div className="relative h-44 w-full overflow-hidden bg-muted sm:h-52 md:h-60">
-        {item.image ? (
-          <Image
-            src={getMediaUrl(item.image)}
-            alt={item.name}
-            fill
-            className="object-cover transition-transform duration-300 hover:scale-105"
-            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-            loading={index < 4 ? "eager" : "lazy"}
-            priority={index < 2}
-          />
-        ) : (
-          <div className="flex size-full items-center justify-center bg-gradient-to-br from-muted to-muted/50">
-            <span className="text-4xl opacity-30">{cfg.placeholderGlyph}</span>
-          </div>
-        )}
+        <ImageWithFallback
+          src={item.image}
+          alt={item.name}
+          useCase={cfg.profile}
+          fill
+          className="object-cover transition-transform duration-300 hover:scale-105"
+          sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+          loading={index < 4 ? "eager" : "lazy"}
+          priority={index < 2}
+        />
 
         {/* Whitelist Toggle */}
         <button
@@ -429,18 +424,16 @@ export function MenuDiscovery({
                   : "border-border text-muted-foreground hover:border-brand-emphasis hover:text-brand-emphasis",
               )}
             >
-              {cat.image ? (
-                <div className="relative size-5 overflow-hidden rounded-full border border-current/10">
-                  <Image
-                    src={getMediaUrl(cat.image)}
-                    alt={cat.name}
-                    fill
-                    className="object-cover"
-                  />
-                </div>
-              ) : (
-                <ChefHatIcon className="size-4 opacity-40" />
-              )}
+              <div className="relative size-5 shrink-0 overflow-hidden rounded-full border border-current/10">
+                <ImageWithFallback
+                  src={cat.image}
+                  alt={cat.name}
+                  useCase={cfg.profile}
+                  fill
+                  className="object-cover"
+                  iconClassName="size-3"
+                />
+              </div>
               <span className="font-bold">{cat.name}</span>
             </Button>
           ))}

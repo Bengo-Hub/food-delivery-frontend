@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import { SiteShell } from "@/components/layout/site-shell";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { UseCaseIllustration } from "@/components/ui/use-case-icon";
 import { Textarea } from "@/components/ui/textarea";
 import { useFeeBreakdown } from "@/hooks/use-cart-api";
 import { useOutlet } from "@/hooks/use-catalog";
@@ -55,7 +56,7 @@ export default function CartPage() {
     return (
       <SiteShell>
         <div className="container mx-auto flex max-w-2xl flex-col items-center gap-6 px-4 py-20 text-center">
-          <span className="text-6xl" aria-hidden>{cfg.placeholderGlyph}</span>
+          <UseCaseIllustration useCase={cfg.profile} className="size-16" />
           <h1 className="text-2xl font-bold">Your cart is empty</h1>
           <p className="text-muted-foreground">Add {copy.itemLabelPlural.toLowerCase()} to get started.</p>
           <Button asChild>

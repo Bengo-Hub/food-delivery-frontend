@@ -28,6 +28,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { brand } from "@/config/brand";
 import { useOutlets } from "@/hooks/use-catalog";
+import { useOrderingConfig } from "@/hooks/use-ordering-config";
 import { userHasRole } from "@/lib/auth/permissions";
 import { getShortLocationName } from "@/lib/geocoding";
 import { orgRoute } from "@/lib/routes";
@@ -75,6 +76,11 @@ export function SiteHeader({ onMenuClick }: SiteHeaderProps) {
   const orgSlug = useOrgSlug();
   const router = useRouter();
   const { getServiceTitle, tenant } = useTenantBranding();
+  // Food-specific quick-category shortcuts (pizza/sushi/grocery/alcohol/etc.)
+  // only make sense for restaurant/QSR tenants — a hardware/retail/pharmacy
+  // storefront must not surface them in its search dropdown.
+  const { profile } = useOrderingConfig();
+  const isFoodVertical = profile === "hospitality" || profile === "quick_service";
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [cartOpen, setCartOpen] = useState(false);
   const [locationDialogOpen, setLocationDialogOpen] = useState(false);
@@ -217,39 +223,53 @@ export function SiteHeader({ onMenuClick }: SiteHeaderProps) {
                   >
                     Outlets
                   </TabsTrigger>
-                  <TabsTrigger
-                    value="grocery"
-                    className="rounded-none border-b-2 border-transparent px-4 py-3 text-sm data-[state=active]:border-foreground data-[state=active]:shadow-none"
-                  >
-                    Grocery
-                  </TabsTrigger>
-                  <TabsTrigger
-                    value="alcohol"
-                    className="rounded-none border-b-2 border-transparent px-4 py-3 text-sm data-[state=active]:border-foreground data-[state=active]:shadow-none"
-                  >
-                    Alcohol
-                  </TabsTrigger>
+                  {isFoodVertical && (
+                    <TabsTrigger
+                      value="grocery"
+                      className="rounded-none border-b-2 border-transparent px-4 py-3 text-sm data-[state=active]:border-foreground data-[state=active]:shadow-none"
+                    >
+                      Grocery
+                    </TabsTrigger>
+                  )}
+                  {isFoodVertical && (
+                    <TabsTrigger
+                      value="alcohol"
+                      className="rounded-none border-b-2 border-transparent px-4 py-3 text-sm data-[state=active]:border-foreground data-[state=active]:shadow-none"
+                    >
+                      Alcohol
+                    </TabsTrigger>
+                  )}
                 </TabsList>
 
-                {/* All Tab - Top Categories */}
-                <TabsContent value="all" className="m-0 p-4">
-                  <p className="mb-3 text-sm font-medium text-muted-foreground">Top categories</p>
-                  <div className="space-y-0">
-                    {searchCategories.map((category) => (
-                      <button
-                        key={category.id}
-                        onClick={() => {
-                          router.push(orgRoute(orgSlug, `/catalog?category=${category.id}`));
-                          setSearchOpen(false);
-                        }}
-                        className="flex w-full items-center gap-4 py-3 text-sm transition hover:bg-muted/50"
-                      >
-                        <span className="text-2xl">{category.emoji}</span>
-                        <span className="font-medium text-foreground">{category.label}</span>
-                      </button>
-                    ))}
-                  </div>
-                </TabsContent>
+                {/* All Tab - Top Categories (food verticals only — a hardware/retail/
+                    pharmacy tenant has no use for pizza/sushi/chicken shortcuts) */}
+                {isFoodVertical && (
+                  <TabsContent value="all" className="m-0 p-4">
+                    <p className="mb-3 text-sm font-medium text-muted-foreground">Top categories</p>
+                    <div className="space-y-0">
+                      {searchCategories.map((category) => (
+                        <button
+                          key={category.id}
+                          onClick={() => {
+                            router.push(orgRoute(orgSlug, `/catalog?category=${category.id}`));
+                            setSearchOpen(false);
+                          }}
+                          className="flex w-full items-center gap-4 py-3 text-sm transition hover:bg-muted/50"
+                        >
+                          <span className="text-2xl">{category.emoji}</span>
+                          <span className="font-medium text-foreground">{category.label}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </TabsContent>
+                )}
+                {!isFoodVertical && (
+                  <TabsContent value="all" className="m-0 p-4">
+                    <p className="py-4 text-center text-sm text-muted-foreground">
+                      Start typing to search the catalog
+                    </p>
+                  </TabsContent>
+                )}
 
                 {/* Outlets Tab */}
                 <TabsContent value="outlets" className="m-0 p-4">
@@ -282,7 +302,8 @@ export function SiteHeader({ onMenuClick }: SiteHeaderProps) {
                   )}
                 </TabsContent>
 
-                {/* Grocery Tab */}
+                {/* Grocery Tab (food verticals only) */}
+                {isFoodVertical && (
                 <TabsContent value="grocery" className="m-0 p-4">
                   <p className="mb-3 text-sm font-medium text-muted-foreground">
                     Grocery & Essentials
@@ -311,8 +332,10 @@ export function SiteHeader({ onMenuClick }: SiteHeaderProps) {
                     ))}
                   </div>
                 </TabsContent>
+                )}
 
-                {/* Alcohol Tab */}
+                {/* Alcohol Tab (food verticals only) */}
+                {isFoodVertical && (
                 <TabsContent value="alcohol" className="m-0 p-4">
                   <p className="mb-3 text-sm font-medium text-muted-foreground">Drinks & Alcohol</p>
                   <div className="space-y-0">
@@ -339,6 +362,7 @@ export function SiteHeader({ onMenuClick }: SiteHeaderProps) {
                     ))}
                   </div>
                 </TabsContent>
+                )}
               </Tabs>
             </PopoverContent>
           </Popover>

@@ -4,14 +4,17 @@ import { ChevronLeft, ChevronRight, X } from "lucide-react";
 import Image from "next/image";
 import { useCallback, useRef, useState } from "react";
 
+import { UseCaseIllustration } from "@/components/ui/use-case-icon";
 import { cn, getMediaUrl } from "@/lib/utils";
 
 interface ItemImageGalleryProps {
   images: string[];
   alt: string;
+  /** Outlet/tenant use_case — drives the SVG placeholder when there are no images. */
+  useCase?: string;
 }
 
-export function ItemImageGallery({ images, alt }: ItemImageGalleryProps) {
+export function ItemImageGallery({ images, alt, useCase }: ItemImageGalleryProps) {
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -39,7 +42,7 @@ export function ItemImageGallery({ images, alt }: ItemImageGalleryProps) {
     return (
       <div className="relative aspect-square overflow-hidden rounded-2xl bg-muted">
         <div className="flex size-full items-center justify-center">
-          <span className="text-6xl opacity-30">🍽️</span>
+          <UseCaseIllustration useCase={useCase} className="size-16" />
         </div>
       </div>
     );
@@ -54,7 +57,7 @@ export function ItemImageGallery({ images, alt }: ItemImageGalleryProps) {
           onClick={() => openLightbox(0)}
         >
           <Image
-            src={getMediaUrl(images[0])}
+            src={getMediaUrl(images[0])!}
             alt={alt}
             fill
             className="object-cover"
@@ -85,7 +88,7 @@ export function ItemImageGallery({ images, alt }: ItemImageGalleryProps) {
           onClick={() => openLightbox(0)}
         >
           <Image
-            src={getMediaUrl(images[0])}
+            src={getMediaUrl(images[0])!}
             alt={alt}
             fill
             className="object-cover"
@@ -112,7 +115,7 @@ export function ItemImageGallery({ images, alt }: ItemImageGalleryProps) {
                 i === 0 ? "ring-primary" : "ring-transparent hover:ring-primary/50",
               )}
             >
-              <Image src={getMediaUrl(src)} alt={`${alt} ${i + 1}`} fill className="object-cover" sizes="64px" />
+              <Image src={getMediaUrl(src)!} alt={`${alt} ${i + 1}`} fill className="object-cover" sizes="64px" />
             </button>
           ))}
         </div>
@@ -181,7 +184,7 @@ function Lightbox({
         onClick={(e) => e.stopPropagation()}
       >
         <Image
-          src={getMediaUrl(images[index])}
+          src={getMediaUrl(images[index])!}
           alt={`${alt} ${index + 1}`}
           fill
           className="object-contain"

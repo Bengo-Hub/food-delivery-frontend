@@ -37,14 +37,14 @@ export async function GET() {
     { src: "/icons/icon-144x144.png", sizes: "144x144", type: "image/png", purpose: "any" as const },
     { src: "/icons/icon-152x152.png", sizes: "152x152", type: "image/png", purpose: "any" as const },
     {
-      src: logoUrl || "/images/logo/logo.jpg",
+      src: logoUrl || "/icons/icon-192x192.png",
       sizes: "192x192",
       type: "image/png",
       purpose: "any maskable" as const,
     },
     { src: "/icons/icon-384x384.png", sizes: "384x384", type: "image/png", purpose: "any" as const },
     {
-      src: logoUrl || "/images/logo/logo.jpg",
+      src: logoUrl || "/icons/icon-512x512.png",
       sizes: "512x512",
       type: "image/png",
       purpose: "any maskable" as const,

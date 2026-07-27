@@ -4,6 +4,7 @@ import { Minus, Plus, ShoppingBag, Trash2, Users, X } from "lucide-react";
 import Link from "next/link";
 
 import { Button } from "@/components/ui/button";
+import { ImageWithFallback } from "@/components/ui/image-with-fallback";
 import { useFeeBreakdown } from "@/hooks/use-cart-api";
 import { useOrderingConfig } from "@/hooks/use-ordering-config";
 import { useSubscription } from "@/hooks/use-subscription";
@@ -21,7 +22,7 @@ function formatCurrency(amount: number) {
   return `KES ${amount.toLocaleString("en-KE", { minimumFractionDigits: 0 })}`;
 }
 
-function CartItemRow({ item, placeholderGlyph }: { item: CartItem; placeholderGlyph: string }) {
+function CartItemRow({ item, useCase }: { item: CartItem; useCase?: string }) {
   const updateQuantity = useCartStore((state) => state.updateQuantity);
   const removeItem = useCartStore((state) => state.removeItem);
 
@@ -39,9 +40,17 @@ function CartItemRow({ item, placeholderGlyph }: { item: CartItem; placeholderGl
 
   return (
     <div className="flex items-start gap-3 border-b border-border py-4 last:border-b-0">
-      {/* Item image placeholder — glyph reflects the outlet vertical (🍽️ / 💊 / 📦 / 🎟️ …) */}
-      <div className="flex size-16 shrink-0 items-center justify-center rounded-lg bg-muted text-2xl">
-        <span aria-hidden>{placeholderGlyph}</span>
+      {/* Item image — falls back to a use-case-aware SVG icon when the line has no image */}
+      <div className="relative size-16 shrink-0 overflow-hidden rounded-lg bg-muted">
+        <ImageWithFallback
+          src={item.image}
+          alt={item.name}
+          useCase={useCase}
+          fill
+          className="object-cover"
+          sizes="64px"
+          iconClassName="size-7"
+        />
       </div>
 
       {/* Item details */}
@@ -211,7 +220,7 @@ export function CartDrawer({ open, onOpenChange }: CartDrawerProps) {
             {/* Items list - scrollable, takes remaining space */}
             <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4">
               {items.map((item) => (
-                <CartItemRow key={item.id} item={item} placeholderGlyph={cfg.placeholderGlyph} />
+                <CartItemRow key={item.id} item={item} useCase={cfg.profile} />
               ))}
 
               {/* Clear cart button - inside scroll area to save space on mobile */}

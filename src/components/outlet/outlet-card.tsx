@@ -1,12 +1,12 @@
 "use client";
 
 import { Heart, Star } from "lucide-react";
-import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
 
 import { Badge } from "@/components/ui/badge";
-import { cn, getMediaUrl } from "@/lib/utils";
+import { ImageWithFallback } from "@/components/ui/image-with-fallback";
+import { cn } from "@/lib/utils";
 import { useOrgSlug } from "@/providers/org-slug-provider";
 import { useIsPickupMode } from "@/store/dining-mode";
 
@@ -95,35 +95,18 @@ export function OutletCard({
     >
       {/* Image Section */}
       <div className="relative aspect-[16/10] overflow-hidden bg-muted">
-        {image ? (
-          <Image
-            src={getMediaUrl(image)}
-            alt={name}
-            fill
-            className={cn(
-              "object-cover transition-transform duration-300 group-hover:scale-105",
-              !isOpen && "grayscale",
-            )}
-            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-          />
-        ) : (
-          <div className={cn(
-            "flex size-full items-center justify-center bg-gradient-to-br from-muted to-muted/50",
+        <ImageWithFallback
+          src={image}
+          alt={name}
+          useCase={businessType}
+          fill
+          className={cn(
+            "object-cover transition-transform duration-300 group-hover:scale-105",
             !isOpen && "grayscale",
-          )}>
-            <span className="text-4xl opacity-30">
-              {businessType === "pharmacy"
-                ? "\uD83D\uDC8A"
-                : businessType === "flowers"
-                  ? "\uD83D\uDC90"
-                  : businessType === "retail"
-                    ? "\uD83D\uDECD\uFE0F"
-                    : businessType === "grocery"
-                      ? "\uD83D\uDED2"
-                      : "\uD83C\uDF7D\uFE0F"}
-            </span>
-          </div>
-        )}
+          )}
+          sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+          iconClassName="size-10"
+        />
 
         {/* Closed overlay */}
         {!isOpen && (

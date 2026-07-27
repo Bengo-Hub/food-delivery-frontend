@@ -1,14 +1,14 @@
 "use client";
 
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import Image from "next/image";
 import Link from "next/link";
 import { useCallback, useRef, useState } from "react";
 
 import { OutletCard, OutletGrid, type OutletCardProps } from "@/components/outlet/outlet-card";
 import { Button } from "@/components/ui/button";
+import { ImageWithFallback } from "@/components/ui/image-with-fallback";
 import { Skeleton } from "@/components/ui/skeleton";
-import { cn, getMediaUrl } from "@/lib/utils";
+import { cn } from "@/lib/utils";
 
 // =============================================================================
 // TYPES
@@ -254,25 +254,15 @@ function LogosVariant({ outlets }: { outlets: OutletCardProps[] }) {
           className="group flex shrink-0 flex-col items-center gap-2"
         >
           <div className="relative size-16 overflow-hidden rounded-full border-2 border-border bg-muted transition-shadow group-hover:shadow-md sm:size-20">
-            {o.image ? (
-              <Image
-                src={getMediaUrl(o.image) ?? ""}
-                alt={o.name}
-                fill
-                className="object-cover"
-                sizes="80px"
-              />
-            ) : (
-              <div className="flex size-full items-center justify-center bg-gradient-to-br from-muted to-muted/50">
-                <span className="text-2xl opacity-40">
-                  {o.businessType === "pharmacy"
-                    ? "\uD83D\uDC8A"
-                    : o.businessType === "grocery"
-                      ? "\uD83D\uDED2"
-                      : "\uD83C\uDF7D\uFE0F"}
-                </span>
-              </div>
-            )}
+            <ImageWithFallback
+              src={o.image}
+              alt={o.name}
+              useCase={o.businessType}
+              fill
+              className="object-cover"
+              sizes="80px"
+              iconClassName="size-7"
+            />
           </div>
           <span className="max-w-[72px] truncate text-center text-[11px] font-medium text-foreground sm:max-w-[84px] sm:text-xs">
             {o.name}

@@ -3,12 +3,13 @@
 import dynamic from "next/dynamic";
 import { useCallback, useState } from "react";
 
-import { CategoryCarousel, defaultCategories } from "@/components/category/category-carousel";
+import { CategoryCarousel } from "@/components/category/category-carousel";
 import { FilterBar, type ActiveFilters, defaultFilters } from "@/components/layout/filter-bar";
 import { OutletCard } from "@/components/outlet/outlet-card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useOutlets } from "@/hooks/use-catalog";
 import { useCategories } from "@/hooks/use-categories";
+import { useOrderingConfig } from "@/hooks/use-ordering-config";
 import { useTenantConfig } from "@/hooks/use-tenant-config";
 import { cn } from "@/lib/utils";
 import { useOrgSlug } from "@/providers/org-slug-provider";
@@ -30,8 +31,12 @@ export function PickupLayout() {
   const [mobileShowMap, setMobileShowMap] = useState(false);
   const deliveryLocation = useDiningModeStore((s) => s.deliveryLocation);
   const { copy } = useTenantConfig();
+  const { profile } = useOrderingConfig();
   const { data: apiCategories } = useCategories();
-  const categories = apiCategories?.length ? apiCategories : defaultCategories;
+  // No hardcoded food-emoji fallback — an empty list renders as an empty (not
+  // fake-food) carousel; CategoryCarousel supplies its own use-case-aware SVG
+  // placeholder for categories without an icon.
+  const categories = apiCategories ?? [];
 
   // Fetch outlets with pickup filter
   const { data: outletsData, isLoading } = useOutlets(orgSlug, {
@@ -111,6 +116,7 @@ export function PickupLayout() {
             activeCategory={activeCategory}
             onCategoryChange={setActiveCategory}
             variant="icons"
+            useCase={profile}
           />
         </div>
 
@@ -145,6 +151,7 @@ export function PickupLayout() {
                     id={outlet.id}
                     name={outlet.name}
                     {...(outlet.image != null ? { image: outlet.image } : {})}
+                    businessType={outlet.businessType}
                     rating={outlet.rating}
                     reviewCount={outlet.reviewCount}
                     deliveryTime={outlet.deliveryTime}

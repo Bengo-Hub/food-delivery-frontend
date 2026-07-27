@@ -1,6 +1,7 @@
 'use client';
 
 import { fetchTenantBySlug, type TenantBrand } from '@/lib/api/tenant';
+import { brand } from '@/config/brand';
 import { useQuery } from '@tanstack/react-query';
 import { createContext, ReactNode, useContext, useMemo } from 'react';
 import { useOrgSlug } from './org-slug-provider';
@@ -15,15 +16,23 @@ interface TenantBrandingContextType {
 
 const TenantBrandingContext = createContext<TenantBrandingContextType | undefined>(undefined);
 
+/**
+ * Neutral placeholder used ONLY while a tenant hasn't resolved yet (or failed
+ * to resolve). This must never be a real tenant's identity — it previously
+ * hardcoded Urban Loft's name/logo/colors, so every OTHER tenant's storefront
+ * flashed "Urban-Loft OrderApp" + Urban Loft's logo on first paint. `logoUrl`
+ * is intentionally `null` (no bundled photo) — consumers must render a
+ * generic mark or nothing while it's null, never assume a string.
+ */
 const DEFAULT_BRAND: TenantBrand = {
-  id: 'urban-loft',
-  name: 'Urban Loft Cafe',
-  slug: 'urban-loft',
-  logoUrl: '/images/logo/logo.jpg',
-  primaryColor: '#5B1C4D',
-  secondaryColor: '#ea8022',
-  orgName: 'Urban-Loft',
-  useCase: 'hospitality',
+  id: '',
+  name: '',
+  slug: '',
+  logoUrl: null,
+  primaryColor: brand.palette.primary,
+  secondaryColor: brand.palette.emphasis,
+  orgName: '',
+  useCase: 'general',
 };
 
 export function TenantBrandingProvider({ children }: { children: ReactNode }) {
@@ -48,11 +57,15 @@ export function TenantBrandingProvider({ children }: { children: ReactNode }) {
     if (typeof window !== 'undefined') {
       const primary = effectiveBrand?.primaryColor || DEFAULT_BRAND.primaryColor!;
       const secondary = effectiveBrand?.secondaryColor || DEFAULT_BRAND.secondaryColor!;
-      const logo = effectiveBrand?.logoUrl || DEFAULT_BRAND.logoUrl!;
-
       document.documentElement.style.setProperty('--tenant-primary', primary);
       document.documentElement.style.setProperty('--tenant-secondary', secondary);
-      document.documentElement.style.setProperty('--tenant-logo-url', `url(${logo})`);
+      // Only set a logo CSS var when a real one resolved — never fall back to
+      // a bundled tenant photo (see DEFAULT_BRAND comment above).
+      if (effectiveBrand?.logoUrl) {
+        document.documentElement.style.setProperty('--tenant-logo-url', `url(${effectiveBrand.logoUrl})`);
+      } else {
+        document.documentElement.style.removeProperty('--tenant-logo-url');
+      }
     }
   }, [effectiveBrand]);
 

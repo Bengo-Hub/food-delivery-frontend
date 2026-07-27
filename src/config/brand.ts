@@ -59,7 +59,10 @@ const supportPhone = process.env.NEXT_PUBLIC_BRAND_SUPPORT_PHONE?.trim() || "+25
 const headquarters =
   process.env.NEXT_PUBLIC_BRAND_HQ?.trim() ||
   "Oginga Road, Pioneer House, Second Floor, Kisumu, Kenya";
-const logo = process.env.NEXT_PUBLIC_BRAND_LOGO_URL?.trim() || "/images/logo/logo.jpg";
+// Generic platform mark (fork+spoon glyph) — NOT a specific tenant's logo. A
+// real tenant's own logo always comes from its branding record (TenantBrand.logoUrl);
+// this is only the last-resort default before any tenant has resolved.
+const logo = process.env.NEXT_PUBLIC_BRAND_LOGO_URL?.trim() || "/icons/icon-512x512.png";
 
 // Brand defaults are env-configurable per tenant. Backend-managed settings planned for post-MVP.
 export const brand = {

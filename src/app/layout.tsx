@@ -26,8 +26,8 @@ export const metadata: Metadata = {
   description: brand.description,
   applicationName: brand.metadata.applicationName,
   icons: {
-    icon: "/images/logo/logo.jpg",
-    apple: "/images/logo/logo.jpg",
+    icon: "/icons/icon-192x192.png",
+    apple: "/icons/icon-192x192.png",
   },
   authors: [{ name: brand.name }],
   manifest: "/api/manifest",

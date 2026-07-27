@@ -2,11 +2,11 @@
 
 import React, { useState } from "react";
 import { Heart, Plus } from "lucide-react";
-import Image from "next/image";
 import Link from "next/link";
 
 import { Button } from "@/components/ui/button";
-import { cn, getMediaUrl } from "@/lib/utils";
+import { ImageWithFallback } from "@/components/ui/image-with-fallback";
+import { cn } from "@/lib/utils";
 import { useOrgSlug } from "@/providers/org-slug-provider";
 
 export interface FeaturedItemProps {
@@ -19,6 +19,8 @@ export interface FeaturedItemProps {
   outletId: string;
   outletName: string;
   category?: string;
+  /** Outlet/tenant use_case — drives the SVG placeholder when there's no image. */
+  useCase?: string;
   discountPercent?: number;
   originalPrice?: number;
   href?: string;
@@ -36,6 +38,7 @@ export function FeaturedItemCard({
   outletId,
   outletName,
   category: _category,
+  useCase,
   discountPercent,
   originalPrice,
   href,
@@ -69,19 +72,15 @@ export function FeaturedItemCard({
     >
       {/* Image */}
       <div className="relative h-44 w-full overflow-hidden bg-muted sm:h-60">
-        {image ? (
-          <Image
-            src={getMediaUrl(image)}
-            alt={name}
-            fill
-            className="object-cover transition-transform duration-300 group-hover:scale-105"
-            sizes="240px"
-          />
-        ) : (
-          <div className="flex size-full items-center justify-center bg-gradient-to-br from-muted to-muted/50">
-            <span className="text-4xl opacity-30">🍽️</span>
-          </div>
-        )}
+        <ImageWithFallback
+          src={image}
+          alt={name}
+          useCase={useCase}
+          fill
+          className="object-cover transition-transform duration-300 group-hover:scale-105"
+          sizes="240px"
+          iconClassName="size-10"
+        />
 
         {/* Discount Badge */}
         {discountPercent && discountPercent > 0 && (

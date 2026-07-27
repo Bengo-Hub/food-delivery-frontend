@@ -43,14 +43,17 @@ export async function GET(
   const bgColor = DEFAULT_BG;
   const logoUrl = tenant?.logo_url ?? (tenant?.metadata?.logo_url as string | undefined);
 
+  // Generic platform icons when the tenant has no logo of its own yet — never
+  // a specific tenant's photo (previously defaulted to Urban Loft's logo.jpg,
+  // which leaked onto every other tenant's installed PWA icon).
   const icons = logoUrl
     ? [
         { src: logoUrl, sizes: '192x192', type: 'image/png', purpose: 'any maskable' },
         { src: logoUrl, sizes: '512x512', type: 'image/png', purpose: 'any maskable' },
       ]
     : [
-        { src: '/images/logo/logo.jpg', sizes: '192x192', type: 'image/jpeg', purpose: 'any maskable' },
-        { src: '/images/logo/logo.jpg', sizes: '512x512', type: 'image/jpeg', purpose: 'any maskable' },
+        { src: '/icons/icon-192x192.png', sizes: '192x192', type: 'image/png', purpose: 'any maskable' },
+        { src: '/icons/icon-512x512.png', sizes: '512x512', type: 'image/png', purpose: 'any maskable' },
       ];
 
   const manifest = {
@@ -74,14 +77,14 @@ export async function GET(
         short_name: 'Orders',
         description: 'View your recent orders',
         url: `/${orgSlug}/orders`,
-        icons: [{ src: logoUrl ?? '/images/logo/logo.jpg', sizes: '96x96' }],
+        icons: [{ src: logoUrl ?? '/icons/icon-96x96.png', sizes: '96x96' }],
       },
       {
         name: 'Track Order',
         short_name: 'Track',
         description: 'Track your active order',
         url: `/${orgSlug}/track`,
-        icons: [{ src: logoUrl ?? '/images/logo/logo.jpg', sizes: '96x96' }],
+        icons: [{ src: logoUrl ?? '/icons/icon-96x96.png', sizes: '96x96' }],
       },
     ],
   };

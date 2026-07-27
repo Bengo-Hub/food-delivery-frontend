@@ -12,7 +12,6 @@ import {
 } from "@/components/catalog/featured-item-card";
 import {
   CategoryCarousel,
-  defaultCategories,
   type Category,
 } from "@/components/category/category-carousel";
 import { PickupLayout } from "@/components/pickup/pickup-layout";
@@ -23,7 +22,9 @@ import { OutletSection } from "@/components/outlet/outlet-section";
 import { PromoBannerCarousel } from "@/components/promo/promo-banner-carousel";
 import { Button } from "@/components/ui/button";
 import { useCategories, useFeaturedItems, useInfiniteOutlets } from "@/hooks/use-catalog";
+import { useOrderingConfig } from "@/hooks/use-ordering-config";
 import { useOutletSections } from "@/hooks/use-outlet-sections";
+import { usePromoBanners } from "@/hooks/use-promo-banners";
 import { orgRoute } from "@/lib/routes";
 import { toast } from "@/lib/toast";
 import { useOrgSlug } from "@/providers/org-slug-provider";
@@ -139,22 +140,23 @@ export default function HomePage() {
   // ------- Featured items (menu items, not outlets) -------
   const firstOutletId = allStores.data?.data?.[0]?.id ?? "";
   const firstOutletName = allStores.data?.data?.[0]?.name ?? "";
-  const { data: categoriesData } = useCategories(orgSlug, firstOutletId || undefined);
+  // Adapt the homepage to the tenant/outlet's vertical — a hardware/electronics
+  // shop must not render food-oriented copy, categories, or placeholder icons.
+  const { profile, useCase: effectiveUseCase } = useOrderingConfig();
+  const { data: categoriesData } = useCategories(orgSlug, firstOutletId || undefined, effectiveUseCase);
   const { data: featuredData } = useFeaturedItems(orgSlug, firstOutletId || undefined, 10);
+  const { data: promoBanners } = usePromoBanners(effectiveUseCase);
 
   // ------- Derived data -------
-  const categories: Category[] =
-    categoriesData?.length
-      ? categoriesData.map((c) => {
-          const match = defaultCategories.find((dc) => dc.id === c.id);
-          return {
-            id: c.id,
-            name: c.name,
-            ...(match?.emoji ? { emoji: match.emoji } : {}),
-            ...(c.image ? { imageUrl: c.image } : {}),
-          };
-        })
-      : defaultCategories;
+  // No hardcoded food-emoji fallback here — an empty/loading category list
+  // renders as an empty (not fake-food) carousel; real icons come from the
+  // backend (inventory-api category.icon) via CategoryCarousel's own
+  // use-case-aware SVG placeholder when a category has no icon yet.
+  const categories: Category[] = (categoriesData ?? []).map((c) => ({
+    id: c.id,
+    name: c.name,
+    ...(c.image ? { imageUrl: c.image } : {}),
+  }));
 
   const mapOutlets = useCallback(
     (data: typeof featured.data) =>
@@ -193,6 +195,7 @@ export default function HomePage() {
             outletId: item.outletId || firstOutletId,
             outletName: item.outletName || firstOutletName,
             category: item.category,
+            useCase: profile,
             href: orgRoute(orgSlug, `/catalog/${item.id}`),
             ...(item.discountPercent != null && { discountPercent: item.discountPercent }),
             ...(item.originalPrice != null && { originalPrice: item.originalPrice }),
@@ -258,6 +261,7 @@ export default function HomePage() {
               }
             }}
             variant="icons"
+            useCase={profile}
           />
         </div>
       </section>
@@ -269,12 +273,14 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Promo Banners */}
-      <section className="bg-background py-4 sm:py-6">
-        <div className="mx-auto w-full max-w-6xl px-3 sm:px-4 lg:px-8">
-          <PromoBannerCarousel banners={[]} />
-        </div>
-      </section>
+      {/* Promo Banners — active pos-api-sourced promotions flagged for the storefront */}
+      {promoBanners != null && promoBanners.length > 0 && (
+        <section className="bg-background py-4 sm:py-6">
+          <div className="mx-auto w-full max-w-6xl px-3 sm:px-4 lg:px-8">
+            <PromoBannerCarousel banners={promoBanners} />
+          </div>
+        </section>
+      )}
 
       {/* Featured Items (menu items carousel) */}
       {featuredItems.length > 0 && (

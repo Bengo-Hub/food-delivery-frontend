@@ -31,11 +31,12 @@ import { VariantSelector, formatVariantAttributes } from "@/components/catalog/v
 import { SiteShell } from "@/components/layout/site-shell";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { ImageWithFallback } from "@/components/ui/image-with-fallback";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useCatalogItem, useCatalogItems } from "@/hooks/use-catalog";
 import { useOrderingConfig } from "@/hooks/use-ordering-config";
 import { orgRoute } from "@/lib/routes";
-import { cn, getMediaUrl } from "@/lib/utils";
+import { cn } from "@/lib/utils";
 import { useOrgSlug } from "@/providers/org-slug-provider";
 import { useCartStore } from "@/store/cart";
 import type { DietaryTag } from "@/types/catalog";
@@ -348,16 +349,18 @@ export default function CatalogItemPage() {
           <div className="lg:col-span-3">
             <div className="relative overflow-hidden rounded-2xl bg-muted">
               {galleryImages.length > 1 ? (
-                <ItemImageGallery images={galleryImages} alt={item.name} />
+                <ItemImageGallery images={galleryImages} alt={item.name} useCase={cfg.profile} />
               ) : galleryImages.length === 1 ? (
                 <div className="relative aspect-[4/3]">
-                  <Image
-                    src={getMediaUrl(galleryImages[0])}
+                  <ImageWithFallback
+                    src={galleryImages[0]}
                     alt={item.name}
+                    useCase={cfg.profile}
                     fill
                     className="object-cover"
                     sizes="(max-width: 1024px) 100vw, 60vw"
                     priority
+                    iconClassName="size-16"
                   />
                 </div>
               ) : (
@@ -592,19 +595,15 @@ export default function CatalogItemPage() {
                   className="group overflow-hidden rounded-xl border border-border bg-card shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
                 >
                   <div className="relative aspect-square bg-muted">
-                    {related.image ? (
-                      <Image
-                        src={getMediaUrl(related.image)}
-                        alt={related.name}
-                        fill
-                        className="object-cover transition group-hover:scale-105"
-                        sizes="(max-width: 640px) 50vw, 25vw"
-                      />
-                    ) : (
-                      <div className="flex size-full items-center justify-center">
-                        <ShoppingCart className="size-8 text-muted-foreground/20" />
-                      </div>
-                    )}
+                    <ImageWithFallback
+                      src={related.image}
+                      alt={related.name}
+                      useCase={cfg.profile}
+                      fill
+                      className="object-cover transition group-hover:scale-105"
+                      sizes="(max-width: 640px) 50vw, 25vw"
+                      iconClassName="size-8"
+                    />
                   </div>
                   <div className="p-2.5">
                     <p className="truncate text-sm font-medium text-foreground">{related.name}</p>

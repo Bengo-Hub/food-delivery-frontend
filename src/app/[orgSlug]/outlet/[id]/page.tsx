@@ -1,7 +1,6 @@
 "use client";
 
 import { ArrowLeft, Clock, Heart, MapPin, Phone, Search, ShoppingCart, Star } from "lucide-react";
-import Image from "next/image";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
@@ -9,10 +8,12 @@ import { toast } from "sonner";
 
 import { SiteShell } from "@/components/layout/site-shell";
 import { Button } from "@/components/ui/button";
+import { ImageWithFallback } from "@/components/ui/image-with-fallback";
 import { Input } from "@/components/ui/input";
 import { useOutlet, useOutletMenu } from "@/hooks/use-catalog";
+import { useOrderingConfig } from "@/hooks/use-ordering-config";
 import { orgRoute } from "@/lib/routes";
-import { cn, getMediaUrl } from "@/lib/utils";
+import { cn } from "@/lib/utils";
 import { useOrgSlug } from "@/providers/org-slug-provider";
 import { useCartStore } from "@/store/cart";
 import type { DietaryTag, MenuItem } from "@/types/catalog";
@@ -26,7 +27,15 @@ const dietaryLabels: Record<DietaryTag, string> = {
   halal: "Halal",
 };
 
-function MenuItemCard({ item, onAddToCart }: { item: MenuItem; onAddToCart: () => void }) {
+function MenuItemCard({
+  item,
+  onAddToCart,
+  useCase,
+}: {
+  item: MenuItem;
+  onAddToCart: () => void;
+  useCase?: string;
+}) {
   const orgSlug = useOrgSlug();
   return (
     <div className="group flex gap-4 rounded-xl border border-border bg-card p-4 transition hover:shadow-md">
@@ -80,19 +89,15 @@ function MenuItemCard({ item, onAddToCart }: { item: MenuItem; onAddToCart: () =
         href={orgRoute(orgSlug, `/catalog/${item.id}`)}
         className="relative size-24 shrink-0 overflow-hidden rounded-lg bg-muted sm:size-28"
       >
-        {item.image ? (
-          <Image
-            src={getMediaUrl(item.image)}
-            alt={item.name}
-            fill
-            className="object-cover transition group-hover:scale-105"
-            sizes="112px"
-          />
-        ) : (
-          <div className="flex size-full items-center justify-center">
-            <span className="text-2xl opacity-30">🍽️</span>
-          </div>
-        )}
+        <ImageWithFallback
+          src={item.image}
+          alt={item.name}
+          useCase={useCase}
+          fill
+          className="object-cover transition group-hover:scale-105"
+          sizes="112px"
+          iconClassName="size-7"
+        />
         {item.discountPercent && item.discountPercent > 0 && (
           <div className="absolute left-1 top-1">
             <span className="rounded-full bg-red-500 px-1.5 py-0.5 text-[10px] font-semibold text-white">
@@ -114,6 +119,8 @@ export default function OutletPage() {
   const { data: outlet, isLoading: outletLoading, error: outletError } = useOutlet(orgSlug, outletId);
   const { data: menuData, isLoading: menuLoading } = useOutletMenu(orgSlug, outletId, undefined, 1, 100);
   const menuItems = menuData?.data ?? [];
+  // Adapt placeholders/copy to THIS outlet's vertical (not the tenant default).
+  const { config: cfg } = useOrderingConfig(outlet?.businessType);
 
   const [search, setSearch] = useState("");
   const [activeCategory, setActiveCategory] = useState("All");
@@ -190,20 +197,17 @@ export default function OutletPage() {
       <div className="relative">
         {/* Cover Image */}
         <div className="relative h-48 w-full bg-muted sm:h-64">
-          {outlet.image ? (
-            <Image
-              src={getMediaUrl(outlet.image)}
-              alt={outlet.name}
-              fill
-              className="object-cover"
-              sizes="100vw"
-              priority
-            />
-          ) : (
-            <div className="flex size-full items-center justify-center bg-gradient-to-br from-primary/20 to-primary/5">
-              <span className="text-6xl opacity-30">🏪</span>
-            </div>
-          )}
+          <ImageWithFallback
+            src={outlet.image}
+            alt={outlet.name}
+            useCase={outlet.businessType}
+            fill
+            className="object-cover"
+            sizes="100vw"
+            priority
+            fallbackClassName="bg-gradient-to-br from-primary/20 to-primary/5"
+            iconClassName="size-16"
+          />
           <div className="absolute inset-0 bg-gradient-to-t from-background/80 to-transparent" />
 
           {/* Back Button */}
@@ -373,6 +377,7 @@ export default function OutletPage() {
                     key={item.id}
                     item={item}
                     onAddToCart={() => handleAddToCart(item)}
+                    useCase={cfg.profile}
                   />
                 ))}
               </div>

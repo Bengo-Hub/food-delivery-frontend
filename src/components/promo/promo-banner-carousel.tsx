@@ -1,23 +1,25 @@
 "use client";
 
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import Image from "next/image";
 import Link from "next/link";
 import { useCallback, useRef, useState } from "react";
 
 import { Button } from "@/components/ui/button";
+import { ImageWithFallback } from "@/components/ui/image-with-fallback";
 import { cn } from "@/lib/utils";
 
 export interface PromoBanner {
   id: string;
   title: string;
   subtitle: string;
-  imageUrl: string;
+  imageUrl?: string;
   ctaText: string;
   ctaLink: string;
   priceBadge?: string;
   backgroundColor?: string;
   textColor?: string;
+  /** Outlet/tenant use_case — drives the SVG placeholder when the banner has no image. */
+  useCase?: string;
 }
 
 interface PromoBannerCarouselProps {
@@ -132,16 +134,16 @@ function PromoBannerCard({ banner }: PromoBannerCardProps) {
 
       {/* Image */}
       <div className="relative aspect-square w-1/3 min-w-[120px] sm:w-2/5">
-        <Image
+        <ImageWithFallback
           src={banner.imageUrl}
           alt={banner.title}
+          useCase={banner.useCase}
           fill
           className="object-cover"
           sizes="(max-width: 640px) 120px, 180px"
+          iconClassName="size-8"
         />
       </div>
     </Link>
   );
 }
-
-// Promo banners: pass from parent (e.g. from GET /promos when API is wired)

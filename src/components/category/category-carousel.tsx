@@ -1,11 +1,11 @@
 "use client";
 
-import Image from "next/image";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { Button } from "@/components/ui/button";
-import { cn, getMediaUrl } from "@/lib/utils";
+import { ImageWithFallback } from "@/components/ui/image-with-fallback";
+import { cn } from "@/lib/utils";
 
 export type Category = {
   id: string;
@@ -22,6 +22,8 @@ export type CategoryCarouselProps = {
   className?: string;
   /** Display mode: 'chips' for pill buttons, 'icons' for Uber Eats style with emoji/image above text */
   variant?: "chips" | "icons";
+  /** Storefront's effective use_case — drives the SVG placeholder for categories with no icon/image. */
+  useCase?: string;
 };
 
 export function CategoryCarousel({
@@ -30,6 +32,7 @@ export function CategoryCarousel({
   onCategoryChange,
   className,
   variant = "icons",
+  useCase,
 }: CategoryCarouselProps) {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
@@ -167,17 +170,17 @@ export function CategoryCarousel({
               >
                 {category.emoji ? (
                   <span>{category.emoji}</span>
-                ) : category.imageUrl ? (
-                  <Image
-                    src={getMediaUrl(category.imageUrl)}
+                ) : (
+                  <ImageWithFallback
+                    src={category.imageUrl}
                     alt={category.name}
+                    useCase={useCase}
                     width={56}
                     height={56}
                     className="size-full rounded-full object-cover"
                     loading="lazy"
+                    iconClassName="size-6"
                   />
-                ) : (
-                  <span className="text-muted-foreground">?</span>
                 )}
               </div>
               {/* Label */}
