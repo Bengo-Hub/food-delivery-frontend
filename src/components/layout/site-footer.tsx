@@ -8,11 +8,12 @@ const footerLinks = [
   { href: "/status", label: "Status" },
 ];
 
+import { brand } from "@/config/brand";
 import { useTenantBranding } from "@/providers/branding-provider";
 
 export function SiteFooter() {
   const { tenant } = useTenantBranding();
-  const tenantName = tenant?.orgName || tenant?.name || "Urban Loft Cafe";
+  const tenantName = tenant?.orgName || tenant?.name || brand.name;
   const currentYear = new Date().getFullYear();
 
   return (
