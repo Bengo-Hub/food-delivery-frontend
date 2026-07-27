@@ -103,8 +103,9 @@ export function UserMenuDrawer({ open, onOpenChange }: UserMenuDrawerProps) {
     return (user as { avatarUrl?: string }).avatarUrl;
   };
 
-  // Logic to determine logo with fallback
-  const menuLogo = tenant?.logoUrl || "/images/logo/logo.jpg";
+  // Fall back to the generic platform mark — never a bundled tenant photo
+  // (see branding-provider.tsx DEFAULT_BRAND comment for why).
+  const menuLogo = tenant?.logoUrl || brand.assets.logo;
 
   // Navigation logic from sidebar
   const menuItems = [
@@ -292,7 +293,7 @@ export function UserMenuDrawer({ open, onOpenChange }: UserMenuDrawerProps) {
               height={40}
               className="size-full object-cover"
               onError={(e) => {
-                (e.target as HTMLImageElement).src = "/images/logo/logo.jpg";
+                (e.target as HTMLImageElement).src = brand.assets.logo;
               }}
             />
           </div>
@@ -433,7 +434,7 @@ export function UserMenuDrawer({ open, onOpenChange }: UserMenuDrawerProps) {
                 height={48}
                 className="size-full object-cover"
                 onError={(e) => {
-                  (e.target as HTMLImageElement).src = "/images/logo/logo.jpg";
+                  (e.target as HTMLImageElement).src = brand.assets.logo;
                 }}
               />
             </div>

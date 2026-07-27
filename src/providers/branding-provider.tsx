@@ -43,6 +43,10 @@ export function TenantBrandingProvider({ children }: { children: ReactNode }) {
     queryFn: () => fetchTenantBySlug(slug),
     staleTime: 6 * 60 * 60 * 1000, // 6 hours — aligned with JWT TTL
     enabled: !!slug,
+    // Fail fast: fetchTenantBySlug already times out at 8s and returns null
+    // rather than throwing, so retries mostly compound wait time with no
+    // benefit — one retry is enough to ride out a single dropped request.
+    retry: 1,
   });
 
   const effectiveBrand = useMemo(() => {

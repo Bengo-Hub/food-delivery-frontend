@@ -276,7 +276,13 @@ function backendOutletToOutlet(o: BackendOutlet): Outlet {
     email: o.email ?? "",
     image: getMediaUrl(o.imageUrl),
     isOpen: o.isOpen ?? o.is_open ?? o.status === "active",
-    businessType: (o.useCase as Outlet["businessType"]) ?? "food",
+    // No vertical fallback here — this module has no tenant context to guess
+    // from. Defaulting to "food" previously forced every outlet with a
+    // missing/unsynced use_case to render hospitality iconography (fork+knife)
+    // regardless of its real business type. Callers with tenant context
+    // (e.g. the homepage) should fall back to the tenant's own resolved
+    // use_case instead of a hardcoded vertical.
+    businessType: (o.useCase as Outlet["businessType"] | undefined) ?? undefined,
     // Per-outlet booking deposit % (drives the deposit-at-checkout breakdown for
     // ticket/appointment carts). Absent/undefined → treated as 0 (pay in full).
     ...(o.bookingDepositPercent != null ? { bookingDepositPercent: o.bookingDepositPercent } : {}),

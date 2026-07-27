@@ -31,7 +31,7 @@ export type OutletCardProps = {
   href?: string;
   className?: string;
   /** Business type for customizing display (food, retail, pharmacy, etc.) */
-  businessType?: string;
+  businessType?: string | undefined;
 };
 
 export function OutletCard({

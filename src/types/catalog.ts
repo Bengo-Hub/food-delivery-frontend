@@ -17,7 +17,7 @@ export interface MenuItem {
   category: string;
   categoryId: string;
   dietary: DietaryTag[];
-  image?: string;
+  image?: string | undefined;
   images?: string[];
   outletId: string;
   outletName: string;
@@ -97,7 +97,7 @@ export interface MenuCategory {
   id: string;
   name: string;
   description?: string;
-  image?: string;
+  image?: string | undefined;
   sortOrder: number;
   itemCount: number;
 }
@@ -117,7 +117,7 @@ export interface Outlet {
   deliveryFee: string;
   minimumOrder?: number;
   cuisines: string[];
-  image?: string;
+  image?: string | undefined;
   isOpen: boolean;
   openingHours?: OutletHours[];
   promoted?: boolean;
@@ -129,7 +129,8 @@ export interface Outlet {
    * the remainder is settled at the event/appointment. 0 = pay the full amount.
    */
   bookingDepositPercent?: number;
-  businessType: "food" | "grocery" | "pharmacy" | "retail" | "services" | "hospitality" | "quick_service" | "manufacturing" | "e_commerce" | "warehousing";
+  /** Absent when the outlet's use_case hasn't synced yet — callers should fall back to the tenant's own resolved use_case, never assume a vertical. */
+  businessType?: "food" | "grocery" | "pharmacy" | "retail" | "services" | "hospitality" | "quick_service" | "manufacturing" | "e_commerce" | "warehousing" | string | undefined;
 }
 
 export interface OutletHours {

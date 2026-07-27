@@ -41,8 +41,8 @@ export function UseCaseIllustration({
   useCase,
   className,
 }: {
-  useCase?: string | null;
-  className?: string;
+  useCase?: string | null | undefined;
+  className?: string | undefined;
 }) {
   const Icon = useCaseIconFor(useCase);
   return (

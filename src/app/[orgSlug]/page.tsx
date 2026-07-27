@@ -73,14 +73,18 @@ function toCardProps(
     deliveryTime: string;
     deliveryFee: string;
     cuisines: string[];
-    businessType: string;
+    businessType?: string | undefined;
     isOpen: boolean;
     promoted?: boolean;
     offerBadge?: string;
-    image?: string;
+    image?: string | undefined;
     discount?: number;
   },
   orgSlug: string,
+  // Tenant's own resolved use_case — used only when this specific outlet's
+  // use_case hasn't synced yet, so its card renders the tenant's real vertical
+  // icon instead of silently defaulting to a food/restaurant illustration.
+  fallbackUseCase?: string,
 ): OutletCardProps {
   return {
     id: o.id,
@@ -90,7 +94,7 @@ function toCardProps(
     deliveryTime: o.deliveryTime,
     deliveryFee: o.deliveryFee,
     cuisines: o.cuisines,
-    businessType: o.businessType,
+    businessType: o.businessType || fallbackUseCase,
     isOpen: o.isOpen,
     href: orgRoute(orgSlug, `/outlet/${o.id}`),
     ...(o.promoted && { promoted: o.promoted }),
@@ -160,8 +164,8 @@ export default function HomePage() {
 
   const mapOutlets = useCallback(
     (data: typeof featured.data) =>
-      data?.data?.map((o) => toCardProps(o, orgSlug)) ?? [],
-    [orgSlug],
+      data?.data?.map((o) => toCardProps(o, orgSlug, effectiveUseCase)) ?? [],
+    [orgSlug, effectiveUseCase],
   );
 
   const featuredOutlets = useMemo(() => mapOutlets(featured.data), [featured.data, mapOutlets]);
@@ -174,11 +178,11 @@ export default function HomePage() {
   const allStoresOutlets = useMemo(() => {
     if (allStoresInfinite.data?.pages) {
       return allStoresInfinite.data.pages.flatMap((page) =>
-        page.data.map((o) => toCardProps(o, orgSlug)),
+        page.data.map((o) => toCardProps(o, orgSlug, effectiveUseCase)),
       );
     }
     return mapOutlets(allStores.data);
-  }, [allStoresInfinite.data, allStores.data, mapOutlets, orgSlug]);
+  }, [allStoresInfinite.data, allStores.data, mapOutlets, orgSlug, effectiveUseCase]);
 
   const featuredItems: FeaturedItemProps[] = useMemo(
     () =>

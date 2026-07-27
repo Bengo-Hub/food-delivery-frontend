@@ -68,6 +68,14 @@ export async function fetchTenantBySlug(slug: string): Promise<TenantBrand | nul
   try {
     const res = await fetch(`${AUTH_API_BASE}/api/v1/tenants/by-slug/${encodeURIComponent(slug)}`, {
       credentials: 'omit',
+      headers: { Accept: 'application/json' },
+      // Bounded so a slow/unreachable auth-api can't leave the storefront stuck
+      // in TanStack Query's isLoading state indefinitely — that stuck state was
+      // rendering the neutral DEFAULT_BRAND (empty name) well past first paint,
+      // which surfaced as the header falling back to a generic "Codevertex
+      // OrderApp" title instead of the tenant's real name. Mirrors pos-ui's
+      // tenant-api.ts fetchTenantBySlug timeout.
+      signal: typeof AbortSignal !== 'undefined' && 'timeout' in AbortSignal ? AbortSignal.timeout(8000) : null,
     });
     if (!res.ok) return null;
     const data = (await res.json()) as TenantResponse;

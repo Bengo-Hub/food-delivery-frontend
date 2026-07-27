@@ -7,10 +7,10 @@ import { cn, getMediaUrl } from "@/lib/utils";
 
 interface ImageWithFallbackProps {
   /** Raw (possibly relative/empty) image URL from the backend. */
-  src?: string | null;
+  src?: string | null | undefined;
   alt: string;
   /** Raw or canonical use_case/profile string — drives the fallback illustration. */
-  useCase?: string | null;
+  useCase?: string | null | undefined;
   className?: string;
   /** Background/layout classes for the fallback placeholder container. */
   fallbackClassName?: string;
