@@ -3,7 +3,7 @@
 import { useQuery } from "@tanstack/react-query";
 
 import { api } from "@/lib/api/base";
-import { getMediaUrl } from "@/lib/utils";
+import { resolveCategoryIcon } from "@/lib/utils";
 import { useOrgSlug } from "@/providers/org-slug-provider";
 import type { Category } from "@/components/category/category-carousel";
 
@@ -24,12 +24,12 @@ interface BackendCategory {
 }
 
 function mapCategory(c: BackendCategory): Category {
-  const rawIcon = c.icon || c.imageUrl || c.image_url;
-  const imageUrl = rawIcon ? getMediaUrl(rawIcon) : undefined;
+  const { emoji, image } = resolveCategoryIcon(c.icon, c.imageUrl || c.image_url);
   return {
     id: c.slug || c.code || c.id,
     name: c.name,
-    ...(imageUrl != null ? { imageUrl } : {}),
+    ...(emoji ? { emoji } : {}),
+    ...(image ? { imageUrl: image } : {}),
   };
 }
 

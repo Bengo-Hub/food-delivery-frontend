@@ -98,6 +98,9 @@ export interface MenuCategory {
   name: string;
   description?: string;
   image?: string | undefined;
+  /** Emoji/glyph form of the category's icon — prefer this over `image` when set (see
+   *  resolveCategoryIcon in lib/utils.ts for why `icon` isn't always an image path). */
+  emoji?: string | undefined;
   sortOrder: number;
   itemCount: number;
 }

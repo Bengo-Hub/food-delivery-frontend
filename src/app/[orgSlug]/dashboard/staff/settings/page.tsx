@@ -25,6 +25,7 @@ import { useParams } from "next/navigation";
 
 import { RequireAuth } from "@/components/auth/require-auth";
 import { SiteShell } from "@/components/layout/site-shell";
+import { TenantLogo } from "@/components/layout/tenant-logo";
 import { useBrandConfig } from "@/hooks/use-brand";
 import {
   useAdminServiceConfig,
@@ -115,11 +116,7 @@ function AppBrandSummary() {
     <Card className="mb-6 border-primary/20 bg-primary/5">
       <CardContent className="flex flex-wrap items-center gap-4 py-4">
         {data.logoUrl ? (
-          <img
-            src={data.logoUrl}
-            alt=""
-            className="h-10 w-10 rounded-full object-cover"
-          />
+          <TenantLogo src={data.logoUrl} alt="" className="h-10" />
         ) : null}
         <div>
           <p className="text-sm font-medium text-muted-foreground">App brand (read-only)</p>

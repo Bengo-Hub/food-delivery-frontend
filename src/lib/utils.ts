@@ -47,3 +47,34 @@ export function getMediaUrl(url: string | undefined | null): string | undefined 
     return url;
   }
 }
+
+const IMAGE_PATH_PATTERN = /^https?:\/\//i;
+const IMAGE_EXTENSION_PATTERN = /\.(png|jpe?g|gif|svg|webp|avif)$/i;
+
+/**
+ * Splits a category's raw `icon` field from a real image URL. inventory-api's
+ * ItemCategory.icon is documented as "Emoji or icon class name for display" (see
+ * internal/ent/schema/itemcategory.go) — i.e. usually a glyph like "🍕", NOT an image path.
+ * Piping it straight through getMediaUrl() (as every category mapper used to) turns an emoji
+ * into a nonsense "/media/🍕"-style path that always 404s, so categories fell back to the
+ * generic default icon even when `icon` WAS set. A dedicated `imageUrl`/`image_url` always wins
+ * when present; `icon` is only treated as an image path if it actually looks like one.
+ */
+export function resolveCategoryIcon(
+  icon: string | undefined | null,
+  imageUrl: string | undefined | null,
+): { emoji?: string; image?: string } {
+  if (imageUrl) {
+    const resolved = getMediaUrl(imageUrl);
+    if (resolved) return { image: resolved };
+  }
+  const trimmed = icon?.trim();
+  if (!trimmed) return {};
+  const looksLikeImagePath =
+    IMAGE_PATH_PATTERN.test(trimmed) || trimmed.startsWith("/") || IMAGE_EXTENSION_PATTERN.test(trimmed);
+  if (looksLikeImagePath) {
+    const resolved = getMediaUrl(trimmed);
+    return resolved ? { image: resolved } : {};
+  }
+  return { emoji: trimmed };
+}

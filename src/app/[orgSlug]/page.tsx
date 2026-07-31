@@ -156,9 +156,13 @@ export default function HomePage() {
   // renders as an empty (not fake-food) carousel; real icons come from the
   // backend (inventory-api category.icon) via CategoryCarousel's own
   // use-case-aware SVG placeholder when a category has no icon yet.
+  // `emoji` (the common case — inventory-api's category.icon is usually a glyph, not an image
+  // path — see resolveCategoryIcon) must be forwarded too, or CategoryCarousel always falls
+  // through to its image path and 404s trying to load a glyph as a URL.
   const categories: Category[] = (categoriesData ?? []).map((c) => ({
     id: c.id,
     name: c.name,
+    ...(c.emoji ? { emoji: c.emoji } : {}),
     ...(c.image ? { imageUrl: c.image } : {}),
   }));
 

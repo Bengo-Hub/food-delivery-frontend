@@ -27,6 +27,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 import { Button } from "@/components/ui/button";
+import { TenantLogo } from "@/components/layout/tenant-logo";
 import { brand } from "@/config/brand";
 import { useSubscription } from "@/hooks/use-subscription";
 import { useTenantConfig } from "@/hooks/use-tenant-config";
@@ -285,18 +286,7 @@ export function UserMenuDrawer({ open, onOpenChange }: UserMenuDrawerProps) {
       >
         {/* Close Button & Logo */}
         <div className="flex items-center justify-between px-4 pt-4 pb-2">
-          <div className="size-10 overflow-hidden rounded-lg">
-            <Image
-              src={menuLogo}
-              alt={tenant?.name || brand.name}
-              width={40}
-              height={40}
-              className="size-full object-cover"
-              onError={(e) => {
-                (e.target as HTMLImageElement).src = brand.assets.logo;
-              }}
-            />
-          </div>
+          <TenantLogo src={menuLogo} alt={tenant?.name || brand.name} className="h-9" />
           <button
             type="button"
             onClick={handleClose}
@@ -426,17 +416,8 @@ export function UserMenuDrawer({ open, onOpenChange }: UserMenuDrawerProps) {
         {/* App Download Section */}
         <div className="border-t border-border bg-muted/30 px-5 py-6">
           <div className="flex items-center gap-4">
-            <div className="flex size-14 items-center justify-center rounded-2xl bg-foreground shadow-lg overflow-hidden">
-              <Image
-                src={menuLogo}
-                alt={brand.name}
-                width={48}
-                height={48}
-                className="size-full object-cover"
-                onError={(e) => {
-                  (e.target as HTMLImageElement).src = brand.assets.logo;
-                }}
-              />
+            <div className="flex size-14 items-center justify-center rounded-2xl bg-foreground shadow-lg p-2">
+              <TenantLogo src={menuLogo} alt={brand.name} className="h-full" />
             </div>
             <div>
               <p className="text-base font-bold">There&apos;s more to love</p>

@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
@@ -21,6 +20,7 @@ import { CartDrawer } from "@/components/cart/cart-drawer";
 import { DiningModeToggle } from "@/components/layout/dining-mode-toggle";
 import { LocationDialog } from "@/components/layout/location-dialog";
 import { OutletFilter } from "@/components/layout/outlet-filter";
+import { TenantLogo } from "@/components/layout/tenant-logo";
 import { ThemeToggle } from "@/components/layout/theme-toggle";
 import { UserMenuDrawer } from "@/components/layout/user-menu-drawer";
 import { Button } from "@/components/ui/button";
@@ -159,12 +159,10 @@ export function SiteHeader({ onMenuClick }: SiteHeaderProps) {
             href={orgRoute(orgSlug, "/")}
             className="flex items-center gap-2 text-sm font-bold text-foreground sm:text-base"
           >
-            <Image
+            <TenantLogo
               src={displayLogo}
               alt={`${displayName} logo`}
-              width={28}
-              height={28}
-              className="h-7 w-7 rounded-full object-cover"
+              className="h-7 sm:h-8"
               priority
             />
             <span className="hidden sm:inline">{displayName}</span>

@@ -424,15 +424,19 @@ export function MenuDiscovery({
                   : "border-border text-muted-foreground hover:border-brand-emphasis hover:text-brand-emphasis",
               )}
             >
-              <div className="relative size-5 shrink-0 overflow-hidden rounded-full border border-current/10">
-                <ImageWithFallback
-                  src={cat.image}
-                  alt={cat.name}
-                  useCase={cfg.profile}
-                  fill
-                  className="object-cover"
-                  iconClassName="size-3"
-                />
+              <div className="relative flex size-5 shrink-0 items-center justify-center overflow-hidden rounded-full border border-current/10 text-xs">
+                {cat.emoji ? (
+                  <span aria-hidden>{cat.emoji}</span>
+                ) : (
+                  <ImageWithFallback
+                    src={cat.image}
+                    alt={cat.name}
+                    useCase={cfg.profile}
+                    fill
+                    className="object-cover"
+                    iconClassName="size-3"
+                  />
+                )}
               </div>
               <span className="font-bold">{cat.name}</span>
             </Button>

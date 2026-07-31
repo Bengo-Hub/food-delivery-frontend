@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import { useEffect, useState } from "react";
 
 import { UseCaseIllustration } from "@/components/ui/use-case-icon";
 import { cn, getMediaUrl } from "@/lib/utils";
@@ -46,8 +47,13 @@ export function ImageWithFallback({
   loading,
 }: ImageWithFallbackProps) {
   const resolved = getMediaUrl(src);
+  // A resolved-but-broken URL (wrong host, deleted file, 404) must fall back to the same
+  // illustration as a genuinely-missing URL — otherwise it silently renders next/image's
+  // broken-image glyph instead of the intended default, which is what most items were doing.
+  const [loadError, setLoadError] = useState(false);
+  useEffect(() => setLoadError(false), [resolved]);
 
-  if (!resolved) {
+  if (!resolved || loadError) {
     return (
       <div
         className={cn(
@@ -70,6 +76,7 @@ export function ImageWithFallback({
         alt={alt}
         fill
         className={className}
+        onError={() => setLoadError(true)}
         {...(sizes ? { sizes } : {})}
         {...(priority ? { priority } : {})}
         {...(loading ? { loading } : {})}
@@ -84,6 +91,7 @@ export function ImageWithFallback({
       width={width ?? 64}
       height={height ?? 64}
       className={className}
+      onError={() => setLoadError(true)}
       {...(sizes ? { sizes } : {})}
       {...(priority ? { priority } : {})}
       {...(loading ? { loading } : {})}

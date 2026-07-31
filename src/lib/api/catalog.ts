@@ -3,7 +3,7 @@
  * Functions for fetching catalog items, categories, and outlets from the backend
  */
 
-import { getMediaUrl } from "@/lib/utils";
+import { getMediaUrl, resolveCategoryIcon } from "@/lib/utils";
 import type {
   CatalogVariant,
   MenuCategory,
@@ -216,24 +216,30 @@ export async function fetchCategories(
   if (useCase) qs.set("use_case", useCase);
   const params = qs.toString() ? `?${qs.toString()}` : "";
   const response = await api.get<BackendMenuCategory[]>(`${tenantSlug}/catalog/categories${params}`);
-  return response.data.map((cat) => ({
-    id: cat.id,
-    name: cat.name,
-    description: cat.description ?? "",
-    image: cat.imageUrl ? getMediaUrl(cat.imageUrl) : cat.icon ? getMediaUrl(cat.icon) : "",
-    sortOrder: 0,
-    itemCount: cat.itemCount,
-  }));
+  return response.data.map((cat) => {
+    const { emoji, image } = resolveCategoryIcon(cat.icon, cat.imageUrl);
+    return {
+      id: cat.id,
+      name: cat.name,
+      description: cat.description ?? "",
+      image: image ?? "",
+      ...(emoji ? { emoji } : {}),
+      sortOrder: 0,
+      itemCount: cat.itemCount,
+    };
+  });
 }
 
 export async function fetchCategory(tenantSlug: string, id: string): Promise<MenuCategory> {
   const response = await api.get<BackendMenuCategory>(`${tenantSlug}/catalog/categories/${id}`);
   const cat = response.data;
+  const { emoji, image } = resolveCategoryIcon(cat.icon, cat.imageUrl);
   return {
     id: cat.id,
     name: cat.name,
     description: cat.description ?? "",
-    image: cat.imageUrl ? getMediaUrl(cat.imageUrl) : cat.icon ? getMediaUrl(cat.icon) : "",
+    image: image ?? "",
+    ...(emoji ? { emoji } : {}),
     sortOrder: 0,
     itemCount: cat.itemCount,
   };

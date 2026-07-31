@@ -9,18 +9,15 @@ const nextConfig = {
     // Enable Next.js image optimization for automatic resizing, format conversion
     // (WebP/AVIF), and lazy loading. This significantly reduces page load times.
     remotePatterns: [
-      {
-        protocol: "http",
-        hostname: "localhost",
-        port: "4000",
-        pathname: "/media/**",
-      },
-      {
-        protocol: "http",
-        hostname: "127.0.0.1",
-        port: "4000",
-        pathname: "/media/**",
-      },
+      // ordering-backend (this service's own media, e.g. outlet photos) — local dev port is
+      // 4005 per .env.local's NEXT_PUBLIC_API_URL; 4000 kept too for other local setups.
+      ...["4000", "4005"].flatMap((port) => [
+        { protocol: "http", hostname: "localhost", port, pathname: "/media/**" },
+        { protocol: "http", hostname: "127.0.0.1", port, pathname: "/media/**" },
+      ]),
+      // inventory-api (item/category images) — local dev port is 4001 per its own .env.
+      { protocol: "http", hostname: "localhost", port: "4001", pathname: "/media/**" },
+      { protocol: "http", hostname: "127.0.0.1", port: "4001", pathname: "/media/**" },
       {
         protocol: "https",
         hostname: "orderingapi.codevertexafrica.com",
