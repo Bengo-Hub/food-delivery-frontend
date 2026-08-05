@@ -134,13 +134,31 @@ export async function getPaymentStatus(
   return res.data;
 }
 
+export interface PromoValidateLine {
+  sku: string;
+  category?: string;
+  quantity: number;
+  unitPrice: number;
+}
+
 export async function applyPromoCode(
   tenantSlug: string,
   code: string,
+  cafeId: string,
+  items: PromoValidateLine[],
   subtotal: number,
 ): Promise<{ valid: boolean; discount: number; message: string }> {
-  const res = await api.post(`${tenantSlug}/promo-codes/validate`, { code, subtotal });
-  return res.data;
+  const res = await api.post(`${tenantSlug}/promo-codes/validate`, { code, cafeId, items, subtotal });
+  // Normalize pos-api's ordering.PromoValidationResult shape ({valid, discountAmount,
+  // errorMessage}) into this function's stable {valid, discount, message} contract — the two
+  // never matched (a pre-existing bug: the caller read result.discount/.message, which were
+  // always undefined, meaning a successfully-validated code never actually showed its amount).
+  const data = res.data as { valid?: boolean; discountAmount?: number; errorMessage?: string };
+  return {
+    valid: !!data.valid,
+    discount: Number(data.discountAmount) || 0,
+    message: data.errorMessage || (data.valid ? 'Promo code applied' : 'Invalid promo code'),
+  };
 }
 
 export async function getOrderTracking(

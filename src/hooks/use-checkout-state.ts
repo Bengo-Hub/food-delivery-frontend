@@ -402,8 +402,19 @@ export function useCheckoutState() {
 
   const handleApplyPromo = useCallback(async () => {
     if (!promoCode.trim()) return;
+    if (!outletId) {
+      toast.error('Select an outlet before applying a promo code');
+      return;
+    }
     try {
-      const result = await applyPromo.mutateAsync({ code: promoCode, subtotal: cartSubtotal });
+      // Real cart lines (not just the subtotal) so the code is scoped/scheduled/BOGO-checked
+      // identically to the POS terminal — see pos-api's ApplyPromoCode doc comment.
+      const promoLines = items.map((item) => ({
+        sku: item.inventorySku || item.id,
+        quantity: item.quantity,
+        unitPrice: item.price,
+      }));
+      const result = await applyPromo.mutateAsync({ code: promoCode, cafeId: outletId, items: promoLines, subtotal: cartSubtotal });
       if (result.valid) {
         setDiscount(result.discount);
         setPromoMessage(result.message);
@@ -415,7 +426,7 @@ export function useCheckoutState() {
     } catch (e) {
       toast.error(await apiErrorMessage(e, "Failed to apply promo code"));
     }
-  }, [promoCode, cartSubtotal, applyPromo]);
+  }, [promoCode, cartSubtotal, applyPromo, outletId, items]);
 
   const handleWalletPayment = useCallback(
     async (explicitOrderId?: string) => {

@@ -14,6 +14,7 @@ import {
   rateOrder,
   type CreateOrderRequest,
   type MpesaPaymentRequest,
+  type PromoValidateLine,
 } from "@/lib/api/orders";
 import { useOrgSlug } from "@/providers/org-slug-provider";
 
@@ -131,7 +132,7 @@ export function useInitiateMpesaPayment() {
 export function useApplyPromoCode() {
   const slug = useOrgSlug();
   return useMutation({
-    mutationFn: ({ code, subtotal }: { code: string; subtotal: number }) =>
-      applyPromoCode(slug, code, subtotal),
+    mutationFn: ({ code, cafeId, items, subtotal }: { code: string; cafeId: string; items: PromoValidateLine[]; subtotal: number }) =>
+      applyPromoCode(slug, code, cafeId, items, subtotal),
   });
 }
