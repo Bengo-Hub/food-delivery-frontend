@@ -1,4 +1,5 @@
 import { api } from "@/lib/api/base";
+import { revokeServerSession as sharedRevokeServerSession } from '@bengo-hub/shared-ui-lib/auth';
 import type {
     AuthResponse,
     OrderSummary,
@@ -62,23 +63,8 @@ export function buildLogoutUrl(postLogoutRedirectUri?: string): string {
   return url.toString();
 }
 
-/**
- * Best-effort POST to revoke the user's backend session. The GET logout redirect
- * (buildLogoutUrl) only clears the bb_session cookie; POST /api/v1/auth/logout
- * with the access token revokes ALL of the user's sessions, deletes their Redis
- * session_token keys, and clears the cookie. Never throws.
- */
 export async function revokeServerSession(accessToken?: string | null): Promise<void> {
-  try {
-    await fetch(new URL("/api/v1/auth/logout", SSO_BASE_URL).toString(), {
-      method: "POST",
-      headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : {},
-      credentials: "include",
-      keepalive: true,
-    });
-  } catch {
-    /* best-effort: still clear local state + redirect */
-  }
+  return sharedRevokeServerSession(SSO_BASE_URL, accessToken);
 }
 
 export async function refreshTokens(refreshToken: string): Promise<{
