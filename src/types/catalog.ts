@@ -177,6 +177,8 @@ export interface MenuFilters {
   featured?: boolean;
   outletId?: string;
   favoriteOnly?: boolean;
+  /** Opaque storefront sort key — currently only "newest" is backend-recognized. */
+  sort?: string;
 }
 
 export interface OutletFilters {

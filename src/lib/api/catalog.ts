@@ -157,6 +157,7 @@ export async function fetchMenuItems(
   if (filters?.featured !== undefined) params.set("featured", String(filters.featured));
   if (filters?.outletId) params.set("outlet_id", filters.outletId);
   if (filters?.favoriteOnly) params.set("favorite", "true");
+  if (filters?.sort) params.set("sort", filters.sort);
 
   const res = await api.get<BackendListResponse<BackendMenuItem>>(
     `${tenantSlug}/catalog/items?${params.toString()}`,

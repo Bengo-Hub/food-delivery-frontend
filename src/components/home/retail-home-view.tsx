@@ -76,6 +76,7 @@ export function RetailHomeView() {
 
   const { data: categoriesData } = useCategories(orgSlug, undefined, effectiveUseCase);
   const { data: itemsPage } = useCatalogItems(orgSlug, {}, 1, 60);
+  const { data: newArrivalsPage } = useCatalogItems(orgSlug, { sort: "newest" }, 1, 10);
   const { data: promoBanners } = usePromoBanners(effectiveUseCase);
   const { data: deals } = usePromoDeals();
   const { data: outletsPage, isLoading: outletsLoading } = useOutlets(
@@ -119,11 +120,13 @@ export function RetailHomeView() {
     [dealItems, orgSlug, profile],
   );
 
-  // "New Arrivals" — ordering-backend's CatalogFilter has no sort param yet, so
-  // this takes the default-order item list rather than inventing a backend change.
+  // "New Arrivals" — fetched separately with sort=newest (inventory-api already
+  // whitelists created_at for sorting; ordering-backend maps the opaque "newest" key
+  // to it) rather than slicing the general item list, which has no defined order.
+  const newArrivalItems = newArrivalsPage?.data ?? [];
   const newArrivals: FeaturedItemProps[] = useMemo(
     () =>
-      items.slice(0, 10).map((item) => ({
+      newArrivalItems.map((item) => ({
         id: item.id,
         name: item.name,
         description: item.description,
@@ -136,7 +139,7 @@ export function RetailHomeView() {
         useCase: profile,
         href: orgRoute(orgSlug, `/catalog/${item.id}`),
       })),
-    [items, orgSlug, profile],
+    [newArrivalItems, orgSlug, profile],
   );
 
   const handleFavoriteToggle = (id: string, isFavorite: boolean) => {
