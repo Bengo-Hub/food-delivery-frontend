@@ -12,8 +12,8 @@ importers:
         specifier: github:Bengo-Hub/maps#v0.2.6
         version: https://codeload.github.com/Bengo-Hub/maps/tar.gz/13e38cca552ea0e31f7f65ec278bf96b82dfe8c4(maplibre-gl@5.21.0)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
       '@bengo-hub/shared-ui-lib':
-        specifier: github:Bengo-Hub/shared-ui-lib#v0.1.47
-        version: https://codeload.github.com/Bengo-Hub/shared-ui-lib/tar.gz/dfe32a127a96df20889f251c571cceff41733f9d(lucide-react@0.452.0(react@19.0.0))(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
+        specifier: github:Bengo-Hub/shared-ui-lib#v0.1.54
+        version: https://codeload.github.com/Bengo-Hub/shared-ui-lib/tar.gz/9833ebf98664c299e949992ac24e175880b6c994(@tanstack/react-query@5.90.20(react@19.0.0))(lucide-react@0.452.0(react@19.0.0))(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
       '@hookform/resolvers':
         specifier: ^3.10.0
         version: 3.10.0(react-hook-form@7.71.1(react@19.0.0))
@@ -820,14 +820,17 @@ packages:
       react: '>=18.0.0'
       react-dom: '>=18.0.0'
 
-  '@bengo-hub/shared-ui-lib@https://codeload.github.com/Bengo-Hub/shared-ui-lib/tar.gz/dfe32a127a96df20889f251c571cceff41733f9d':
-    resolution: {tarball: https://codeload.github.com/Bengo-Hub/shared-ui-lib/tar.gz/dfe32a127a96df20889f251c571cceff41733f9d}
-    version: 0.1.47
+  '@bengo-hub/shared-ui-lib@https://codeload.github.com/Bengo-Hub/shared-ui-lib/tar.gz/9833ebf98664c299e949992ac24e175880b6c994':
+    resolution: {tarball: https://codeload.github.com/Bengo-Hub/shared-ui-lib/tar.gz/9833ebf98664c299e949992ac24e175880b6c994}
+    version: 0.1.54
     peerDependencies:
+      '@tanstack/react-query': '>=5.0.0'
       lucide-react: '>=0.400.0'
       react: '>=18.0.0'
       react-dom: '>=18.0.0'
     peerDependenciesMeta:
+      '@tanstack/react-query':
+        optional: true
       lucide-react:
         optional: true
 
@@ -7085,11 +7088,12 @@ snapshots:
       react: 19.0.0
       react-dom: 19.0.0(react@19.0.0)
 
-  '@bengo-hub/shared-ui-lib@https://codeload.github.com/Bengo-Hub/shared-ui-lib/tar.gz/dfe32a127a96df20889f251c571cceff41733f9d(lucide-react@0.452.0(react@19.0.0))(react-dom@19.0.0(react@19.0.0))(react@19.0.0)':
+  '@bengo-hub/shared-ui-lib@https://codeload.github.com/Bengo-Hub/shared-ui-lib/tar.gz/9833ebf98664c299e949992ac24e175880b6c994(@tanstack/react-query@5.90.20(react@19.0.0))(lucide-react@0.452.0(react@19.0.0))(react-dom@19.0.0(react@19.0.0))(react@19.0.0)':
     dependencies:
       react: 19.0.0
       react-dom: 19.0.0(react@19.0.0)
     optionalDependencies:
+      '@tanstack/react-query': 5.90.20(react@19.0.0)
       lucide-react: 0.452.0(react@19.0.0)
 
   '@bramus/specificity@2.4.2':
