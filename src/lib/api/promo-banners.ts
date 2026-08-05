@@ -21,6 +21,10 @@ interface BackendPromoBanner {
   banner_color?: string;
   text_color?: string;
   outlet_id?: string | null;
+  /** True when this promotion is a time-boxed flash sale — drives the countdown + badge. */
+  is_flash_sale?: boolean;
+  /** ISO timestamp the flash sale ends at (only meaningful when is_flash_sale is true). */
+  end_at?: string | null;
 }
 
 function backendBannerToPromoBanner(b: BackendPromoBanner, useCase?: string): PromoBanner {
@@ -34,6 +38,8 @@ function backendBannerToPromoBanner(b: BackendPromoBanner, useCase?: string): Pr
     ...(b.banner_color ? { backgroundColor: b.banner_color } : {}),
     ...(b.text_color ? { textColor: b.text_color } : {}),
     ...(useCase ? { useCase } : {}),
+    ...(b.is_flash_sale ? { isFlashSale: true } : {}),
+    ...(b.is_flash_sale && b.end_at ? { endAt: b.end_at } : {}),
   };
 }
 

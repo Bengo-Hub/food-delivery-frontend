@@ -10,6 +10,10 @@ export type ItemType = "GOODS" | "SERVICE" | "RECIPE" | "INGREDIENT" | "VOUCHER"
 
 export interface MenuItem {
   id: string;
+  /** Raw inventory-api item UUID (distinct from `id`, which prefers the SKU when present).
+   *  Needed to cross-reference pos-api promotion rule `scope_ids` (item-scoped deals), which
+   *  reference inventory-api item IDs, not SKUs. */
+  inventoryId?: string;
   name: string;
   description: string;
   price: number;
@@ -103,6 +107,16 @@ export interface MenuCategory {
   emoji?: string | undefined;
   sortOrder: number;
   itemCount: number;
+  /** Parent category id. Null/undefined = top-level (either a group parent or a genuine
+   *  standalone root category). Drives the "Shop by Category" sidebar tree for
+   *  retail/pharmacy/wholesale tenants. */
+  parentId?: string | null;
+  /** Denormalized parent name, when this category is a child. */
+  parentName?: string;
+  /** Depth in the category tree (0 = top-level). */
+  depth?: number;
+  /** Materialized path (e.g. "Phones & Communication/Chargers"). */
+  path?: string;
 }
 
 export interface Outlet {

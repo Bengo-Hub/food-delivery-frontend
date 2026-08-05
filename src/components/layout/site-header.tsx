@@ -171,8 +171,10 @@ export function SiteHeader({ onMenuClick }: SiteHeaderProps) {
 
         {/* Center: Delivery/Pickup Toggle + Location + Search (Desktop) */}
         <div className="hidden flex-1 items-center gap-2 md:flex md:max-w-3xl lg:max-w-4xl lg:gap-3">
-          {/* Delivery/Pickup Toggle */}
-          <DiningModeToggle size="sm" />
+          {/* Delivery/Pickup Toggle — meaningless outside food verticals (retail/
+              pharmacy/wholesale/services/ticketing tenants don't have a delivery-vs-
+              pickup dining mode concept). */}
+          {isFoodVertical && <DiningModeToggle size="sm" />}
 
           {/* Location Selector */}
           <button
@@ -428,7 +430,7 @@ export function SiteHeader({ onMenuClick }: SiteHeaderProps) {
 
       {/* Mobile: Delivery/Pickup + Location Row */}
       <div className="flex items-center gap-1.5 border-t border-border px-3 py-1 md:hidden">
-        <DiningModeToggle size="sm" />
+        {isFoodVertical && <DiningModeToggle size="sm" />}
         <button
           onClick={() => setLocationDialogOpen(true)}
           className="flex min-h-[40px] flex-1 items-center gap-1.5 rounded-full bg-muted/50 px-3 py-1.5 text-xs font-medium active:bg-muted"

@@ -100,6 +100,7 @@ function backendItemToMenuItem(
   const hasVariants = b.hasVariants ?? variants.length > 0;
   return {
     id: b.sku || b.id || b.inventoryId || "",
+    ...(b.inventoryId ? { inventoryId: b.inventoryId } : {}),
     name: b.name,
     description: b.description ?? "",
     price: b.basePrice,
@@ -202,6 +203,12 @@ interface BackendMenuCategory {
   imageUrl?: string;
   icon?: string;
   itemCount: number;
+  /** Parent→children tree fields (see ordering-backend catalog.InventoryCategory). */
+  parentId?: string | null;
+  parentName?: string;
+  depth?: number;
+  path?: string;
+  sortOrder?: number;
 }
 
 export async function fetchCategories(
@@ -224,8 +231,12 @@ export async function fetchCategories(
       description: cat.description ?? "",
       image: image ?? "",
       ...(emoji ? { emoji } : {}),
-      sortOrder: 0,
+      sortOrder: cat.sortOrder ?? 0,
       itemCount: cat.itemCount,
+      parentId: cat.parentId ?? null,
+      ...(cat.parentName ? { parentName: cat.parentName } : {}),
+      depth: cat.depth ?? 0,
+      ...(cat.path ? { path: cat.path } : {}),
     };
   });
 }
@@ -240,8 +251,12 @@ export async function fetchCategory(tenantSlug: string, id: string): Promise<Men
     description: cat.description ?? "",
     image: image ?? "",
     ...(emoji ? { emoji } : {}),
-    sortOrder: 0,
+    sortOrder: cat.sortOrder ?? 0,
     itemCount: cat.itemCount,
+    parentId: cat.parentId ?? null,
+    ...(cat.parentName ? { parentName: cat.parentName } : {}),
+    depth: cat.depth ?? 0,
+    ...(cat.path ? { path: cat.path } : {}),
   };
 }
 

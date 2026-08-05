@@ -1,11 +1,12 @@
 "use client";
 
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, Zap } from "lucide-react";
 import Link from "next/link";
 import { useCallback, useRef, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { ImageWithFallback } from "@/components/ui/image-with-fallback";
+import { useCountdown } from "@/hooks/use-countdown";
 import { cn } from "@/lib/utils";
 
 export interface PromoBanner {
@@ -20,6 +21,10 @@ export interface PromoBanner {
   textColor?: string;
   /** Outlet/tenant use_case — drives the SVG placeholder when the banner has no image. */
   useCase?: string;
+  /** Whether this promotion is a time-boxed flash sale — drives the countdown + badge. */
+  isFlashSale?: boolean;
+  /** ISO timestamp the flash sale ends at (only meaningful when isFlashSale is true). */
+  endAt?: string;
 }
 
 interface PromoBannerCarouselProps {
@@ -103,6 +108,7 @@ interface PromoBannerCardProps {
 function PromoBannerCard({ banner }: PromoBannerCardProps) {
   const bgColor = banner.backgroundColor || "#f87171"; // Default coral/red
   const textColor = banner.textColor || "#000000";
+  const countdown = useCountdown(banner.isFlashSale ? banner.endAt : null);
 
   return (
     <Link
@@ -112,6 +118,19 @@ function PromoBannerCard({ banner }: PromoBannerCardProps) {
     >
       {/* Text Content */}
       <div className="flex flex-1 flex-col justify-center p-3 sm:p-5" style={{ color: textColor }}>
+        {banner.isFlashSale && (
+          <div className="mb-1.5 flex items-center gap-2">
+            <span className="inline-flex items-center gap-1 rounded-full bg-destructive px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-destructive-foreground">
+              <Zap className="size-3 fill-current" />
+              Flash Sale
+            </span>
+            {countdown && (
+              <span className="rounded-full bg-black/80 px-2 py-0.5 text-[10px] font-semibold text-white">
+                {countdown}
+              </span>
+            )}
+          </div>
+        )}
         <h3 className="text-base font-bold leading-tight sm:text-xl">{banner.title}</h3>
         <p className="mt-0.5 text-xs opacity-90 sm:mt-1 sm:text-sm">{banner.subtitle}</p>
         {banner.priceBadge && (
