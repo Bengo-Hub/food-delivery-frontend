@@ -416,6 +416,11 @@ export default function CatalogItemPage() {
                 {[item.manufacturer, item.model].filter(Boolean).join(" · ")}
               </p>
             )}
+            {cfg.showMakeModel && item.condition && item.condition !== "NEW" && (
+              <span className="mt-2 inline-block rounded-full bg-muted px-2.5 py-1 text-xs font-medium text-muted-foreground">
+                {item.condition.replace(/_/g, " ")}
+              </span>
+            )}
 
             {/* Description */}
             {item.description && (

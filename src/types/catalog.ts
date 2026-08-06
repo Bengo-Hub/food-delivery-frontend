@@ -45,6 +45,8 @@ export interface MenuItem {
   manufacturer?: string;
   /** Model name/number (retail/goods), shown as muted subtext when present. */
   model?: string;
+  /** Item condition (retail/goods): NEW | REFURBISHED | USED | OPEN_BOX. Omitted/NEW = no badge. */
+  condition?: string;
   /** Whether this item has selectable variants (e.g. color/size). */
   hasVariants?: boolean;
   /** Selectable variants. Present when the item is fetched with variants included. */

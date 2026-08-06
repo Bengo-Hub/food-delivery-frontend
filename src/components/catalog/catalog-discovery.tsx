@@ -44,6 +44,7 @@ type MenuItem = {
   isFavorite?: boolean | undefined;
   manufacturer?: string | undefined;
   model?: string | undefined;
+  condition?: string | undefined;
   hasVariants?: boolean | undefined;
 } & Record<string, any>;
 
@@ -118,6 +119,11 @@ function DiscoveryMenuItem({
                 <p className="mt-0.5 truncate text-xs text-muted-foreground">
                   {[item.manufacturer, item.model].filter(Boolean).join(" · ")}
                 </p>
+              )}
+              {cfg.showMakeModel && item.condition && item.condition !== "NEW" && (
+                <span className="mt-1 inline-block rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
+                  {item.condition.replace(/_/g, " ")}
+                </span>
               )}
             </div>
             <div className="flex shrink-0 gap-1">
@@ -272,6 +278,7 @@ export function MenuDiscovery({
         isFavorite: m.isFavorite,
         manufacturer: m.manufacturer,
         model: m.model,
+        condition: m.condition,
         hasVariants: m.hasVariants,
         ...(m.featured && { feature: "recommended" as const }),
       })),

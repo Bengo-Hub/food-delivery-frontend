@@ -58,6 +58,7 @@ interface BackendMenuItem {
   leadTimeMinutes?: number;
   manufacturer?: string;
   model?: string;
+  condition?: string;
   hasVariants?: boolean;
   variants?: BackendVariant[];
   dietaryTags?: unknown[];
@@ -116,6 +117,7 @@ function backendItemToMenuItem(
     isFavorite: !!b.isFavorite,
     ...(b.manufacturer ? { manufacturer: b.manufacturer } : {}),
     ...(b.model ? { model: b.model } : {}),
+    ...(b.condition ? { condition: b.condition } : {}),
     hasVariants,
     ...(variants.length > 0 ? { variants } : {}),
     ...(b.modifierGroups ? { modifierGroups: b.modifierGroups.map((g) => ({
