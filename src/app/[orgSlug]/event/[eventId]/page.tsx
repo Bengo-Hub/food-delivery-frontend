@@ -6,10 +6,8 @@ import { CalendarDays, Clock, Loader2, MapPin, Minus, Plus, Share2, Sparkles, Ti
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
-
-function formatMoney(amount: number, currency = "KES") {
-  return new Intl.NumberFormat("en-KE", { style: "currency", currency, maximumFractionDigits: 0 }).format(amount);
-}
+// Centralized in shared-ui-lib (aliased to keep this file's existing call sites unchanged).
+import { formatCurrency as formatMoney } from "@bengo-hub/shared-ui-lib";
 
 function formatDate(iso?: string) {
   if (!iso) return "";

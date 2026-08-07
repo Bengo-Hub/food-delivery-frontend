@@ -12,14 +12,12 @@ import { orgRoute } from "@/lib/routes";
 import { cn } from "@/lib/utils";
 import { useOrgSlug } from "@/providers/org-slug-provider";
 import { useCartStore, type CartItem } from "@/store/cart";
+// Centralized in shared-ui-lib — was a local hardcoded-"KES" copy duplicated in cart/page.tsx.
+import { formatCurrency } from "@bengo-hub/shared-ui-lib";
 
 interface CartDrawerProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-}
-
-function formatCurrency(amount: number) {
-  return `KES ${amount.toLocaleString("en-KE", { minimumFractionDigits: 0 })}`;
 }
 
 function CartItemRow({ item, useCase }: { item: CartItem; useCase?: string }) {

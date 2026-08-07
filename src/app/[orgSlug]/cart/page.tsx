@@ -16,10 +16,8 @@ import { orgRoute } from "@/lib/routes";
 import { useOrgSlug } from "@/providers/org-slug-provider";
 import { useCartStore } from "@/store/cart";
 import { useDiningModeStore } from "@/store/dining-mode";
-
-function formatCurrency(amount: number) {
-  return `KES ${amount.toLocaleString("en-KE", { minimumFractionDigits: 0 })}`;
-}
+// Centralized in shared-ui-lib — was a local hardcoded-"KES" copy duplicated in cart-drawer.tsx.
+import { formatCurrency } from "@bengo-hub/shared-ui-lib";
 
 export default function CartPage() {
   const router = useRouter();

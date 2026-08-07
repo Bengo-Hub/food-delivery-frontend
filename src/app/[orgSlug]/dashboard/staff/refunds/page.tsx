@@ -22,6 +22,10 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "@/lib/toast";
 import { apiErrorMessage } from "@/lib/api/error-message";
+// Centralized in shared-ui-lib — was the exact 0-decimal-currency bug this centralization fixes
+// (hardcoded minimumFractionDigits:2 with no per-currency decimal-place lookup, so UGX/RWF would
+// have rendered with a spurious ".00").
+import { formatCurrency as sharedFormatCurrency } from "@bengo-hub/shared-ui-lib";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -50,12 +54,10 @@ function statusVariant(status: RefundStatus | string): "default" | "outline" | "
   }
 }
 
+// Wrapper preserves the original "empty-string currency falls back to KES" behavior — the shared
+// formatCurrency's default parameter only covers `undefined`, not `""`.
 function formatAmount(amount: number, currency: string) {
-  const code = currency || "KES";
-  return `${code} ${Number(amount).toLocaleString(undefined, {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  })}`;
+  return sharedFormatCurrency(amount, currency || "KES");
 }
 
 function formatDate(value?: string | null) {
