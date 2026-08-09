@@ -19,6 +19,7 @@ import { toast } from "sonner";
 import { ImageWithFallback } from "@/components/ui/image-with-fallback";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useCategories, useCatalogItems, useOutlets, useToggleFavorite } from "@/hooks/use-catalog";
 import { useOrderingConfig } from "@/hooks/use-ordering-config";
 import type { OrderingConfig } from "@/lib/use-case-config";
@@ -183,6 +184,29 @@ function DiscoveryMenuItem({
         </footer>
       </div>
     </Link>
+  );
+}
+
+/**
+ * Facebook-style skeleton placeholder matching DiscoveryMenuItem's real layout —
+ * shown for the initial catalog fetch so the grid never blocks on a spinner/text
+ * message. Individual item images resolve independently inside ImageWithFallback
+ * once real data arrives, so this only covers the "no data yet at all" gap.
+ */
+function MenuItemCardSkeleton() {
+  return (
+    <div className="flex h-full flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-sm sm:rounded-3xl">
+      <Skeleton className="h-44 w-full rounded-none sm:h-52 md:h-60" />
+      <div className="flex flex-1 flex-col gap-3 p-4 sm:p-6">
+        <Skeleton className="h-4 w-3/4" />
+        <Skeleton className="h-3 w-full" />
+        <Skeleton className="h-3 w-2/3" />
+        <div className="mt-auto flex items-center justify-between gap-2 pt-2">
+          <Skeleton className="h-4 w-16" />
+          <Skeleton className="h-9 w-24 rounded-md" />
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -525,9 +549,7 @@ export function MenuDiscovery({
           cfg.productLayout === "compact" ? "lg:grid-cols-4" : "lg:grid-cols-3",
         )}>
           {isPending && menuItems.length === 0 ? (
-            <div className="col-span-full rounded-2xl border border-dashed border-border bg-card p-6 text-center sm:rounded-3xl sm:p-8">
-              <p className="text-sm text-muted-foreground">Loading catalog…</p>
-            </div>
+            Array.from({ length: 8 }, (_, i) => <MenuItemCardSkeleton key={i} />)
           ) : itemsError && menuItems.length === 0 ? (
             <div className="col-span-full flex flex-col items-center gap-3 rounded-2xl border border-dashed border-border bg-card p-6 text-center sm:rounded-3xl sm:p-8">
               <ShieldAlert className="size-8 text-muted-foreground" aria-hidden />

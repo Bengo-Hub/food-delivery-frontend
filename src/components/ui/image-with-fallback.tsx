@@ -3,6 +3,7 @@
 import Image from "next/image";
 import { useEffect, useState } from "react";
 
+import { Skeleton } from "@/components/ui/skeleton";
 import { UseCaseIllustration } from "@/components/ui/use-case-icon";
 import { cn, getMediaUrl } from "@/lib/utils";
 
@@ -51,7 +52,13 @@ export function ImageWithFallback({
   // illustration as a genuinely-missing URL — otherwise it silently renders next/image's
   // broken-image glyph instead of the intended default, which is what most items were doing.
   const [loadError, setLoadError] = useState(false);
-  useEffect(() => setLoadError(false), [resolved]);
+  // Facebook-style skeleton: the card/grid itself never waits on this — only the image slot
+  // shows a shimmer until the photo actually decodes, then cross-fades in.
+  const [isLoaded, setIsLoaded] = useState(false);
+  useEffect(() => {
+    setLoadError(false);
+    setIsLoaded(false);
+  }, [resolved]);
 
   if (!resolved || loadError) {
     return (
@@ -69,32 +76,30 @@ export function ImageWithFallback({
     );
   }
 
+  const imageProps = {
+    src: resolved,
+    alt,
+    onLoad: () => setIsLoaded(true),
+    onError: () => setLoadError(true),
+    className: cn(className, "transition-opacity duration-300", isLoaded ? "opacity-100" : "opacity-0"),
+    ...(sizes ? { sizes } : {}),
+    ...(priority ? { priority } : {}),
+    ...(loading ? { loading } : {}),
+  };
+
   if (fill) {
     return (
-      <Image
-        src={resolved}
-        alt={alt}
-        fill
-        className={className}
-        onError={() => setLoadError(true)}
-        {...(sizes ? { sizes } : {})}
-        {...(priority ? { priority } : {})}
-        {...(loading ? { loading } : {})}
-      />
+      <div className="absolute inset-0">
+        {!isLoaded && <Skeleton className={cn("absolute inset-0 rounded-none", className)} />}
+        <Image {...imageProps} fill />
+      </div>
     );
   }
 
   return (
-    <Image
-      src={resolved}
-      alt={alt}
-      width={width ?? 64}
-      height={height ?? 64}
-      className={className}
-      onError={() => setLoadError(true)}
-      {...(sizes ? { sizes } : {})}
-      {...(priority ? { priority } : {})}
-      {...(loading ? { loading } : {})}
-    />
+    <div className="relative inline-block" style={width && height ? { width, height } : undefined}>
+      {!isLoaded && <Skeleton className={cn("absolute inset-0 rounded-none", className)} />}
+      <Image {...imageProps} width={width ?? 64} height={height ?? 64} />
+    </div>
   );
 }

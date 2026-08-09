@@ -1,6 +1,7 @@
 "use client";
 
 import { fetchPublicEvent, type PublicEvent } from "@/lib/api/events";
+import { ImageWithFallback } from "@/components/ui/image-with-fallback";
 import { useCartStore } from "@/store/cart";
 import { CalendarDays, Clock, Loader2, MapPin, Minus, Plus, Share2, Sparkles, Ticket } from "lucide-react";
 import Link from "next/link";
@@ -226,8 +227,14 @@ export default function PublicEventPage() {
         {/* ── Hero ───────────────────────────────────────────────────────── */}
         <div className="relative rounded-[1.75rem] overflow-hidden shadow-2xl shadow-black/20 ring-1 ring-white/10 aspect-[16/10] sm:aspect-[21/9]">
           {event.image_url ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={event.image_url} alt={event.name} className="absolute inset-0 w-full h-full object-cover" />
+            <ImageWithFallback
+              src={event.image_url}
+              alt={event.name}
+              fill
+              className="object-cover"
+              sizes="(max-width: 1024px) 100vw, 1024px"
+              priority
+            />
           ) : (
             <div className="absolute inset-0 bg-gradient-to-br from-primary/30 via-primary/10 to-background flex items-center justify-center">
               <Ticket className="h-20 w-20 text-primary/40" />
