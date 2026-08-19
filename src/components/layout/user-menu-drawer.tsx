@@ -29,13 +29,13 @@ import { usePathname } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { TenantLogo } from "@/components/layout/tenant-logo";
 import { brand } from "@/config/brand";
+import { useBrandConfig } from "@/hooks/use-brand";
+import { useOrderingConfig } from "@/hooks/use-ordering-config";
 import { usePwaInstall } from "@/hooks/use-pwa-install";
 import { useSubscription } from "@/hooks/use-subscription";
-import { useTenantConfig } from "@/hooks/use-tenant-config";
 import { orgRoute } from "@/lib/routes";
 import { toast } from "@/lib/toast";
 import { cn } from "@/lib/utils";
-import { useTenantBranding } from "@/providers/branding-provider";
 import { useOrgSlug } from "@/providers/org-slug-provider";
 import { useAuthStore } from "@/store/auth";
 import { userCanAccess, userHasRole } from "@/lib/auth/permissions";
@@ -50,8 +50,8 @@ export function UserMenuDrawer({ open, onOpenChange }: UserMenuDrawerProps) {
   const pathname = usePathname();
   const user = useAuthStore((state) => state.user);
   const logout = useAuthStore((state) => state.logout);
-  const { tenant } = useTenantBranding();
-  const { copy } = useTenantConfig();
+  const { data: brandConfig } = useBrandConfig();
+  const { copy } = useOrderingConfig();
   const { hasFeature } = useSubscription();
   // Plan-gated nav entries (exempt tenants pass via hasFeature).
   const hasAnalytics = hasFeature("advanced_analytics");
@@ -108,7 +108,7 @@ export function UserMenuDrawer({ open, onOpenChange }: UserMenuDrawerProps) {
 
   // Fall back to the generic platform mark — never a bundled tenant photo
   // (see branding-provider.tsx DEFAULT_BRAND comment for why).
-  const menuLogo = tenant?.logoUrl || brand.assets.logo;
+  const menuLogo = brandConfig?.logoUrl || brand.assets.logo;
 
   const { canInstall, isInstalled, isIOS, promptInstall } = usePwaInstall();
   const handleInstallClick = async () => {
@@ -306,7 +306,7 @@ export function UserMenuDrawer({ open, onOpenChange }: UserMenuDrawerProps) {
       >
         {/* Close Button & Logo */}
         <div className="flex items-center justify-between px-4 pt-4 pb-2">
-          <TenantLogo src={menuLogo} alt={tenant?.name || brand.name} className="h-9" />
+          <TenantLogo src={menuLogo} alt={brandConfig?.name || brand.name} className="h-9" />
           <button
             type="button"
             onClick={handleClose}

@@ -1,9 +1,9 @@
 'use client';
 
 import { SubscriptionBanner as SharedSubscriptionBanner } from '@bengo-hub/shared-ui-lib/subscription';
+import { useBrandConfig } from '@/hooks/use-brand';
 import { useSubscription } from '@/hooks/use-subscription';
 import { useUsageAlerts } from '@/hooks/use-usage-alerts';
-import { useTenantBranding } from '@/providers/branding-provider';
 
 const SUBSCRIPTIONS_UI_URL =
   process.env.NEXT_PUBLIC_SUBSCRIPTIONS_UI_URL || 'https://pricing.codevertexafrica.com';
@@ -14,8 +14,8 @@ const BILLING_URL = `${SUBSCRIPTIONS_UI_URL}/billing`;
 export function SubscriptionBanner() {
   const sub = useSubscription();
   const usageAlerts = useUsageAlerts();
-  const { tenant } = useTenantBranding();
-  const brandColor = tenant?.primaryColor ?? undefined;
+  const { data: brandConfig } = useBrandConfig();
+  const brandColor = brandConfig?.primaryColor ?? undefined;
   return (
     <SharedSubscriptionBanner
       status={sub.status}

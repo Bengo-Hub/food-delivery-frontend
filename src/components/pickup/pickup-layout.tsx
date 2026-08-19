@@ -10,7 +10,6 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useOutlets } from "@/hooks/use-catalog";
 import { useCategories } from "@/hooks/use-categories";
 import { useOrderingConfig } from "@/hooks/use-ordering-config";
-import { useTenantConfig } from "@/hooks/use-tenant-config";
 import { cn } from "@/lib/utils";
 import { useOrgSlug } from "@/providers/org-slug-provider";
 import { useDiningModeStore } from "@/store/dining-mode";
@@ -30,8 +29,7 @@ export function PickupLayout() {
   const [activeCategory, setActiveCategory] = useState("all");
   const [mobileShowMap, setMobileShowMap] = useState(false);
   const deliveryLocation = useDiningModeStore((s) => s.deliveryLocation);
-  const { copy } = useTenantConfig();
-  const { profile } = useOrderingConfig();
+  const { copy, profile } = useOrderingConfig();
   const { data: apiCategories } = useCategories();
   // No hardcoded food-emoji fallback — an empty list renders as an empty (not
   // fake-food) carousel; CategoryCarousel supplies its own use-case-aware SVG

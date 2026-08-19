@@ -2,7 +2,7 @@
 
 import { AlertTriangle, Calendar, Package, Truck } from "lucide-react";
 
-import { useTenantConfig } from "@/hooks/use-tenant-config";
+import { useOrderingConfig } from "@/hooks/use-ordering-config";
 import { cn } from "@/lib/utils";
 
 type FulfillmentMode = "delivery" | "pickup" | "schedule";
@@ -72,7 +72,7 @@ export function FulfillmentToggle({
   estimatedTime,
   allowSchedule = true,
 }: FulfillmentToggleProps) {
-  const { copy } = useTenantConfig();
+  const { copy } = useOrderingConfig();
 
   return (
     <section className="space-y-3">

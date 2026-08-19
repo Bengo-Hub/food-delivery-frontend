@@ -9,11 +9,11 @@ const footerLinks = [
 ];
 
 import { brand } from "@/config/brand";
-import { useTenantBranding } from "@/providers/branding-provider";
+import { useBrandConfig } from "@/hooks/use-brand";
 
 export function SiteFooter() {
-  const { tenant } = useTenantBranding();
-  const tenantName = tenant?.orgName || tenant?.name || brand.name;
+  const { data: brandConfig } = useBrandConfig();
+  const tenantName = brandConfig?.name || brand.name;
   const currentYear = new Date().getFullYear();
 
   return (

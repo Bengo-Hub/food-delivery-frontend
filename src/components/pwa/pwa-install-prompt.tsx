@@ -5,7 +5,7 @@ import { useParams } from "next/navigation";
 import { PwaInstallPrompt } from "@bengo-hub/shared-ui-lib/offline";
 
 import { brand } from "@/config/brand";
-import { useTenantBranding } from "@/providers/branding-provider";
+import { useBrandConfig } from "@/hooks/use-brand";
 
 const DISMISS_KEY = "pwa-install-dismissed";
 
@@ -43,14 +43,14 @@ function useTenantManifestLink() {
  */
 export function PWAInstallPrompt() {
   useTenantManifestLink();
-  const { tenant } = useTenantBranding();
+  const { data: brandConfig } = useBrandConfig();
 
-  const appName = tenant?.orgName ? `${tenant.orgName} Ordering` : brand.shortName;
+  const appName = brandConfig?.name ? `${brandConfig.name} Ordering` : brand.shortName;
 
   return (
     <PwaInstallPrompt
       appName={appName}
-      logoUrl={tenant?.logoUrl ?? null}
+      logoUrl={brandConfig?.logoUrl ?? null}
       tagline="Order faster with the installed app. Works offline too!"
       dismissKey={DISMISS_KEY}
     />

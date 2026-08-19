@@ -4,7 +4,7 @@ import { Check, ChevronDown, Star, Tag } from "lucide-react";
 import { useState } from "react";
 
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { useTenantConfig } from "@/hooks/use-tenant-config";
+import { useOrderingConfig } from "@/hooks/use-ordering-config";
 import { cn } from "@/lib/utils";
 import { useIsPickupMode } from "@/store/dining-mode";
 
@@ -84,7 +84,7 @@ export function FilterBar({
   className,
 }: FilterBarProps) {
   const isPickupMode = useIsPickupMode();
-  const { copy } = useTenantConfig();
+  const { copy } = useOrderingConfig();
   const [internalFilters, setInternalFilters] = useState<ActiveFilters>(defaultFilters);
 
   // Use external state if provided, otherwise use internal state

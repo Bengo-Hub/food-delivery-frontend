@@ -7,6 +7,7 @@ import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
 import { AddToCartModal, type AddToCartModalItem } from "@/components/catalog/add-to-cart-modal";
+import { DiningModeToggle } from "@/components/layout/dining-mode-toggle";
 import { SiteShell } from "@/components/layout/site-shell";
 import { categoryAnchorId, OutletMenuSection } from "@/components/outlet/outlet-menu-section";
 import { OutletSidebar } from "@/components/outlet/outlet-sidebar";
@@ -167,6 +168,7 @@ export function FoodOutletView({ orgSlug, outletId }: FoodOutletViewProps) {
           />
 
           <div className="space-y-6">
+            <DiningModeToggle size="md" />
             <OutletLocationMapCard outlet={outlet} />
 
             {menuLoading && menuItems.length === 0 ? (

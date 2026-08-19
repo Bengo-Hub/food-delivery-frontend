@@ -17,12 +17,22 @@ interface TenantBrandConfig {
   support_phone?: string;
   brand_palette?: Record<string, string>;
   features?: Record<string, boolean>;
+  use_case?: string;
+  use_cases?: string[];
 }
 
 export const brandKeys = {
   all: ["brand"] as const,
   config: (tenantSlug: string) => [...brandKeys.all, "config", tenantSlug] as const,
 };
+
+/** "{first word of tenantName} {appName}", e.g. "Urban OrderApp" — falls back to just
+ *  appName while no tenant name has resolved yet. Mirrors the shared-ui-lib
+ *  TenantBrandingProvider's getServiceTitle helper this replaces. */
+export function serviceTitle(tenantName: string | undefined, appName: string): string {
+  const firstWord = (tenantName ?? "").trim().split(/\s+/)[0] ?? "";
+  return firstWord ? `${firstWord} ${appName}` : appName;
+}
 
 export function useBrandConfig() {
   const orgSlug = useOrgSlug();
@@ -42,6 +52,8 @@ export function useBrandConfig() {
           primaryColor: staticBrand.palette.primary,
           secondaryColor: staticBrand.palette.emphasis,
           features: {} as Record<string, boolean>,
+          useCase: undefined as string | undefined,
+          useCases: [] as string[],
         };
       }
       try {
@@ -56,6 +68,8 @@ export function useBrandConfig() {
           primaryColor: data.primary_color || data.brand_palette?.primary || staticBrand.palette.primary,
           secondaryColor: data.secondary_color || data.brand_palette?.secondary || staticBrand.palette.emphasis,
           features: data.features ?? {},
+          useCase: data.use_case,
+          useCases: data.use_cases ?? [],
         };
       } catch {
         return {
@@ -68,6 +82,8 @@ export function useBrandConfig() {
           primaryColor: staticBrand.palette.primary,
           secondaryColor: staticBrand.palette.emphasis,
           features: {} as Record<string, boolean>,
+          useCase: undefined as string | undefined,
+          useCases: [] as string[],
         };
       }
     },
