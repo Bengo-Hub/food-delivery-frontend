@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { ImageWithFallback } from "@/components/ui/image-with-fallback";
 import { cn } from "@/lib/utils";
 import { useOrgSlug } from "@/providers/org-slug-provider";
+import type { CatalogVariant, ModifierGroup } from "@/types/catalog";
 
 export interface FeaturedItemProps {
   id: string;
@@ -26,6 +27,11 @@ export interface FeaturedItemProps {
   href?: string;
   className?: string;
   onAddToCart?: (id: string) => void;
+  /** Not rendered by the card itself — carried through so the parent's add-to-cart
+   *  handler can decide whether to open the modifier/variant modal. */
+  hasVariants?: boolean | undefined;
+  variants?: CatalogVariant[] | undefined;
+  modifierGroups?: ModifierGroup[] | undefined;
 }
 
 export function FeaturedItemCard({

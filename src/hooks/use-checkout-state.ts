@@ -17,9 +17,30 @@ import { orgRoute } from "@/lib/routes";
 import { toast } from "@/lib/toast";
 import { useOrgSlug } from "@/providers/org-slug-provider";
 import { useAuthStore } from "@/store/auth";
-import { useCartStore } from "@/store/cart";
+import { useCartStore, type CartItem } from "@/store/cart";
 import { useDiningModeStore } from "@/store/dining-mode";
 import type { PaymentResult } from "@/components/checkout/treasury-payment-modal";
+import type { CheckoutItemModifier } from "@/lib/api/cart-api";
+
+/** Flattens a cart line's grouped modifier selections into the one-entry-per-option
+ *  wire shape the backend expects (mirrors the persisted-cart AddItemRequest.modifiers
+ *  contract), so a selected modifier survives checkout instead of being dropped. */
+function flattenModifiers(item: CartItem): CheckoutItemModifier[] | undefined {
+  if (!item.modifiers?.length) return undefined;
+  const flat: CheckoutItemModifier[] = [];
+  for (const group of item.modifiers) {
+    for (const option of group.options) {
+      flat.push({
+        groupId: group.groupId,
+        groupName: group.groupName,
+        optionId: option.id,
+        optionName: option.name,
+        priceAdjustment: option.price,
+      });
+    }
+  }
+  return flat.length > 0 ? flat : undefined;
+}
 
 export type FulfillmentMode = "delivery" | "pickup" | "schedule";
 export type CheckoutStep = "review" | "processing" | "payment" | "success";
@@ -519,14 +540,18 @@ export function useCheckoutState() {
           sessionId,
           fulfillmentType: effectiveFulfillment,
           idempotencyKey,
-          items: items.map((item) => ({
-            inventorySku: item.inventorySku || item.id,
-            name: item.name,
-            quantity: item.quantity,
-            unitPrice: item.price,
-            totalPrice: item.total,
-            ...(item.metadata ? { metadata: item.metadata } : {}),
-          })),
+          items: items.map((item) => {
+            const modifiers = flattenModifiers(item);
+            return {
+              inventorySku: item.inventorySku || item.id,
+              name: item.name,
+              quantity: item.quantity,
+              unitPrice: item.price,
+              totalPrice: item.total,
+              ...(item.metadata ? { metadata: item.metadata } : {}),
+              ...(modifiers ? { modifiers } : {}),
+            };
+          }),
         };
         if (guestEmail.trim()) guestPayload.contactEmail = guestEmail.trim();
         if (guestPhone.trim()) guestPayload.contactPhone = guestPhone.trim();
@@ -549,14 +574,18 @@ export function useCheckoutState() {
         const payload: Parameters<typeof checkoutMutation.mutateAsync>[0] = {
           outletId: checkoutOutletId,
           fulfillmentType: effectiveFulfillment,
-          items: items.map((item) => ({
-            inventorySku: item.inventorySku || item.id,
-            name: item.name,
-            quantity: item.quantity,
-            unitPrice: item.price,
-            totalPrice: item.total,
-            ...(item.metadata ? { metadata: item.metadata } : {}),
-          })),
+          items: items.map((item) => {
+            const modifiers = flattenModifiers(item);
+            return {
+              inventorySku: item.inventorySku || item.id,
+              name: item.name,
+              quantity: item.quantity,
+              unitPrice: item.price,
+              totalPrice: item.total,
+              ...(item.metadata ? { metadata: item.metadata } : {}),
+              ...(modifiers ? { modifiers } : {}),
+            };
+          }),
           idempotencyKey,
         };
         // Attach authenticated user contact details so orders show customer info

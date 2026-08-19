@@ -15,6 +15,16 @@ export interface FeeBreakdown {
   grand_total: number;
 }
 
+/** A selected modifier option on a checkout line — one entry per option, matching
+ *  ordering-backend's CartItemModifierDTO wire shape exactly. */
+export interface CheckoutItemModifier {
+  groupId: string;
+  groupName: string;
+  optionId: string;
+  optionName: string;
+  priceAdjustment: number;
+}
+
 export interface CheckoutRequest {
   outletId: string;
   fulfillmentType: "delivery" | "pickup" | "schedule";
@@ -25,6 +35,7 @@ export interface CheckoutRequest {
     unitPrice: number;
     totalPrice: number;
     metadata?: Record<string, unknown>;
+    modifiers?: CheckoutItemModifier[];
   }[];
   deliveryAddressId?: string;
   deliveryNotes?: string;
@@ -97,6 +108,7 @@ export interface GuestCheckoutRequest {
     unitPrice: number;
     totalPrice: number;
     metadata?: Record<string, unknown>;
+    modifiers?: CheckoutItemModifier[];
   }[];
   fulfillmentType: "delivery" | "pickup" | "schedule";
   deliveryAddress?: string;

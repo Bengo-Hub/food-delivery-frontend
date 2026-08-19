@@ -29,10 +29,9 @@ import { useCategories, useCatalogItems, useOutlets } from "@/hooks/use-catalog"
 import { useOrderingConfig } from "@/hooks/use-ordering-config";
 import { usePromoBanners } from "@/hooks/use-promo-banners";
 import { usePromoDeals } from "@/hooks/use-promo-deals";
-import { applyDeal, dealBadge, type Deal } from "@/lib/api/promo-deals";
+import { applyDeal, dealBadge, resolveDealItems } from "@/lib/api/promo-deals";
 import { orgRoute } from "@/lib/routes";
 import { useOrgSlug } from "@/providers/org-slug-provider";
-import type { MenuItem } from "@/types/catalog";
 
 const TRUST_BADGES = [
   { icon: Truck, label: "Fast Delivery" },
@@ -40,32 +39,6 @@ const TRUST_BADGES = [
   { icon: Tag, label: "Best Prices" },
   { icon: Headset, label: "24/7 Support" },
 ];
-
-/** Resolve the (item, matching deal) pairs for the Top Deals rail: cross-reference
- *  each deal's rule.scope_ids against the loaded catalog items, matching item-scoped
- *  deals by item id/inventoryId and category-scoped deals by categoryId. "all"-scope
- *  deals are skipped here — they're banner-appropriate, not a per-item grid concern. */
-function resolveDealItems(items: MenuItem[], deals: Deal[]): { item: MenuItem; deal: Deal }[] {
-  const out: { item: MenuItem; deal: Deal }[] = [];
-  const seen = new Set<string>();
-  for (const deal of deals) {
-    const rule = deal.rule;
-    if (!rule || rule.scopeType === "all") continue;
-    if (rule.discountType === "bogo") continue; // doesn't reduce to a single price badge
-    for (const item of items) {
-      if (seen.has(item.id)) continue;
-      const matches =
-        rule.scopeType === "item"
-          ? rule.scopeIds.includes(item.id) || (item.inventoryId != null && rule.scopeIds.includes(item.inventoryId))
-          : rule.scopeIds.includes(item.categoryId);
-      if (matches) {
-        seen.add(item.id);
-        out.push({ item, deal });
-      }
-    }
-  }
-  return out;
-}
 
 export function RetailHomeView() {
   const orgSlug = useOrgSlug();

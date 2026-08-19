@@ -13,6 +13,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useMemo, useState } from "react";
 
+import { AddToCartModal, needsAddToCartModal, type AddToCartModalItem } from "@/components/catalog/add-to-cart-modal";
 import {
   FeaturedItemCard,
   FeaturedItemsCarousel,
@@ -30,10 +31,12 @@ import { OutletCard, type OutletCardProps } from "@/components/outlet/outlet-car
 import { OutletSection } from "@/components/outlet/outlet-section";
 import { PromoBannerCarousel } from "@/components/promo/promo-banner-carousel";
 import { Button } from "@/components/ui/button";
-import { useCategories, useFeaturedItems, useInfiniteOutlets } from "@/hooks/use-catalog";
+import { useCatalogItems, useCategories, useFeaturedItems, useInfiniteOutlets } from "@/hooks/use-catalog";
 import { useOrderingConfig } from "@/hooks/use-ordering-config";
 import { useOutletSections } from "@/hooks/use-outlet-sections";
 import { usePromoBanners } from "@/hooks/use-promo-banners";
+import { usePromoDeals } from "@/hooks/use-promo-deals";
+import { applyDeal, dealBadge, resolveDealItems } from "@/lib/api/promo-deals";
 import { orgRoute } from "@/lib/routes";
 import { toast } from "@/lib/toast";
 import { useOrgSlug } from "@/providers/org-slug-provider";
@@ -46,6 +49,7 @@ export function FoodHomeView() {
   const [activeCategory, setActiveCategory] = useState("all");
   const [favorites, setFavorites] = useState<Set<string>>(new Set());
   const [filters, setFilters] = useState<ActiveFilters>(defaultFilters);
+  const [modalItem, setModalItem] = useState<AddToCartModalItem | null>(null);
 
   const diningMode = useDiningModeStore((s) => s.mode);
   const deliveryLocation = useDiningModeStore((state) => state.deliveryLocation);
@@ -74,6 +78,11 @@ export function FoodHomeView() {
   const { data: categoriesData } = useCategories(orgSlug, firstOutletId || undefined, effectiveUseCase);
   const { data: featuredData } = useFeaturedItems(orgSlug, firstOutletId || undefined, 10);
   const { data: promoBanners } = usePromoBanners(effectiveUseCase);
+  // Item-level deals grid ("Today's offers on menu items", Uber-Eats-style deal cards) —
+  // reuses the exact same deal-matching utilities RetailHomeView already built, rather than
+  // re-implementing scope-matching/price math for the food vertical.
+  const { data: dealCatalogPage } = useCatalogItems(orgSlug, {}, 1, 60);
+  const { data: deals } = usePromoDeals();
 
   // ------- Derived data -------
   const categories: Category[] = (categoriesData ?? []).map((c) => ({
@@ -124,9 +133,46 @@ export function FoodHomeView() {
             href: orgRoute(orgSlug, `/catalog/${item.id}`),
             ...(item.discountPercent != null && { discountPercent: item.discountPercent }),
             ...(item.originalPrice != null && { originalPrice: item.originalPrice }),
+            hasVariants: item.hasVariants,
+            variants: item.variants,
+            modifierGroups: item.modifierGroups,
           }))
         : [],
     [featuredData, firstOutletId, firstOutletName, orgSlug, profile],
+  );
+
+  const dealItems = useMemo(
+    () => resolveDealItems(dealCatalogPage?.data ?? [], deals ?? []).slice(0, 12),
+    [dealCatalogPage, deals],
+  );
+
+  const topDeals: FeaturedItemProps[] = useMemo(
+    () =>
+      dealItems.map(({ item, deal }) => {
+        const discounted = applyDeal(item.price, deal.rule);
+        const badge = dealBadge(deal.rule);
+        const percentOff =
+          badge && deal.rule?.discountType === "percentage" ? deal.rule.discountValue : undefined;
+        return {
+          id: item.id,
+          name: item.name,
+          description: item.description,
+          price: discounted,
+          currency: item.currency ?? "KES",
+          ...(item.image ? { image: item.image } : {}),
+          outletId: item.outletId,
+          outletName: item.outletName,
+          category: item.category,
+          useCase: profile,
+          href: orgRoute(orgSlug, `/catalog/${item.id}`),
+          ...(percentOff != null ? { discountPercent: percentOff } : {}),
+          originalPrice: item.price,
+          hasVariants: item.hasVariants,
+          variants: item.variants,
+          modifierGroups: item.modifierGroups,
+        };
+      }),
+    [dealItems, orgSlug, profile],
   );
 
   // ------- Handlers -------
@@ -141,19 +187,34 @@ export function FoodHomeView() {
 
   const handleAddToCart = useCallback(
     (itemId: string) => {
-      const item = featuredItems.find((i) => i.id === itemId);
-      if (item) {
-        addItem({
+      const item = featuredItems.find((i) => i.id === itemId) ?? topDeals.find((i) => i.id === itemId);
+      if (!item) return;
+      if (needsAddToCartModal(item)) {
+        setModalItem({
           id: item.id,
           name: item.name,
+          description: item.description,
           price: item.price,
+          currency: item.currency,
+          image: item.image,
           outletId: item.outletId,
           outletName: item.outletName,
+          hasVariants: item.hasVariants,
+          variants: item.variants,
+          modifierGroups: item.modifierGroups,
         });
-        toast.success(`Added ${item.name} to cart`);
+        return;
       }
+      addItem({
+        id: item.id,
+        name: item.name,
+        price: item.price,
+        outletId: item.outletId,
+        outletName: item.outletName,
+      });
+      toast.success(`Added ${item.name} to cart`);
     },
-    [featuredItems, addItem],
+    [featuredItems, topDeals, addItem],
   );
 
   const handleLoadMore = useCallback(() => {
@@ -203,6 +264,29 @@ export function FoodHomeView() {
         <section className="bg-background py-4 sm:py-6">
           <div className="mx-auto w-full max-w-6xl px-3 sm:px-4 lg:px-8">
             <PromoBannerCarousel banners={promoBanners} />
+          </div>
+        </section>
+      )}
+
+      {/* Top deals — item-level "% off" / discounted-price cards, matching Uber Eats' deal
+          cards (distinct from the outlet-level "Today's offers" rail further down). */}
+      {topDeals.length > 0 && (
+        <section className="py-4 sm:py-6">
+          <div className="mx-auto w-full max-w-6xl px-3 sm:px-4 lg:px-8">
+            <div className="mb-3 flex items-center justify-between sm:mb-4">
+              <div>
+                <h2 className="text-base font-bold text-foreground sm:text-xl">Top deals</h2>
+                <p className="text-xs text-muted-foreground sm:text-sm">Menu items on sale right now</p>
+              </div>
+              <Button variant="ghost" size="sm" className="h-9 text-primary" asChild>
+                <Link href={orgRoute(orgSlug, "/catalog?filter=deals")}>See all</Link>
+              </Button>
+            </div>
+            <FeaturedItemsCarousel>
+              {topDeals.map((item) => (
+                <FeaturedItemCard key={item.id} {...item} onAddToCart={handleAddToCart} />
+              ))}
+            </FeaturedItemsCarousel>
           </div>
         </section>
       )}
@@ -397,6 +481,8 @@ export function FoodHomeView() {
           </div>
         </div>
       </section>
+
+      <AddToCartModal item={modalItem} onClose={() => setModalItem(null)} />
     </SiteShell>
   );
 }

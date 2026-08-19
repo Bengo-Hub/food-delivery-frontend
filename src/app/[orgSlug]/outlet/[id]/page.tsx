@@ -6,7 +6,9 @@ import { useParams, useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 
+import { AddToCartModal, needsAddToCartModal, type AddToCartModalItem } from "@/components/catalog/add-to-cart-modal";
 import { SiteShell } from "@/components/layout/site-shell";
+import { FoodOutletView } from "@/components/outlet/food-outlet-view";
 import { Button } from "@/components/ui/button";
 import { ImageWithFallback } from "@/components/ui/image-with-fallback";
 import { Input } from "@/components/ui/input";
@@ -17,6 +19,24 @@ import { cn } from "@/lib/utils";
 import { useOrgSlug } from "@/providers/org-slug-provider";
 import { useCartStore } from "@/store/cart";
 import type { DietaryTag, MenuItem } from "@/types/catalog";
+
+/** Foods/quick-service outlets get the Uber-Eats-style sidebar+map layout (FoodOutletView);
+ *  every other vertical keeps today's single-column GenericOutletView. This dispatch has to
+ *  live in a separate parent component (not a conditional return inside GenericOutletView
+ *  itself) — the vertical is only known once the outlet finishes loading, and switching which
+ *  hooks run mid-lifetime of one component would violate the Rules of Hooks. */
+export default function OutletPage() {
+  const params = useParams();
+  const orgSlug = useOrgSlug();
+  const outletId = (params?.id as string) ?? "";
+  const { data: outlet } = useOutlet(orgSlug, outletId);
+  const { config: cfg } = useOrderingConfig(outlet?.businessType);
+
+  if (cfg.profile === "hospitality" || cfg.profile === "quick_service") {
+    return <FoodOutletView orgSlug={orgSlug} outletId={outletId} />;
+  }
+  return <GenericOutletView orgSlug={orgSlug} outletId={outletId} />;
+}
 
 const dietaryLabels: Record<DietaryTag, string> = {
   vegan: "Vegan",
@@ -110,11 +130,8 @@ function MenuItemCard({
   );
 }
 
-export default function OutletPage() {
-  const params = useParams();
+function GenericOutletView({ orgSlug, outletId }: { orgSlug: string; outletId: string }) {
   const router = useRouter();
-  const orgSlug = useOrgSlug();
-  const outletId = (params?.id as string) ?? "";
 
   const { data: outlet, isLoading: outletLoading, error: outletError } = useOutlet(orgSlug, outletId);
   const { data: menuData, isLoading: menuLoading } = useOutletMenu(orgSlug, outletId, undefined, 1, 100);
@@ -125,6 +142,7 @@ export default function OutletPage() {
   const [search, setSearch] = useState("");
   const [activeCategory, setActiveCategory] = useState("All");
   const [isFavorite, setIsFavorite] = useState(false);
+  const [modalItem, setModalItem] = useState<AddToCartModalItem | null>(null);
 
   const addItem = useCartStore((state) => state.addItem);
 
@@ -159,6 +177,22 @@ export default function OutletPage() {
   }, [filteredItems]);
 
   const handleAddToCart = (item: MenuItem) => {
+    if (needsAddToCartModal(item)) {
+      setModalItem({
+        id: item.id,
+        name: item.name,
+        description: item.description,
+        price: item.price,
+        currency: item.currency,
+        image: item.image,
+        outletId: item.outletId,
+        outletName: item.outletName,
+        hasVariants: item.hasVariants,
+        variants: item.variants,
+        modifierGroups: item.modifierGroups,
+      });
+      return;
+    }
     addItem({
       id: item.id,
       name: item.name,
@@ -397,6 +431,8 @@ export default function OutletPage() {
           )}
         </div>
       </div>
+
+      <AddToCartModal item={modalItem} onClose={() => setModalItem(null)} />
     </SiteShell>
   );
 }

@@ -16,6 +16,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 
+import { AddToCartModal, needsAddToCartModal, type AddToCartModalItem } from "@/components/catalog/add-to-cart-modal";
 import { ImageWithFallback } from "@/components/ui/image-with-fallback";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -27,7 +28,7 @@ import { orgRoute } from "@/lib/routes";
 import { cn } from "@/lib/utils";
 import { useOrgSlug } from "@/providers/org-slug-provider";
 import { useCartStore } from "@/store/cart";
-import type { DietaryTag } from "@/types/catalog";
+import type { CatalogVariant, DietaryTag, ModifierGroup } from "@/types/catalog";
 
 type MenuItem = {
   id: string;
@@ -47,6 +48,8 @@ type MenuItem = {
   model?: string | undefined;
   condition?: string | undefined;
   hasVariants?: boolean | undefined;
+  variants?: CatalogVariant[] | undefined;
+  modifierGroups?: ModifierGroup[] | undefined;
 } & Record<string, any>;
 
 function DiscoveryMenuItem({
@@ -62,6 +65,7 @@ function DiscoveryMenuItem({
   cfg: OrderingConfig;
   index?: number;
 }) {
+  const opensModal = needsAddToCartModal(item);
   const itemUrl = item.id ? `/${orgSlug}/catalog/${item.id}` : "#";
   const { mutate: toggleFavorite } = useToggleFavorite(orgSlug);
   const [isWhitelisted, setIsWhitelisted] = useState(item.isFavorite ?? false);
@@ -160,27 +164,19 @@ function DiscoveryMenuItem({
               ))}
             </div>
           </div>
-          {item.hasVariants ? (
-            // Variant products need a selection — let the click navigate to the detail
-            // page (the wrapping Link) where the variant selector lives.
-            <Button className="w-full min-h-[48px]" size="sm" variant="outline">
-              <ShoppingCartIcon className="mr-2 size-4" />
-              {cfg.selectOptionsLabel}
-            </Button>
-          ) : (
-            <Button
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                onAddToCart(item);
-              }}
-              className="w-full min-h-[48px]"
-              size="sm"
-            >
-              <ShoppingCartIcon className="mr-2 size-4" />
-              {cfg.ctaLabel}
-            </Button>
-          )}
+          <Button
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              onAddToCart(item);
+            }}
+            className="w-full min-h-[48px]"
+            size="sm"
+            variant={opensModal ? "outline" : "default"}
+          >
+            <ShoppingCartIcon className="mr-2 size-4" />
+            {opensModal ? cfg.selectOptionsLabel : cfg.ctaLabel}
+          </Button>
         </footer>
       </div>
     </Link>
@@ -253,6 +249,7 @@ export function MenuDiscovery({
   const [activeDietary, setActiveDietary] = useState<DietaryTag[]>((initialDietary as DietaryTag[]) ?? []);
   const [favoriteOnly, setFavoriteOnly] = useState(initialFavoriteOnly ?? false);
   const [page, setPage] = useState(1);
+  const [modalItem, setModalItem] = useState<AddToCartModalItem | null>(null);
   const addItem = useCartStore((state) => state.addItem);
 
   const { data: outletsData } = useOutlets(orgSlug, undefined, 1, 50);
@@ -304,6 +301,8 @@ export function MenuDiscovery({
         model: m.model,
         condition: m.condition,
         hasVariants: m.hasVariants,
+        variants: m.variants,
+        modifierGroups: m.modifierGroups,
         ...(m.featured && { feature: "recommended" as const }),
       })),
     [apiItems],
@@ -331,9 +330,21 @@ export function MenuDiscovery({
   }, [initialCategory, initialOutlet, initialSearch, initialDietary, initialFavoriteOnly]);
 
   const handleAddToCart = (item: MenuItem) => {
-    // Variant products require choosing an option on the detail page first.
-    if (item.hasVariants) {
-      router.push(`/${orgSlug}/catalog/${item.id}`);
+    // Variant/modifier products open the quick add-to-cart modal so the customer can
+    // configure their selection without leaving the grid (mirrors Uber Eats).
+    if (needsAddToCartModal(item)) {
+      setModalItem({
+        id: item.id,
+        name: item.name,
+        description: item.description,
+        price: item.priceValue,
+        image: item.image,
+        outletId: item.outletId,
+        outletName: item.outletName,
+        hasVariants: item.hasVariants,
+        variants: item.variants,
+        modifierGroups: item.modifierGroups,
+      });
       return;
     }
     addItem({
@@ -607,6 +618,7 @@ export function MenuDiscovery({
           </div>
         )}
       </div>
+      <AddToCartModal item={modalItem} onClose={() => setModalItem(null)} />
     </section>
   );
 }

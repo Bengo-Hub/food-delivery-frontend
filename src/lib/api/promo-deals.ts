@@ -4,12 +4,13 @@
  * Mirrors promo-banners.ts: a thin read-through of ordering-backend's
  * GET /{tenant}/promotions/deals, which itself proxies pos-api's active,
  * currently-in-window Promotion+PromotionRule records (posdiscounts.Discount).
- * This module owns no discount logic beyond typing/shaping the response —
- * cross-referencing scope_ids against catalog items happens in the retail
- * home view, not here.
+ * Also owns resolveDealItems, the deal-to-catalog-item matcher shared by every
+ * home view that renders a per-item deals grid (retail, food) — kept here rather
+ * than duplicated per view.
  */
 
 import { api } from "./base";
+import type { MenuItem } from "@/types/catalog";
 
 export type DealScopeType = "all" | "category" | "item";
 export type DealDiscountType = "percentage" | "fixed_amount" | "fixed_price" | "bogo";
@@ -84,6 +85,33 @@ export function dealBadge(rule: DealRule | null | undefined): string | null {
   if (rule.discountType === "percentage") return `-${rule.discountValue}%`;
   if (rule.discountType === "fixed_amount") return `-KES ${rule.discountValue.toLocaleString()}`;
   return null;
+}
+
+/** Resolve the (item, matching deal) pairs for a "Top Deals"/"Today's offers" item grid:
+ *  cross-references each deal's rule.scope_ids against the loaded catalog items, matching
+ *  item-scoped deals by item id/inventoryId and category-scoped deals by categoryId.
+ *  "all"-scope deals are skipped here — they're banner-appropriate, not a per-item grid
+ *  concern. Shared by every home view that renders a deals grid (retail, food). */
+export function resolveDealItems(items: MenuItem[], deals: Deal[]): { item: MenuItem; deal: Deal }[] {
+  const out: { item: MenuItem; deal: Deal }[] = [];
+  const seen = new Set<string>();
+  for (const deal of deals) {
+    const rule = deal.rule;
+    if (!rule || rule.scopeType === "all") continue;
+    if (rule.discountType === "bogo") continue; // doesn't reduce to a single price badge
+    for (const item of items) {
+      if (seen.has(item.id)) continue;
+      const matches =
+        rule.scopeType === "item"
+          ? rule.scopeIds.includes(item.id) || (item.inventoryId != null && rule.scopeIds.includes(item.inventoryId))
+          : rule.scopeIds.includes(item.categoryId);
+      if (matches) {
+        seen.add(item.id);
+        out.push({ item, deal });
+      }
+    }
+  }
+  return out;
 }
 
 /** Compute the discounted price for an item given its original price and a deal's rule. */
