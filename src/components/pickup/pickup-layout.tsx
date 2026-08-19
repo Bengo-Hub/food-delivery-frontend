@@ -1,14 +1,13 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { useCallback, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 
-import { CategoryCarousel } from "@/components/category/category-carousel";
+import { CategoryCarousel, type Category } from "@/components/category/category-carousel";
 import { FilterBar, type ActiveFilters, defaultFilters } from "@/components/layout/filter-bar";
 import { OutletCard } from "@/components/outlet/outlet-card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useOutlets } from "@/hooks/use-catalog";
-import { useCategories } from "@/hooks/use-categories";
+import { useCategories, useOutlets } from "@/hooks/use-catalog";
 import { useOrderingConfig } from "@/hooks/use-ordering-config";
 import { cn } from "@/lib/utils";
 import { useOrgSlug } from "@/providers/org-slug-provider";
@@ -30,11 +29,20 @@ export function PickupLayout() {
   const [mobileShowMap, setMobileShowMap] = useState(false);
   const deliveryLocation = useDiningModeStore((s) => s.deliveryLocation);
   const { copy, profile } = useOrderingConfig();
-  const { data: apiCategories } = useCategories();
+  const { data: apiCategories } = useCategories(orgSlug, undefined, profile);
   // No hardcoded food-emoji fallback — an empty list renders as an empty (not
   // fake-food) carousel; CategoryCarousel supplies its own use-case-aware SVG
   // placeholder for categories without an icon.
-  const categories = apiCategories ?? [];
+  const categories: Category[] = useMemo(
+    () =>
+      (apiCategories ?? []).map((c) => ({
+        id: c.id,
+        name: c.name,
+        ...(c.emoji ? { emoji: c.emoji } : {}),
+        ...(c.image ? { imageUrl: c.image } : {}),
+      })),
+    [apiCategories],
+  );
 
   // Fetch outlets with pickup filter
   const { data: outletsData, isLoading } = useOutlets(orgSlug, {

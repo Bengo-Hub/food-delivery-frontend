@@ -28,6 +28,15 @@ const nextConfig = {
         hostname: "inventoryapi.codevertexafrica.com",
         pathname: "/media/**",
       },
+      // auth-service's tenant-branding logo storage — every tenant's real logo_url
+      // (e.g. urban-loft's) is hosted here. Missing this entry made next/image's
+      // optimizer 400 on every real tenant logo, silently falling back to the
+      // generic mark even once tenant branding data itself resolved correctly.
+      {
+        protocol: "https",
+        hostname: "accounts.codevertexafrica.com",
+        pathname: "/images/**",
+      },
     ],
     // Serve optimized images in modern formats with quality 80
     formats: ["image/avif", "image/webp"],

@@ -227,7 +227,7 @@ export async function fetchCategories(
   const params = qs.toString() ? `?${qs.toString()}` : "";
   const response = await api.get<BackendMenuCategory[]>(`${tenantSlug}/catalog/categories${params}`);
   return response.data.map((cat) => {
-    const { emoji, image } = resolveCategoryIcon(cat.icon, cat.imageUrl);
+    const { emoji, image } = resolveCategoryIcon(cat.icon, cat.imageUrl, cat.name);
     return {
       id: cat.id,
       name: cat.name,
@@ -247,7 +247,7 @@ export async function fetchCategories(
 export async function fetchCategory(tenantSlug: string, id: string): Promise<MenuCategory> {
   const response = await api.get<BackendMenuCategory>(`${tenantSlug}/catalog/categories/${id}`);
   const cat = response.data;
-  const { emoji, image } = resolveCategoryIcon(cat.icon, cat.imageUrl);
+  const { emoji, image } = resolveCategoryIcon(cat.icon, cat.imageUrl, cat.name);
   return {
     id: cat.id,
     name: cat.name,
