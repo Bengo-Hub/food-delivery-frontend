@@ -46,9 +46,9 @@ Steps:
 | Variable | Description | Default |
 |----------|-------------|---------|
 | `BASE_URL` | Ordering-frontend origin | `https://ordering.codevertexafrica.com` |
-| `E2E_ORG_SLUG` | Tenant slug | `urban-loft` |
-| `E2E_LOGIN_EMAIL` | SSO login email | `demo@bengobox.dev` |
-| `E2E_LOGIN_PASSWORD` | SSO login password | `DemoUser2024!` |
+| `E2E_ORG_SLUG` | Tenant slug | `codevertex-demo` |
+| `E2E_LOGIN_EMAIL` | SSO login email | `admin@demo.codevertexafrica.com` |
+| `E2E_LOGIN_PASSWORD` | SSO login password | `DemoAdmin2024!` |
 
 ## Running
 

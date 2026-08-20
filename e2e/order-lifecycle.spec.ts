@@ -11,8 +11,8 @@ import { test, expect, type Page, type BrowserContext } from '@playwright/test';
 
 // ─── Environment (loaded from .env.test via playwright.config.ts) ───
 const BASE = process.env.BASE_URL || 'https://ordering.codevertexafrica.com';
-const ORG_SLUG = process.env.E2E_ORG_SLUG || 'urban-loft';
-const LOGIN_EMAIL = process.env.E2E_LOGIN_EMAIL || 'demo@bengobox.dev';
+const ORG_SLUG = process.env.E2E_ORG_SLUG || 'codevertex-demo';
+const LOGIN_EMAIL = process.env.E2E_LOGIN_EMAIL || 'admin@demo.codevertexafrica.com';
 const LOGIN_PASSWORD = process.env.E2E_LOGIN_PASSWORD ?? '';
 const BASE_URL = `${BASE}/${ORG_SLUG}`;
 
