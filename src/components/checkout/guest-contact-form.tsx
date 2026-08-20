@@ -1,6 +1,7 @@
 "use client";
 
-import { Mail, Phone, User } from "lucide-react";
+import { Mail, User } from "lucide-react";
+import { PhoneInputField } from "@bengo-hub/shared-ui-lib/contact";
 
 import { Input } from "@/components/ui/input";
 
@@ -37,16 +38,12 @@ export function GuestContactForm({
             className="min-h-[44px] pl-10"
           />
         </div>
-        <div className="relative">
-          <Phone className="absolute left-3 top-3 size-4 text-muted-foreground" />
-          <Input
-            type="tel"
-            placeholder="Phone number (optional)"
-            value={phone}
-            onChange={(e) => onPhoneChange(e.target.value)}
-            className="min-h-[44px] pl-10"
-          />
-        </div>
+        <PhoneInputField
+          value={phone}
+          onChange={onPhoneChange}
+          placeholder="Phone number (optional)"
+          className="min-h-[44px]"
+        />
         <div className="relative">
           <User className="absolute left-3 top-3 size-4 text-muted-foreground" />
           <Input

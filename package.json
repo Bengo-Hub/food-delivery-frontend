@@ -20,7 +20,7 @@
   },
   "dependencies": {
     "@bengo-hub/maps": "github:Bengo-Hub/maps#v0.2.6",
-    "@bengo-hub/shared-ui-lib": "github:Bengo-Hub/shared-ui-lib#v0.1.71",
+    "@bengo-hub/shared-ui-lib": "github:Bengo-Hub/shared-ui-lib#v0.1.74",
     "@hookform/resolvers": "^3.10.0",
     "@radix-ui/react-dialog": "^1.1.15",
     "@radix-ui/react-label": "^2.1.8",
