@@ -6,7 +6,9 @@ import Link from "next/link";
 
 import type { LatLngTuple } from "leaflet";
 import { CheckCircle2Icon, ShieldCheckIcon } from "lucide-react";
+import { PhoneInputField } from "@bengo-hub/shared-ui-lib/contact";
 
+import { RequireAuth } from "@/components/auth/require-auth";
 import { SiteShell } from "@/components/layout/site-shell";
 import { LocationMap } from "@/components/location/location-map";
 import { LocationSearchInput } from "@/components/location/location-search-input";
@@ -14,18 +16,39 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { brand } from "@/config/brand";
+import { useCreateAddress } from "@/hooks/use-addresses";
 import { useUserLocation } from "@/hooks/use-user-location";
 import { isWithinBusia } from "@/lib/geofence";
 import { orgRoute } from "@/lib/routes";
 import { useOrgSlug } from "@/providers/org-slug-provider";
+import { useAuthStore } from "@/store/auth";
 import { getActiveLabel, getActiveLocation, useCustomerLocationStore } from "@/store/location";
 
 const FALLBACK: LatLngTuple = [-0.0607, 34.2855];
 
 export default function CustomerSignupPage() {
+  return (
+    <RequireAuth>
+      <SaveDeliveryAddressPage />
+    </RequireAuth>
+  );
+}
+
+function SaveDeliveryAddressPage() {
   const orgSlug = useOrgSlug();
+  const user = useAuthStore((state) => state.user);
+  const createAddress = useCreateAddress();
+
+  const [label, setLabel] = useState("Home");
+  const [contactName, setContactName] = useState(user?.fullName ?? "");
+  const [contactPhone, setContactPhone] = useState(user?.phone ?? "");
   const [submitted, setSubmitted] = useState(false);
   const [locationFeedback, setLocationFeedback] = useState<string | null>(null);
+
+  useEffect(() => {
+    setContactName(user?.fullName ?? "");
+    setContactPhone(user?.phone ?? "");
+  }, [user?.fullName, user?.phone]);
 
   const defaultLocation = useCustomerLocationStore((state) => state.defaultLocation);
   const customLocation = useCustomerLocationStore((state) => state.customLocation);
@@ -75,9 +98,29 @@ export default function CustomerSignupPage() {
     setCustomLocation(coords, formatCoord(coords));
   };
 
-  const onSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+  const onSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    setSubmitted(true);
+    if (!customLocation) {
+      setLocationFeedback("Please pick a delivery point on the map or search for your address.");
+      return;
+    }
+    setLocationFeedback(null);
+    try {
+      await createAddress.mutateAsync({
+        label: label.trim() || "Home",
+        addressLine1: activeLabel ?? formatCoord(activeLocation),
+        city: "Busia",
+        country: "KE",
+        latitude: activeLocation[0],
+        longitude: activeLocation[1],
+        contactName: contactName.trim(),
+        contactPhone: contactPhone.trim(),
+        isDefault: true,
+      });
+      setSubmitted(true);
+    } catch {
+      // useCreateAddress surfaces its own error via isError below
+    }
   };
 
   return (
@@ -85,11 +128,11 @@ export default function CustomerSignupPage() {
       <section className="border-b border-border bg-brand-surface/60 py-12">
         <div className="mx-auto flex w-full max-w-5xl flex-col gap-3 px-4 text-center">
           <h1 className="text-4xl font-semibold text-foreground md:text-5xl">
-            Create your {brand.shortName} account
+            Save your delivery address
           </h1>
           <p className="text-base text-muted-foreground">
-            Save favourites, track deliveries, and unlock rewards every time you order from Urban
-            Café.
+            Add a delivery point within Busia so checkout is one tap next time you order from{" "}
+            {brand.shortName}.
           </p>
         </div>
       </section>
@@ -98,10 +141,9 @@ export default function CustomerSignupPage() {
         <div className="mx-auto grid w-full max-w-5xl gap-6 px-4 lg:grid-cols-[1.1fr_0.9fr]">
           <Card>
             <CardHeader>
-              <h2 className="text-2xl font-semibold text-foreground">Tell us about you</h2>
+              <h2 className="text-2xl font-semibold text-foreground">Delivery details</h2>
               <p className="text-sm text-muted-foreground">
-                We&apos;ll use these details to personalise recommendations and make checkout
-                faster.
+                We&apos;ll use these to reach you and find your door faster.
               </p>
             </CardHeader>
             <CardContent>
@@ -109,48 +151,45 @@ export default function CustomerSignupPage() {
                 <div className="grid gap-4 md:grid-cols-2">
                   <div>
                     <label
-                      htmlFor="firstName"
+                      htmlFor="contactName"
                       className="mb-1 block text-xs font-semibold uppercase text-muted-foreground"
                     >
-                      First name
-                    </label>
-                    <Input id="firstName" name="firstName" placeholder="Mary" required />
-                  </div>
-                  <div>
-                    <label
-                      htmlFor="lastName"
-                      className="mb-1 block text-xs font-semibold uppercase text-muted-foreground"
-                    >
-                      Last name
-                    </label>
-                    <Input id="lastName" name="lastName" placeholder="Atieno" required />
-                  </div>
-                </div>
-                <div className="grid gap-4 md:grid-cols-2">
-                  <div>
-                    <label
-                      htmlFor="email"
-                      className="mb-1 block text-xs font-semibold uppercase text-muted-foreground"
-                    >
-                      Email
+                      Contact name
                     </label>
                     <Input
-                      id="email"
-                      name="email"
-                      type="email"
-                      placeholder="you@example.com"
-                      required
+                      id="contactName"
+                      value={contactName}
+                      onChange={(event) => setContactName(event.target.value)}
+                      placeholder="Mary Atieno"
                     />
                   </div>
                   <div>
                     <label
-                      htmlFor="phone"
+                      htmlFor="addressLabel"
                       className="mb-1 block text-xs font-semibold uppercase text-muted-foreground"
                     >
-                      Phone number
+                      Label
                     </label>
-                    <Input id="phone" name="phone" type="tel" placeholder="07xx xxx xxx" required />
+                    <Input
+                      id="addressLabel"
+                      value={label}
+                      onChange={(event) => setLabel(event.target.value)}
+                      placeholder="Home"
+                    />
                   </div>
+                </div>
+                <div>
+                  <label
+                    htmlFor="contactPhone"
+                    className="mb-1 block text-xs font-semibold uppercase text-muted-foreground"
+                  >
+                    Phone number
+                  </label>
+                  <PhoneInputField
+                    value={contactPhone}
+                    onChange={setContactPhone}
+                    placeholder="07xx xxx xxx"
+                  />
                 </div>
                 <div className="space-y-3">
                   <LocationSearchInput
@@ -174,56 +213,37 @@ export default function CustomerSignupPage() {
                     height={240}
                   />
                   <div className="text-xs text-muted-foreground">Pin coordinates: {pinLabel}</div>
-                  <input type="hidden" name="deliveryLatitude" value={activeLocation[0]} />
-                  <input type="hidden" name="deliveryLongitude" value={activeLocation[1]} />
-                  <input type="hidden" name="deliveryLabel" value={activeLabel ?? ""} />
                 </div>
-                <div className="grid gap-4 md:grid-cols-2">
-                  <div>
-                    <label
-                      htmlFor="password"
-                      className="mb-1 block text-xs font-semibold uppercase text-muted-foreground"
-                    >
-                      Password
-                    </label>
-                    <Input
-                      id="password"
-                      name="password"
-                      type="password"
-                      placeholder="Create a strong password"
-                      required
-                    />
-                  </div>
-                  <div>
-                    <label
-                      htmlFor="confirmPassword"
-                      className="mb-1 block text-xs font-semibold uppercase text-muted-foreground"
-                    >
-                      Confirm password
-                    </label>
-                    <Input
-                      id="confirmPassword"
-                      name="confirmPassword"
-                      type="password"
-                      placeholder="Repeat password"
-                      required
-                    />
-                  </div>
-                </div>
+                {createAddress.isError ? (
+                  <p className="text-sm text-destructive">
+                    We couldn&apos;t save that address. Please try again.
+                  </p>
+                ) : null}
                 <div className="space-y-3">
-                  <Button type="submit" className="w-full" disabled={submitted}>
-                    {submitted ? "Request submitted" : "Create account"}
+                  <Button type="submit" className="w-full" disabled={createAddress.isPending || submitted}>
+                    {submitted
+                      ? "Address saved"
+                      : createAddress.isPending
+                        ? "Saving…"
+                        : "Save delivery address"}
                   </Button>
                   <Button variant="outline" className="w-full justify-center" asChild>
-                    <Link href={orgRoute(orgSlug, "/auth")}>Sign in instead</Link>
+                    <Link href={orgRoute(orgSlug, "/profile")}>Skip for now</Link>
                   </Button>
                 </div>
                 {submitted ? (
                   <div className="flex items-start gap-3 rounded-2xl border border-primary/40 bg-primary/10 p-4 text-sm text-muted-foreground">
                     <CheckCircle2Icon className="mt-1 size-4 text-primary" aria-hidden />
                     <p>
-                      We&apos;ve captured your details for the demo experience. In production, this
-                      will create your customer profile and send a verification email.
+                      Saved as your default delivery address.{" "}
+                      <Link href={orgRoute(orgSlug, "/profile")} className="font-semibold text-primary">
+                        Go to your profile
+                      </Link>{" "}
+                      or{" "}
+                      <Link href={orgRoute(orgSlug, "/")} className="font-semibold text-primary">
+                        start ordering
+                      </Link>
+                      .
                     </p>
                   </div>
                 ) : null}
@@ -246,11 +266,11 @@ export default function CustomerSignupPage() {
               <CardHeader className="space-y-3">
                 <h3 className="text-xl font-semibold text-foreground">Need help?</h3>
                 <p className="text-sm text-muted-foreground">
-                  Already registered? Head to the{" "}
-                  <Link href={orgRoute(orgSlug, "/auth")} className="font-semibold text-primary">
-                    sign-in page
-                  </Link>{" "}
-                  or contact our support team for assistance.
+                  Contact our support team for assistance, or manage your account from your{" "}
+                  <Link href={orgRoute(orgSlug, "/profile")} className="font-semibold text-primary">
+                    profile
+                  </Link>
+                  .
                 </p>
               </CardHeader>
             </Card>

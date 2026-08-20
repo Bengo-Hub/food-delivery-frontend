@@ -45,7 +45,7 @@ export function AddressSelector({
   const selectedAddress = addresses.find((a) => a.id === selectedId);
   const hasAddress = !!(selectedAddress || guestAddress);
   const displayLabel = selectedAddress?.label ?? "Delivery Location";
-  const displayAddress = selectedAddress?.address ?? guestAddress?.address ?? "";
+  const displayAddress = selectedAddress?.address_line1 ?? guestAddress?.address ?? "";
 
   return (
     <section className="rounded-xl border border-border p-4">
@@ -288,9 +288,9 @@ function LocationSelectorModal({
                       <MapPin className={cn("size-4 shrink-0", selected ? "text-primary" : "text-muted-foreground")} />
                       <div className="min-w-0 flex-1">
                         <p className="text-sm font-medium">{addr.label}</p>
-                        <p className="truncate text-xs text-muted-foreground">{addr.address}</p>
+                        <p className="truncate text-xs text-muted-foreground">{addr.address_line1}</p>
                       </div>
-                      {addr.isDefault && (
+                      {addr.is_default && (
                         <span className="shrink-0 rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-medium text-primary">
                           Default
                         </span>

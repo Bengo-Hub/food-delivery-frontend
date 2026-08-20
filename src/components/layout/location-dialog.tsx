@@ -49,11 +49,12 @@ function toSavedAddress(addr: Address): SavedAddress {
   return {
     id: addr.id,
     label: addr.label,
-    address: addr.address,
-    fullAddress: addr.address,
-    latitude: addr.lat,
-    longitude: addr.lng,
-    isDefault: addr.isDefault,
+    address: addr.address_line1,
+    fullAddress: addr.address_line1,
+    latitude: addr.latitude ?? 0,
+    longitude: addr.longitude ?? 0,
+    isDefault: addr.is_default,
+    additionalInfo: addr.instructions ?? "",
   };
 }
 

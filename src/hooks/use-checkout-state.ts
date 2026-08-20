@@ -173,10 +173,10 @@ export function useCheckoutState() {
 
   // Zone check — use saved address coords OR guest-picked location coords
   const deliveryLat = fulfillmentMode !== "pickup"
-    ? (selectedAddress?.lat ?? guestDeliveryLocation?.lat ?? null)
+    ? (selectedAddress?.latitude ?? guestDeliveryLocation?.lat ?? null)
     : null;
   const deliveryLng = fulfillmentMode !== "pickup"
-    ? (selectedAddress?.lng ?? guestDeliveryLocation?.lng ?? null)
+    ? (selectedAddress?.longitude ?? guestDeliveryLocation?.lng ?? null)
     : null;
   const { data: zoneResult, isLoading: zoneLoading, isError: zoneError } = useZoneCheck(deliveryLat, deliveryLng);
 
@@ -373,7 +373,7 @@ export function useCheckoutState() {
   // Auto-select default address
   useEffect(() => {
     if (!selectedAddressId && addresses.length > 0) {
-      const defaultAddr = addresses.find((a) => a.isDefault);
+      const defaultAddr = addresses.find((a) => a.is_default);
       setSelectedAddressId(defaultAddr?.id ?? addresses[0].id);
     }
   }, [addresses, selectedAddressId]);
@@ -558,9 +558,9 @@ export function useCheckoutState() {
         if (guestName.trim()) guestPayload.contactName = guestName.trim();
         // Delivery address from saved address or guest-picked location
         if (selectedAddr) {
-          guestPayload.deliveryAddress = selectedAddr.address ?? "";
-          guestPayload.deliveryLat = selectedAddr.lat;
-          guestPayload.deliveryLng = selectedAddr.lng;
+          guestPayload.deliveryAddress = selectedAddr.address_line1 ?? "";
+          guestPayload.deliveryLat = selectedAddr.latitude ?? 0;
+          guestPayload.deliveryLng = selectedAddr.longitude ?? 0;
         } else if (guestDeliveryLocation) {
           guestPayload.deliveryAddress = guestDeliveryLocation.address;
           guestPayload.deliveryLat = guestDeliveryLocation.lat;
