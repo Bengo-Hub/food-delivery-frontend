@@ -88,6 +88,8 @@ export function RetailHomeView() {
           href: orgRoute(orgSlug, `/catalog/${item.id}`),
           ...(percentOff != null ? { discountPercent: percentOff } : {}),
           originalPrice: item.price,
+          isFlashSale: deal.isFlashSale,
+          dealEndsAt: deal.endAt,
         };
       }),
     [dealItems, orgSlug, profile],

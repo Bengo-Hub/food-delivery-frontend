@@ -29,6 +29,10 @@ export interface MenuItem {
   featured?: boolean;
   discountPercent?: number;
   originalPrice?: number;
+  /** Set when the matching deal has Promotion.metadata["banner"]["is_flash_sale"] — lets a
+   *  card render a live countdown instead of (or alongside) a plain discount badge. */
+  isFlashSale?: boolean;
+  dealEndsAt?: string | null;
   preparationTime?: number; // in minutes
   calories?: number;
   allergens?: string[];

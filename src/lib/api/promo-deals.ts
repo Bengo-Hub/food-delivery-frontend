@@ -29,6 +29,10 @@ export interface Deal {
   startAt: string;
   endAt: string | null;
   rule: DealRule | null;
+  /** Renders a countdown-to-endAt badge on the deal's grid card instead of a plain discount
+   *  badge. Sourced from the same Promotion.metadata["banner"]["is_flash_sale"] flag the
+   *  banner carousel already reads. */
+  isFlashSale: boolean;
 }
 
 /** Backend deal shape (ordering-backend -> pos-api S2S response, snake_case, passed through as-is). */
@@ -46,6 +50,7 @@ interface BackendDeal {
   start_at: string;
   end_at: string | null;
   rule: BackendDealRule | null;
+  is_flash_sale?: boolean;
 }
 
 function backendDealToDeal(d: BackendDeal): Deal {
@@ -63,6 +68,7 @@ function backendDealToDeal(d: BackendDeal): Deal {
           maxDiscount: d.rule.max_discount,
         }
       : null,
+    isFlashSale: !!d.is_flash_sale,
   };
 }
 

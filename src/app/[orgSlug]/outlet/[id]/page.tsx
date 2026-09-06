@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowLeft, Clock, Heart, MapPin, Phone, Search, ShoppingCart, Star } from "lucide-react";
+import { ArrowLeft, Clock, Heart, MapPin, Phone, Search, ShoppingCart, Star, Zap } from "lucide-react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
@@ -13,7 +13,10 @@ import { Button } from "@/components/ui/button";
 import { ImageWithFallback } from "@/components/ui/image-with-fallback";
 import { Input } from "@/components/ui/input";
 import { useOutlet, useOutletMenu } from "@/hooks/use-catalog";
+import { useCountdown } from "@/hooks/use-countdown";
 import { useOrderingConfig } from "@/hooks/use-ordering-config";
+import { usePromoDeals } from "@/hooks/use-promo-deals";
+import { applyDeal, resolveDealItems } from "@/lib/api/promo-deals";
 import { orgRoute } from "@/lib/routes";
 import { cn } from "@/lib/utils";
 import { useOrgSlug } from "@/providers/org-slug-provider";
@@ -57,6 +60,7 @@ function MenuItemCard({
   useCase?: string;
 }) {
   const orgSlug = useOrgSlug();
+  const countdown = useCountdown(item.isFlashSale ? item.dealEndsAt : null);
   return (
     <div className="group flex gap-4 rounded-xl border border-border bg-card p-4 transition hover:shadow-md">
       {/* Content */}
@@ -118,11 +122,18 @@ function MenuItemCard({
           sizes="112px"
           iconClassName="size-7"
         />
-        {item.discountPercent && item.discountPercent > 0 && (
-          <div className="absolute left-1 top-1">
-            <span className="rounded-full bg-red-500 px-1.5 py-0.5 text-[10px] font-semibold text-white">
-              -{item.discountPercent}%
-            </span>
+        {((item.discountPercent && item.discountPercent > 0) || (item.isFlashSale && countdown)) && (
+          <div className="absolute left-1 top-1 flex flex-col items-start gap-0.5">
+            {item.discountPercent && item.discountPercent > 0 && (
+              <span className="rounded-full bg-red-500 px-1.5 py-0.5 text-[10px] font-semibold text-white">
+                -{item.discountPercent}%
+              </span>
+            )}
+            {item.isFlashSale && countdown && (
+              <span className="flex items-center gap-0.5 rounded-full bg-amber-500 px-1.5 py-0.5 text-[9px] font-semibold text-white">
+                <Zap className="size-2 fill-white" /> {countdown}
+              </span>
+            )}
           </div>
         )}
       </Link>
@@ -135,7 +146,31 @@ function GenericOutletView({ orgSlug, outletId }: { orgSlug: string; outletId: s
 
   const { data: outlet, isLoading: outletLoading, error: outletError } = useOutlet(orgSlug, outletId);
   const { data: menuData, isLoading: menuLoading } = useOutletMenu(orgSlug, outletId, undefined, 1, 100);
-  const menuItems = menuData?.data ?? [];
+  const { data: deals } = usePromoDeals();
+  // Apply active deals to this outlet's own menu — previously this page never called
+  // resolveDealItems/applyDeal at all (only the home-page Top Deals grids did), so a matching
+  // item's discountPercent/originalPrice here were always undefined and MenuItemCard's
+  // strikethrough/badge UI silently never rendered even for a genuinely discounted item.
+  const menuItems = useMemo(() => {
+    const base = menuData?.data ?? [];
+    if (!deals?.length) return base;
+    const dealByItemId = new Map(resolveDealItems(base, deals).map(({ item, deal }) => [item.id, deal]));
+    return base.map((item) => {
+      const deal = dealByItemId.get(item.id);
+      if (!deal) return item;
+      const discounted = applyDeal(item.price, deal.rule);
+      if (discounted >= item.price) return item;
+      const percentOff = deal.rule?.discountType === "percentage" ? deal.rule.discountValue : undefined;
+      return {
+        ...item,
+        price: discounted,
+        originalPrice: item.price,
+        ...(percentOff != null ? { discountPercent: percentOff } : {}),
+        isFlashSale: deal.isFlashSale,
+        dealEndsAt: deal.endAt,
+      };
+    });
+  }, [menuData, deals]);
   // Adapt placeholders/copy to THIS outlet's vertical (not the tenant default).
   const { config: cfg } = useOrderingConfig(outlet?.businessType);
 

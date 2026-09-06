@@ -167,6 +167,8 @@ export function FoodHomeView() {
           href: orgRoute(orgSlug, `/catalog/${item.id}`),
           ...(percentOff != null ? { discountPercent: percentOff } : {}),
           originalPrice: item.price,
+          isFlashSale: deal.isFlashSale,
+          dealEndsAt: deal.endAt,
           hasVariants: item.hasVariants,
           variants: item.variants,
           modifierGroups: item.modifierGroups,

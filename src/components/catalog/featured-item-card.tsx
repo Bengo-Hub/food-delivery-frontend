@@ -1,13 +1,14 @@
 "use client";
 
 import React, { useState } from "react";
-import { Heart, Plus } from "lucide-react";
+import { Heart, Plus, Zap } from "lucide-react";
 import Link from "next/link";
 
 import { Button } from "@/components/ui/button";
 import { ImageWithFallback } from "@/components/ui/image-with-fallback";
 import { cn } from "@/lib/utils";
 import { useOrgSlug } from "@/providers/org-slug-provider";
+import { useCountdown } from "@/hooks/use-countdown";
 import type { CatalogVariant, ModifierGroup } from "@/types/catalog";
 
 export interface FeaturedItemProps {
@@ -24,6 +25,10 @@ export interface FeaturedItemProps {
   useCase?: string;
   discountPercent?: number;
   originalPrice?: number;
+  /** Renders a live countdown badge instead of the plain discount badge — set alongside
+   *  dealEndsAt when the matching deal has Promotion.metadata["banner"]["is_flash_sale"]. */
+  isFlashSale?: boolean;
+  dealEndsAt?: string | null;
   href?: string;
   className?: string;
   onAddToCart?: (id: string) => void;
@@ -47,12 +52,15 @@ export function FeaturedItemCard({
   useCase,
   discountPercent,
   originalPrice,
+  isFlashSale,
+  dealEndsAt,
   href,
   className,
   onAddToCart,
 }: FeaturedItemProps) {
   const orgSlug = useOrgSlug();
   const [isWhitelisted, setIsWhitelisted] = useState(false);
+  const countdown = useCountdown(isFlashSale ? dealEndsAt : null);
 
   const handleAddToCart = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -88,12 +96,19 @@ export function FeaturedItemCard({
           iconClassName="size-10"
         />
 
-        {/* Discount Badge */}
-        {discountPercent && discountPercent > 0 && (
-          <div className="absolute left-2 top-2">
-            <span className="rounded-full bg-red-500 px-2 py-0.5 text-xs font-semibold text-white">
-              -{discountPercent}%
-            </span>
+        {/* Discount / Flash Sale Badge */}
+        {((discountPercent && discountPercent > 0) || (isFlashSale && countdown)) && (
+          <div className="absolute left-2 top-2 flex flex-col items-start gap-1">
+            {discountPercent && discountPercent > 0 && (
+              <span className="rounded-full bg-red-500 px-2 py-0.5 text-xs font-semibold text-white">
+                -{discountPercent}%
+              </span>
+            )}
+            {isFlashSale && countdown && (
+              <span className="flex items-center gap-1 rounded-full bg-amber-500 px-2 py-0.5 text-[10px] font-semibold text-white">
+                <Zap className="size-2.5 fill-white" /> {countdown}
+              </span>
+            )}
           </div>
         )}
 
